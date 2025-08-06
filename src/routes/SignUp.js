@@ -15,6 +15,8 @@ import {
 import {
   AccountCircle,
   Cancel,
+  Check,
+  Close,
   CheckCircle,
   ChevronRight,
   Email,
@@ -255,6 +257,18 @@ function SignUp() {
                   }}
                 >
                   Contains lowercase letter
+                </Typography>
+              </Box>
+              <Box sx={{display: "flex", flexDirection: "row", alignItems: "center"}}>
+                <Close sx={{color: "error.main", mr: 1}} fontSize="small" />
+                <Check sx={{color: "success.main", mr: 1}} fontSize="small" />
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: "text.secondary",
+                  }}
+                >
+                  Contains uppercase letter
                 </Typography>
               </Box>
             </Box>
