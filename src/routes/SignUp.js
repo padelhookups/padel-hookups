@@ -79,7 +79,7 @@ function SignUp() {
     <Container fixed>
       <Box
         sx={{
-          height: "100vh",
+          minHeight: "100vh",
           width: "100%",
           display: "flex",
           flexDirection: "column",
