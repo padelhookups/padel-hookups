@@ -5,6 +5,7 @@ import ProtectedRoute from './utils/ProtectedRoute';
 
 /* ROUTES */
 import Login from "./routes/Login";
+import SignUp from "./routes/SignUp";
 
 import "./App.css";
 
@@ -18,6 +19,7 @@ function App() {
 			<BrowserRouter>
 				<Routes>
 					<Route path='/' element={<Login />} />
+					<Route path='/SignUp' element={<SignUp />} />
 					<Route path='/Home' element={<ProtectedRoute><App /></ProtectedRoute>} />
 				</Routes>
 			</BrowserRouter>

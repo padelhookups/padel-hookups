@@ -1,11 +1,8 @@
-import * as React from "react";
-
 import {
   Box,
   Button,
   Container,
   FormControl,
-  FormControlLabel,
   InputAdornment,
   InputLabel,
   Link,
@@ -16,17 +13,19 @@ import {
 import {
   AccountCircle,
   ChevronRight,
+  Email,
   Lock,
   Visibility,
 } from "@mui/icons-material";
 import logo from "../images/LogoWhite.svg";
 
-function Login() {
+function SignUp() {
   return (
     <Container fixed>
       <Box
         sx={{
           height: "100vh",
+          width: "100%",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
@@ -43,10 +42,10 @@ function Login() {
           }}
         />
         <Typography variant="h4" sx={{ mt: 5, mb: 1, textAlign: "center" }}>
-          <b>Welcome to Padel Hookups</b>
+          <b>Create your account</b>
         </Typography>
         <Typography variant="subtitle1">
-          Sign in to your account to continue
+          Join the Padel Hookups community
         </Typography>
         <Box
           component="form"
@@ -75,10 +74,10 @@ function Login() {
                 },
               }}
             >
-              <InputLabel htmlFor="email">Email</InputLabel>
+              <InputLabel htmlFor="name">Name</InputLabel>
               <OutlinedInput
                 fullWidth
-                id="email"
+                id="name"
                 startAdornment={
                   <InputAdornment position="start">
                     <AccountCircle
@@ -117,6 +116,42 @@ function Login() {
                 },
               }}
             >
+              <InputLabel htmlFor="email">Email</InputLabel>
+              <OutlinedInput
+                id="email"
+                startAdornment={
+                  <InputAdornment position="start">
+                    <Email
+                      sx={{
+                        color: "action.active",
+                        mr: 1,
+                        my: 0.5,
+                        ".Mui-focused &": {
+                          color: "primary.main",
+                        },
+                      }}
+                    />
+                  </InputAdornment>
+                }
+                endAdornment={<Box sx={{ width: 40 }} />}
+                label="Email"
+              />
+            </FormControl>
+          </Box>
+          <Box
+            sx={{
+              width: "100%",
+            }}
+          >
+            <FormControl
+              sx={{
+                width: "100%",
+                "&:focus-within": {
+                  borderColor: "primary.main",
+                  borderWidth: "2px", // outer second border
+                },
+              }}
+            >
               <InputLabel htmlFor="password">Password</InputLabel>
               <OutlinedInput
                 id="password"
@@ -134,18 +169,7 @@ function Login() {
                     />
                   </InputAdornment>
                 }
-                endAdornment={
-                  <InputAdornment position="end">
-                    <Visibility
-                      sx={{
-                        color: "action.active",
-                        mr: 1,
-                        my: 0.5,
-                        cursor: "pointer",
-                      }}
-                    />
-                  </InputAdornment>
-                }
+                endAdornment={<Box sx={{ width: 40 }} />}
                 label="Password"
               />
             </FormControl>
@@ -153,60 +177,110 @@ function Login() {
           <Box
             sx={{
               width: "100%",
-              mt: "0 !important",
-              display: "flex",
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
             }}
           >
-            <FormControlLabel
+            <FormControl
               sx={{
-                width: "50%",
-                "& .MuiFormControlLabel-label": {
-                  fontSize: "0.875rem", // Smaller font (e.g. 14px)
-                  fontWeight: 500, // Optional: make it lighter or bolder
+                width: "100%",
+                "&:focus-within": {
+                  borderColor: "primary.main",
+                  borderWidth: "2px", // outer second border
                 },
+                mb: 0,
               }}
-              control={<Switch />}
-              label="Remember me?"
-            />
+            >
+              <InputLabel htmlFor="confirm-password">
+                Confirm Password
+              </InputLabel>
+              <OutlinedInput
+                id="confirm-password"
+                startAdornment={
+                  <InputAdornment position="start">
+                    <Lock
+                      sx={{
+                        color: "action.active",
+                        mr: 1,
+                        my: 0.5,
+                        ".Mui-focused &": {
+                          color: "primary.main",
+                        },
+                      }}
+                    />
+                  </InputAdornment>
+                }
+                endAdornment={<Box sx={{ width: 40 }} />}
+                label="Confirm Password"
+              />
+            </FormControl>
+          </Box>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              width: "100%",
+              mt: "0 !important",
+              pt: 2,
+            }}
+          >
+            <Switch />
             <Typography
               variant="body2"
               sx={{
-                color: "primary.main",
-                cursor: "pointer",
-                "&:hover": {
-                  textDecoration: "underline",
-                },
+                ml: 0,
+                fontSize: "0.875rem",
+                fontWeight: 500,
+                lineHeight: 1.4,
+                whiteSpace: "normal",
+                wordBreak: "break-word",
+                maxWidth: "75%", // ensures wrapping
               }}
             >
-              Forgot Password?
+              I agree to the{" "}
+              <Link href="/SignUp" color="primary">
+                Terms of Service{" "}
+              </Link>
+              and{" "}
+              <Link href="/privacy" color="primary">
+                Privacy Policy
+              </Link>
             </Typography>
           </Box>
-          <Button fullWidth variant="contained" id="sign-in-button">
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "flex-center",
+              justifyContent: "center",
+              flexDirection: "column",
+              maxWidth: "100%",
+              width: "100%",
+            }}
+          >
+            <Button fullWidth variant="contained" id="sign-in-button">
+              <Typography
+                variant="body1"
+                sx={{
+                  color: "#fff",
+                  textTransform: "capitalize",
+                  fontWeight: "bold",
+                }}
+              >
+                Create Account
+              </Typography>
+              <ChevronRight sx={{ color: "#fff" }} />
+            </Button>
             <Typography
-              variant="body1"
-              sx={{
-                color: "#fff",
-                textTransform: "capitalize",
-                fontWeight: "bold",
-              }}
+              sx={{ mt: 2, textAlign: "center", color: "text.secondary" }}
             >
-              Login
+              Already have an account?{" "}
+              <Link href="/" color="primary">
+                Sign In
+              </Link>
             </Typography>
-            <ChevronRight sx={{ color: "#fff" }} />
-          </Button>
-          <Typography sx={{ textAlign: "center", color: "text.secondary" }}>
-            Dont have an account?{" "}
-            <Link href="/SignUp" color="primary">
-              Sign Up
-            </Link>
-          </Typography>
+          </Box>
         </Box>
       </Box>
     </Container>
   );
 }
 
-export default Login;
+export default SignUp;
