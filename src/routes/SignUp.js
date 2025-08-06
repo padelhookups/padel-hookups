@@ -39,6 +39,12 @@ function SignUp() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  //const [isTermsAccepted, setIsTermsAccepted] = useState(false);
+  const [lowerCaseValid, setLowerCaseValid] = useState(false);
+  const [upperCaseValid, setUpperCaseValid] = useState(false);
+  const [numberValid, setNumberValid] = useState(false);
+  const [specialCharValid, setSpecialCharValid] = useState(false);
+  const [lengthValid, setLengthValid] = useState(false);
 
   const createUser = async () => {
     const result = await validatePasswordJS();
@@ -247,9 +253,24 @@ function SignUp() {
               >
                 Password requirements:
               </Typography>
-              <Box sx={{display: "flex", flexDirection: "row", alignItems: "center"}}>
-                <Cancel sx={{color: "error.main", mr: 1}} fontSize="small" />
-                <CheckCircle sx={{color: "success.main", mr: 1}} fontSize="small" />
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "row",
+                  alignItems: "center",
+                }}
+              >
+                {lowerCaseValid ? (
+                  <Check
+                    sx={{ color: "success.main", mr: 1 }}
+                    fontSize="small"
+                  />
+                ) : (
+                  <Close
+                    sx={{ color: "error.main", mr: 1 }}
+                    fontSize="small"
+                  />
+                )}
                 <Typography
                   variant="caption"
                   sx={{
@@ -259,9 +280,24 @@ function SignUp() {
                   Contains lowercase letter
                 </Typography>
               </Box>
-              <Box sx={{display: "flex", flexDirection: "row", alignItems: "center"}}>
-                <Close sx={{color: "error.main", mr: 1}} fontSize="small" />
-                <Check sx={{color: "success.main", mr: 1}} fontSize="small" />
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "row",
+                  alignItems: "center",
+                }}
+              >
+                {upperCaseValid ? (
+                  <Check
+                    sx={{ color: "success.main", mr: 1 }}
+                    fontSize="small"
+                  />
+                ) : (
+                  <Close
+                    sx={{ color: "error.main", mr: 1 }}
+                    fontSize="small"
+                  />
+                )}
                 <Typography
                   variant="caption"
                   sx={{
@@ -269,6 +305,78 @@ function SignUp() {
                   }}
                 >
                   Contains uppercase letter
+                </Typography>
+              </Box>
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "row",
+                  alignItems: "center",
+                }}
+              >
+                {!numberValid ? (
+                  <Close sx={{ color: "error.main", mr: 1 }} fontSize="small" />
+                ) : (
+                  <Check
+                    sx={{ color: "success.main", mr: 1 }}
+                    fontSize="small"
+                  />
+                )}
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: "text.secondary",
+                  }}
+                >
+                  Contains numeric character
+                </Typography>
+              </Box>
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "row",
+                  alignItems: "center",
+                }}
+              >
+                {!specialCharValid ? (
+                  <Close sx={{ color: "error.main", mr: 1 }} fontSize="small" />
+                ) : (
+                  <Check
+                    sx={{ color: "success.main", mr: 1 }}
+                    fontSize="small"
+                  />
+                )}
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: "text.secondary",
+                  }}
+                >
+                  Contains special character (!@#$%^&*)
+                </Typography>
+              </Box>
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "row",
+                  alignItems: "center",
+                }}
+              >
+                {!lengthValid ? (
+                  <Close sx={{ color: "error.main", mr: 1 }} fontSize="small" />
+                ) : (
+                  <Check
+                    sx={{ color: "success.main", mr: 1 }}
+                    fontSize="small"
+                  />
+                )}
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: "text.secondary",
+                  }}
+                >
+                  At least 8 characters long
                 </Typography>
               </Box>
             </Box>
