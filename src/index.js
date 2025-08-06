@@ -3,10 +3,6 @@ import ReactDOM from "react-dom/client";
 import App from "./App";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 
-/* FIREBASE */
-/* import { getAuth } from "firebase/auth"; */
-
-/* AUTH */
 import { AuthProvider } from "./utils/AuthContext";
 
 import "./index.css";

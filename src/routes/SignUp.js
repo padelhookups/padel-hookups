@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 import {
   Box,
   Button,
@@ -12,14 +14,59 @@ import {
 } from "@mui/material";
 import {
   AccountCircle,
+  Cancel,
+  CheckCircle,
   ChevronRight,
   Email,
   Lock,
-  Visibility,
 } from "@mui/icons-material";
 import logo from "../images/LogoWhite.svg";
 
+/* FIREBASE */
+import app from "../firebase-config";
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  validatePassword,
+} from "firebase/auth";
+
 function SignUp() {
+  const auth = getAuth(app);
+
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const createUser = async () => {
+    const result = await validatePasswordJS();
+    if (!result.isValid) return;
+
+    createUserWithEmailAndPassword(auth, email, password)
+      .then((userCredential) => {
+        // Signed up
+        const user = userCredential.user;
+      })
+      .catch((error) => {
+        const errorCode = error.code;
+        const errorMessage = error.message;
+      });
+  };
+
+  const validatePasswordJS = async () => {
+    const status = await validatePassword(getAuth(), password);
+    console.log(status);
+
+    if (!status.isValid) {
+      // Password could not be validated. Use the status to show what
+      // requirements are met and which are missing.
+      // If a criterion is undefined, it is not required by policy. If the
+      // criterion is defined but false, it is required but not fulfilled by
+      // the given password. For example:
+    }
+    return status.isValid;
+  };
+
   return (
     <Container fixed>
       <Box
@@ -78,6 +125,8 @@ function SignUp() {
               <OutlinedInput
                 fullWidth
                 id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 startAdornment={
                   <InputAdornment position="start">
                     <AccountCircle
@@ -119,6 +168,8 @@ function SignUp() {
               <InputLabel htmlFor="email">Email</InputLabel>
               <OutlinedInput
                 id="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 startAdornment={
                   <InputAdornment position="start">
                     <Email
@@ -155,6 +206,8 @@ function SignUp() {
               <InputLabel htmlFor="password">Password</InputLabel>
               <OutlinedInput
                 id="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 startAdornment={
                   <InputAdornment position="start">
                     <Lock
@@ -173,6 +226,38 @@ function SignUp() {
                 label="Password"
               />
             </FormControl>
+            <Box
+              sx={{
+                mt: 1,
+                p: 2,
+                display: "flex",
+                flexDirection: "column",
+                backgroundColor: "grey.100",
+                borderRadius: 2,
+              }}
+            >
+              <Typography
+                variant="body2"
+                sx={{
+                  mb: 0.5,
+                  fontWeight: "bold",
+                }}
+              >
+                Password requirements:
+              </Typography>
+              <Box sx={{display: "flex", flexDirection: "row", alignItems: "center"}}>
+                <Cancel sx={{color: "error.main", mr: 1}} fontSize="small" />
+                <CheckCircle sx={{color: "success.main", mr: 1}} fontSize="small" />
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: "text.secondary",
+                  }}
+                >
+                  Contains lowercase letter
+                </Typography>
+              </Box>
+            </Box>
           </Box>
           <Box
             sx={{
@@ -194,6 +279,8 @@ function SignUp() {
               </InputLabel>
               <OutlinedInput
                 id="confirm-password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
                 startAdornment={
                   <InputAdornment position="start">
                     <Lock
@@ -255,7 +342,12 @@ function SignUp() {
               width: "100%",
             }}
           >
-            <Button fullWidth variant="contained" id="sign-in-button">
+            <Button
+              fullWidth
+              variant="contained"
+              id="sign-in-button"
+              onClick={() => createUser()}
+            >
               <Typography
                 variant="body1"
                 sx={{

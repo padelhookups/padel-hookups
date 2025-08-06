@@ -1,5 +1,3 @@
-import * as React from "react";
-
 import {
   Box,
   Button,
@@ -13,6 +11,7 @@ import {
   Switch,
   Typography,
 } from "@mui/material";
+
 import {
   AccountCircle,
   ChevronRight,
