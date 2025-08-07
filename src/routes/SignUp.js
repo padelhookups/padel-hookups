@@ -56,41 +56,6 @@ function SignUp() {
 	const [isLoading, setIsLoading] = useState(false);
 	const [showSuccess, setShowSuccess] = useState(false);
 
-	const createUser = async () => {
-		const result = await validatePasswordJS();
-		if (!result) return;
-
-		createUserWithEmailAndPassword(auth, email, password)
-			.then((userCredential) => {
-				// Signed up
-				const user = userCredential.user;
-				console.log("User verified?", user.emailVerified);
-				return sendEmailVerification(user, {
-					// Optional: Use a custom redirect URL
-					url: "https://padel-hookups.web.app/verifyEmail",
-					handleCodeInApp: true // If you want to handle verification in the app
-				})
-					.then(() => {
-						console.log(
-							"Verification email sent! Check your inbox."
-						);
-						setIsLoading(false);
-					})
-					.catch((error) => {
-						console.error(
-							"Error sending email verification:",
-							error
-						);
-						setIsLoading(false);
-					});
-			})
-			.catch((error) => {
-				const errorCode = error.code;
-				const errorMessage = error.message;
-				setIsLoading(false);
-			});
-	};
-
 	const validatePasswordJS = async () => {
 		const status = await validatePassword(getAuth(), password);
 		console.log(status);
@@ -120,8 +85,6 @@ function SignUp() {
 
 	const handleSubmit = (e) => {
 		setIsLoading(true);
-		e.preventDefault();
-		createUser();
 	};
 
 	return (
