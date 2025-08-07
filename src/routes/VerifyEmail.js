@@ -1,41 +1,38 @@
 import { useEffect } from "react";
-import { useNavigate, useLocation } from "react-router";
-import { getAuth, applyActionCode } from "firebase/auth";
+import { getAuth, signInWithEmailLink } from "firebase/auth";
+import { useNavigate } from "react-router";
 
 export default function VerifyEmail() {
-	const navigate = useNavigate();
-	const location = useLocation();
-	const auth = getAuth();
+  const auth = getAuth();
+  const navigate = useNavigate();
 
-	useEffect(() => {
-		const params = new URLSearchParams(location.search);
-		const mode = params.get("mode");
-		const oobCode = params.get("oobCode");
-		const continueUrl = params.get("continueUrl") || "/";
+  useEffect(() => {
+    const url = window.location.href;
 
-		console.log("Action mode:", mode);
-		console.log("OOB code:", oobCode);
-		console.log("Continue URL:", continueUrl);
+    // You must get the email either from saved localStorage or URL param
+    const email = window.localStorage.getItem("emailForSignIn") 
+      || new URLSearchParams(window.location.search).get("email");
 
-		if (mode === "verifyEmail" || mode === "signIn") {
-			applyActionCode(auth, oobCode)
-				.then(() => {
-					// Action code applied successfully, redirect to continueUrl
-					navigate(
-						new URL(continueUrl).pathname +
-							new URL(continueUrl).search
-					);
-				})
-				.catch((error) => {
-					console.error("Error applying action code:", error);
-					// Optionally redirect or show error message
-					navigate("/");
-				});
-		} else {
-			// If mode is unrecognized, redirect home or elsewhere
-			navigate("/");
-		}
-	}, [auth, location, navigate]);
+    if (!email) {
+      console.error("No email found for sign-in.");
+      return;
+    }
 
-	return <div>Processing...</div>;
+    if (signInWithEmailLink(auth, url)) {
+      signInWithEmailLink(auth, email, url)
+        .then(() => {
+          // Clear saved email
+          window.localStorage.removeItem("emailForSignIn");
+          // Redirect to SignUp page or main app page
+          navigate(`/SignUp?email=${encodeURIComponent(email)}`);
+        })
+        .catch((error) => {
+          console.error("Error signing in with email link:", error);
+        });
+    } else {
+      console.error("Invalid sign-in email link.");
+    }
+  }, [auth, navigate]);
+
+  return <div>Verifying your sign-in link...</div>;
 }
