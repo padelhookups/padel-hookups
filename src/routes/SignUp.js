@@ -19,8 +19,8 @@ import {
 	ChevronRight,
 	Email,
 	Lock,
-  Visibility,
-  VisibilityOff
+	Visibility,
+	VisibilityOff
 } from "@mui/icons-material";
 import logo from "../images/LogoWhite.svg";
 
@@ -29,6 +29,7 @@ import app from "../firebase-config";
 import {
 	getAuth,
 	createUserWithEmailAndPassword,
+  sendEmailVerification,
 	validatePassword
 } from "firebase/auth";
 
@@ -59,6 +60,21 @@ function SignUp() {
 			.then((userCredential) => {
 				// Signed up
 				const user = userCredential.user;
+        console.log("User verified?", user.emailVerified);
+				return sendEmailVerification(user, {
+					// Optional: Use a custom redirect URL
+					url: "https://padel-hookups.web.app/verifyEmail",
+					handleCodeInApp: true // If you want to handle verification in the app
+				})
+					.then(() => {
+						console.log("Verification email sent! Check your inbox.");
+					})
+					.catch((error) => {
+						console.error(
+							"Error sending email verification:",
+							error
+						);
+					});
 			})
 			.catch((error) => {
 				const errorCode = error.code;
@@ -240,7 +256,7 @@ function SignUp() {
 							<OutlinedInput
 								id='password'
 								value={password}
-								type={showPassword ? 'text' : 'password'}
+								type={showPassword ? "text" : "password"}
 								autoComplete='new-password'
 								required
 								onChange={(e) =>
@@ -272,7 +288,9 @@ function SignUp() {
 													my: 0.5,
 													cursor: "pointer"
 												}}
-												onClick={() => setShowPassword(false)}
+												onClick={() =>
+													setShowPassword(false)
+												}
 											/>
 										) : (
 											<Visibility
@@ -282,7 +300,9 @@ function SignUp() {
 													my: 0.5,
 													cursor: "pointer"
 												}}
-												onClick={() => setShowPassword(true)}
+												onClick={() =>
+													setShowPassword(true)
+												}
 											/>
 										)}
 									</InputAdornment>
@@ -470,7 +490,7 @@ function SignUp() {
 							<OutlinedInput
 								id='confirm-password'
 								value={confirmPassword}
-								type={showConfirmPassword ? 'text' : 'password'}
+								type={showConfirmPassword ? "text" : "password"}
 								autoComplete='new-password'
 								required
 								onChange={(e) =>
@@ -506,7 +526,11 @@ function SignUp() {
 													my: 0.5,
 													cursor: "pointer"
 												}}
-												onClick={() => setShowConfirmPassword(false)}
+												onClick={() =>
+													setShowConfirmPassword(
+														false
+													)
+												}
 											/>
 										) : (
 											<Visibility
@@ -516,7 +540,9 @@ function SignUp() {
 													my: 0.5,
 													cursor: "pointer"
 												}}
-												onClick={() => setShowConfirmPassword(true)}
+												onClick={() =>
+													setShowConfirmPassword(true)
+												}
 											/>
 										)}
 									</InputAdornment>
