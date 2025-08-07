@@ -24,6 +24,7 @@ import {
 	VisibilityOff
 } from "@mui/icons-material";
 import logo from "../images/LogoWhite.svg";
+import SuccessModal from "../components/ModalSignUp";
 
 /* FIREBASE */
 import app from "../firebase-config";
@@ -53,6 +54,7 @@ function SignUp() {
 	const [specialCharValid, setSpecialCharValid] = useState(false);
 	const [lengthValid, setLengthValid] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
+	const [showSuccess, setShowSuccess] = useState(false);
 
 	const createUser = async () => {
 		const result = await validatePasswordJS();
@@ -676,6 +678,11 @@ function SignUp() {
 						</Typography>
 					</Box>
 				</Box>
+				{/* MUI Success Modal */}
+				<SuccessModal
+					open={showSuccess}
+					onClose={() => setShowSuccess(false)}
+				/>
 			</Box>
 		</Container>
 	);

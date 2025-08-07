@@ -29,7 +29,7 @@ function App() {
 					element={
 						<ProtectedRoute>
 							<div>
-								<h1>Hello {auth.currentUser.displayName || auth.currentUser.email}</h1>
+								<h1>Hello {auth.currentUser?.displayName || auth.currentUser?.email}</h1>
 							</div>
 						</ProtectedRoute>
 					}
