@@ -7,6 +7,7 @@ import NotFound from "./components/NotFound";
 /* ROUTES */
 import Login from "./routes/Login";
 import SignUp from "./routes/SignUp";
+import VerifyEmail from "./routes/VerifyEmail";
 
 import "./App.css";
 
@@ -24,6 +25,7 @@ function App() {
 			<Routes>
 				<Route path='/' element={<Login />} />
 				<Route path='/SignUp' element={<SignUp />} />
+				<Route path='/verifyEmail' element={<VerifyEmail />} />
 				<Route
 					path='/Home'
 					element={

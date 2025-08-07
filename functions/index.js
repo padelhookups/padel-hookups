@@ -1,7 +1,10 @@
 // The Cloud Functions for Firebase SDK to create Cloud Functions and triggers.
-const functions = require('firebase-functions');
+const { SecretManagerServiceClient } = require("@google-cloud/secret-manager");
+const client = new SecretManagerServiceClient();
 const { logger } = require("firebase-functions");
 const { getAuth } = require("firebase-admin/auth");
+
+const { onRequest } = require('firebase-functions/v2/https');
 const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 
 // The Firebase Admin SDK to access Firestore.
@@ -10,12 +13,21 @@ const { getFirestore } = require("firebase-admin/firestore");
 
 initializeApp();
 
-const brevoApiKey = process.env.BREVO_API_KEY;
-
 exports.sendInviteOnCreateUser = onDocumentCreated(
 	{ region: "europe-west1", document: "/Invites/{inviteId}" },
 	async (event) => {
-		logger.log("BREVO_API_KEY", brevoApiKey);
+		let brevoApiKey;
+		try {
+			const [result] = await client.accessSecretVersion({
+				name: `projects/padel-hookups/secrets/brevo-api-key/versions/latest`
+			});
+			brevoApiKey = result.payload.data.toString("utf8");
+			logger.info("BREVO_API_KEY successfully retrieved.");
+		} catch (err) {
+			logger.error("Failed to access brevo-api-key secret:", err);
+			return;
+		}
+
 		const snap = event.data;
 		if (!snap) {
 			console.error("No data in document.");
@@ -54,6 +66,8 @@ exports.sendInviteOnCreateUser = onDocumentCreated(
 			actionCodeSettings
 		);
 
+		logger.info("Link generated for email:", link);
+
 		const emailBody = {
 			sender: { name: "Padel Hookups", email: "padelhookups@gmail.com" }, // replace with your verified sender
 			to: [{ email }],
@@ -64,6 +78,8 @@ exports.sendInviteOnCreateUser = onDocumentCreated(
 				REGISTER_URL: link
 			}
 		};
+
+		logger.info("BREVO_API_KEY:", brevoApiKey);
 
 		try {
 			const response = await fetch(
