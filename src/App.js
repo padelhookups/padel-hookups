@@ -1,7 +1,8 @@
-import * as React from "react";
 import { BrowserRouter, Routes, Route } from "react-router";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 
-import ProtectedRoute from './utils/ProtectedRoute';
+import ProtectedRoute from "./utils/ProtectedRoute";
+import NotFound from "./components/NotFound";
 
 /* ROUTES */
 import Login from "./routes/Login";
@@ -10,20 +11,33 @@ import SignUp from "./routes/SignUp";
 import "./App.css";
 
 function App() {
+	const auth = getAuth();
+	onAuthStateChanged(auth, (user) => {
+		if (user) {
+			console.log("User is authenticated:", user); // Log user details if needed
+		} else {
+			console.log("User is not authenticated");
+		}
+	});
 	return (
-		<>
-			{/* <div className="App">
-      <img src={logo} className="App-logo" alt="logo" />
-      <Button variant="contained">Hello world</Button>
-      </div> */}
-			<BrowserRouter>
-				<Routes>
-					<Route path='/' element={<Login />} />
-					<Route path='/SignUp' element={<SignUp />} />
-					<Route path='/Home' element={<ProtectedRoute><App /></ProtectedRoute>} />
-				</Routes>
-			</BrowserRouter>
-		</>
+		<BrowserRouter>
+			<Routes>
+				<Route path='/' element={<Login />} />
+				<Route path='/SignUp' element={<SignUp />} />
+				<Route
+					path='/Home'
+					element={
+						<ProtectedRoute>
+							<div>
+								<h1>Hello {auth.currentUser.displayName || auth.currentUser.email}</h1>
+							</div>
+						</ProtectedRoute>
+					}
+				/>
+				{/* Catch-all route for non-existent paths */}
+				<Route path='*' element={<NotFound />} />
+			</Routes>
+		</BrowserRouter>
 	);
 }
 

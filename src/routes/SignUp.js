@@ -3,6 +3,7 @@ import { useState } from "react";
 import {
 	Box,
 	Button,
+	CircularProgress,
 	Container,
 	FormControl,
 	InputAdornment,
@@ -29,7 +30,7 @@ import app from "../firebase-config";
 import {
 	getAuth,
 	createUserWithEmailAndPassword,
-  sendEmailVerification,
+	sendEmailVerification,
 	validatePassword
 } from "firebase/auth";
 
@@ -51,6 +52,7 @@ function SignUp() {
 	const [numberValid, setNumberValid] = useState(false);
 	const [specialCharValid, setSpecialCharValid] = useState(false);
 	const [lengthValid, setLengthValid] = useState(false);
+	const [isLoading, setIsLoading] = useState(false);
 
 	const createUser = async () => {
 		const result = await validatePasswordJS();
@@ -60,25 +62,30 @@ function SignUp() {
 			.then((userCredential) => {
 				// Signed up
 				const user = userCredential.user;
-        console.log("User verified?", user.emailVerified);
+				console.log("User verified?", user.emailVerified);
 				return sendEmailVerification(user, {
 					// Optional: Use a custom redirect URL
 					url: "https://padel-hookups.web.app/verifyEmail",
 					handleCodeInApp: true // If you want to handle verification in the app
 				})
 					.then(() => {
-						console.log("Verification email sent! Check your inbox.");
+						console.log(
+							"Verification email sent! Check your inbox."
+						);
+						setIsLoading(false);
 					})
 					.catch((error) => {
 						console.error(
 							"Error sending email verification:",
 							error
 						);
+						setIsLoading(false);
 					});
 			})
 			.catch((error) => {
 				const errorCode = error.code;
 				const errorMessage = error.message;
+				setIsLoading(false);
 			});
 	};
 
@@ -110,6 +117,7 @@ function SignUp() {
 	};
 
 	const handleSubmit = (e) => {
+		setIsLoading(true);
 		e.preventDefault();
 		createUser();
 	};
@@ -197,7 +205,7 @@ function SignUp() {
 										{/* width matches icon button */}
 									</InputAdornment>
 								}
-								label='Email'
+								label='Name'
 							/>
 						</FormControl>
 					</Box>
@@ -638,6 +646,12 @@ function SignUp() {
 							variant='contained'
 							type='submit'
 							id='sign-in-button'>
+							{isLoading ? (
+								<CircularProgress
+									size={24}
+									sx={{ mr: 1, color: "#fff" }}
+								/>
+							) : null}
 							<Typography
 								variant='body1'
 								sx={{
