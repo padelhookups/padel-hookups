@@ -1,4 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react"; // make sure this is imported
+import { useNavigate } from "react-router";
+
+/* FIREBASE */
+import app from "../firebase-config";
+import { getAuth, validatePassword, updatePassword } from "firebase/auth";
+import { doc, getDoc, getFirestore,setDoc } from "firebase/firestore";
 
 import {
 	Box,
@@ -23,20 +29,14 @@ import {
 	Visibility,
 	VisibilityOff
 } from "@mui/icons-material";
+
 import logo from "../images/LogoWhite.svg";
 import SuccessModal from "../components/ModalSignUp";
 
-/* FIREBASE */
-import app from "../firebase-config";
-import {
-	getAuth,
-	createUserWithEmailAndPassword,
-	sendEmailVerification,
-	validatePassword
-} from "firebase/auth";
-
 function SignUp() {
 	const auth = getAuth(app);
+	const db = getFirestore(app);
+	const navigate = useNavigate();
 
 	const [name, setName] = useState("");
 	const [email, setEmail] = useState("");
@@ -55,6 +55,25 @@ function SignUp() {
 	const [lengthValid, setLengthValid] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
 	const [showSuccess, setShowSuccess] = useState(false);
+
+	const urlParams = new URLSearchParams(window.location.search);
+	const emailFromLink = urlParams.get("email");
+	const inviteId = urlParams.get("inviteId");
+	console.log("Invite ID from URL:", inviteId);
+
+	useEffect(() => {
+		if (!emailFromLink) {
+			console.error("Email is missing from URL.");
+			navigate("/");
+		} else {
+			setEmail(emailFromLink);
+		}
+
+		if (!inviteId) {
+			console.error("Invite ID is missing from URL.");
+			navigate("/");
+		}
+	}, [emailFromLink, inviteId, navigate]);
 
 	const validatePasswordJS = async () => {
 		const status = await validatePassword(getAuth(), password);
@@ -83,8 +102,67 @@ function SignUp() {
 		setLengthValid(passwordValue.length >= 8);
 	};
 
-	const handleSubmit = (e) => {
+	const handleSubmit = async (e) => {
+		e.preventDefault();
+		e.stopPropagation();
+
+		if (isLoading) return;
+
+		const validPassword = await validatePasswordJS();
+		if (!validPassword) {
+			alert("Password does not meet complexity requirements.");
+			return;
+		}
+
 		setIsLoading(true);
+		validateValidInvitation();
+	};
+
+	const validateValidInvitation = async () => {
+		// query firestore
+		// If valid, proceed with sign up
+		const docRef = doc(db, "Invites", inviteId);
+		const docSnap = await getDoc(docRef);
+
+		if (!docSnap.exists()) {
+			console.error("No valid invitation found for ID:", inviteId);
+			setIsLoading(false);
+			alert("Invalid or expired invitation link.");
+			navigate("/");
+		} else {
+			handleUserPassword();
+		}
+	};
+
+	const handleUserPassword = () => {
+		updatePassword(auth.currentUser, password)
+			.then(() => {
+				handleUser();
+			})
+			.catch((error) => {
+				// An error ocurred
+				// ...
+			});
+	};
+
+	const handleUser = async () => {
+		const docRef = doc(db, "Users", auth.currentUser.uid);
+		const docSnap = await getDoc(docRef);
+
+		if (!docSnap.exists()) {
+			console.warn("Non existent user, will be created");
+			// Create user document in Firestore
+			await setDoc(docRef, {
+				Name: name,
+				Email: email,
+				CreatedAt: new Date(),
+				LastLoginAt: new Date(),
+				InviteId: inviteId
+			});
+		} else {
+			setIsLoading(false);
+			setShowSuccess(true);
+		}
 	};
 
 	return (
@@ -192,6 +270,7 @@ function SignUp() {
 								value={email}
 								type='email'
 								autoComplete='email'
+								disabled={!!emailFromLink}
 								required
 								onChange={(e) => setEmail(e.target.value)}
 								startAdornment={
@@ -575,7 +654,7 @@ function SignUp() {
 							mt: "0 !important",
 							pt: 2
 						}}>
-						<Switch />
+						<Switch required />
 						<Typography
 							variant='body2'
 							sx={{
@@ -624,7 +703,7 @@ function SignUp() {
 									textTransform: "capitalize",
 									fontWeight: "bold"
 								}}>
-								Create Account
+								Update Account
 							</Typography>
 							<ChevronRight sx={{ color: "#fff" }} />
 						</Button>

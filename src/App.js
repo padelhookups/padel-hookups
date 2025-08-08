@@ -13,6 +13,8 @@ import "./App.css";
 
 function App() {
 	const auth = getAuth();
+	auth.useDeviceLanguage();
+	
 	onAuthStateChanged(auth, (user) => {
 		if (user) {
 			console.log("User is authenticated:", user); // Log user details if needed
@@ -24,14 +26,25 @@ function App() {
 		<BrowserRouter>
 			<Routes>
 				<Route path='/' element={<Login />} />
-				<Route path='/SignUp' element={<SignUp />} />
+				<Route
+					path='/SignUp'
+					element={
+						<ProtectedRoute>
+							<SignUp />
+						</ProtectedRoute>
+					}
+				/>
 				<Route path='/verifyEmail' element={<VerifyEmail />} />
 				<Route
 					path='/Home'
 					element={
 						<ProtectedRoute>
 							<div>
-								<h1>Hello {auth.currentUser?.displayName || auth.currentUser?.email}</h1>
+								<h1>
+									Hello{" "}
+									{auth.currentUser?.displayName ||
+										auth.currentUser?.email}
+								</h1>
 							</div>
 						</ProtectedRoute>
 					}

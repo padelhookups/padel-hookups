@@ -1,38 +1,40 @@
-import { useEffect } from "react";
-import { getAuth, signInWithEmailLink } from "firebase/auth";
+import { getAuth, signInWithEmailLink,isSignInWithEmailLink } from "firebase/auth";
 import { useNavigate } from "react-router";
 
 export default function VerifyEmail() {
-  const auth = getAuth();
-  const navigate = useNavigate();
+	const auth = getAuth();
+	const navigate = useNavigate();
 
-  useEffect(() => {
-    const url = window.location.href;
+    console.log("Verifying email link...");
+    console.log("Is sign-in with email link:", isSignInWithEmailLink(auth, window.location.href));
 
-    // You must get the email either from saved localStorage or URL param
-    const email = window.localStorage.getItem("emailForSignIn") 
-      || new URLSearchParams(window.location.search).get("email");
+	if (isSignInWithEmailLink(auth, window.location.href)) {
+		let email;
+		let inviteId
 
-    if (!email) {
-      console.error("No email found for sign-in.");
-      return;
-    }
+		// Try to extract email from continueUrl
+		const urlParams = new URLSearchParams(window.location.search);
+		const continueUrl = urlParams.get("continueUrl");
+		if (continueUrl) {
+			const contParams = new URLSearchParams(new URL(continueUrl).search);
+			email = contParams.get("email");
+			inviteId = contParams.get("inviteId");
+		}
 
-    if (signInWithEmailLink(auth, url)) {
-      signInWithEmailLink(auth, email, url)
-        .then(() => {
-          // Clear saved email
-          window.localStorage.removeItem("emailForSignIn");
-          // Redirect to SignUp page or main app page
-          navigate(`/SignUp?email=${encodeURIComponent(email)}`);
-        })
-        .catch((error) => {
-          console.error("Error signing in with email link:", error);
-        });
-    } else {
-      console.error("Invalid sign-in email link.");
-    }
-  }, [auth, navigate]);
+		// Fallback: localStorage (same device)
+		if (!email) {
+			email = window.localStorage.getItem("emailForSignIn");
+		}
 
-  return <div>Verifying your sign-in link...</div>;
+		// Last resort: ask user
+		if (!email) {
+			email = window.prompt("Please provide your email for confirmation");
+		}
+
+		signInWithEmailLink(auth, email, window.location.href)
+			.then(() => {
+				navigate(`/SignUp?email=${encodeURIComponent(email)}&inviteId=${encodeURIComponent(inviteId)}`,{ replace: true });
+			})
+			.catch(console.error);
+	}
 }

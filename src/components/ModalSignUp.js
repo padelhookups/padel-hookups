@@ -8,6 +8,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { CheckCircle, SportsBaseballOutlined } from "@mui/icons-material";
+import { Navigate } from "react-router";
 
 export default function SuccessModal({ open, onClose }) {
   return (
@@ -269,7 +270,8 @@ export default function SuccessModal({ open, onClose }) {
 
           {/* Action Button */}
           <Button
-            to="/login"
+            to="/Home"
+            component={Navigate}
             variant="contained"
             size="large"
             fullWidth
@@ -287,7 +289,7 @@ export default function SuccessModal({ open, onClose }) {
               },
             }}
           >
-            Continue to Sign In
+            Let´s Play!
           </Button>
 
           {/* CSS Animation Styles */}
