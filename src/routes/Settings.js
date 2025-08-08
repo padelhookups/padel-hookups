@@ -1,6 +1,5 @@
 import React from 'react';
 import { getAuth, signOut } from 'firebase/auth';
-import { useNavigate } from 'react-router';
 import {
   Box,
   Typography,
@@ -25,12 +24,10 @@ import {
 
 const Settings = () => {
   const auth = getAuth();
-  const navigate = useNavigate();
 
   const handleSignOut = async () => {
     try {
       await signOut(auth);
-      navigate('/');
     } catch (error) {
       console.error('Error signing out:', error);
     }

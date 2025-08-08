@@ -1,6 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
+import {
+	getAuth,
+	signInWithEmailAndPassword,
+	setPersistence,
+	browserLocalPersistence
+} from "firebase/auth";
 
 import {
 	Box,
@@ -39,22 +44,36 @@ function Login() {
 
 	const login = () => {
 		setIsLoading(true);
-		signInWithEmailAndPassword(auth, email, password)
-			.then((userCredential) => {
-				console.log("user logged in successfully");
-				navigate("/Home");
-        
-				const user = userCredential.user;
+
+		setPersistence(auth, browserLocalPersistence)
+			.then(() => {
+				// Existing and future Auth states are now persisted in the current
+				// session only. Closing the window would clear any existing state even
+				// if a user forgets to sign out.
 				// ...
+				// New sign-in will be persisted with session persistence.
+				return signInWithEmailAndPassword(auth, email, password)
+					.then((userCredential) => {
+						console.log("user logged in successfully");
+						navigate("/Home");
+
+						const user = userCredential.user;
+						// ...
+					})
+					.catch((error) => {
+						console.log("Error logging in:", error);
+
+						const errorCode = error.code;
+						const errorMessage = error.message;
+					})
+					.finally(() => {
+						setIsLoading(false);
+					});
 			})
 			.catch((error) => {
-        console.log("Error logging in:", error);
-        
+				// Handle Errors here.
 				const errorCode = error.code;
 				const errorMessage = error.message;
-			})
-			.finally(() => {
-				setIsLoading(false);
 			});
 	};
 
@@ -232,27 +251,28 @@ function Login() {
 						type='submit'
 						disabled={isLoading}
 						sx={{
-							'&.Mui-disabled': {
-								backgroundColor: 'primary.main',
-								color: '#fff'
+							"&.Mui-disabled": {
+								backgroundColor: "primary.main",
+								color: "#fff"
 							}
 						}}
 						id='sign-in-button'>
 						{isLoading ? (
-							<CircularProgress size={24} sx={{ mr:1, color: "#fff" }} />
-						) : (
-							null
-						)}
-            <Typography
-									variant='body1'
-									sx={{
-										color: "#fff",
-										textTransform: "capitalize",
-										fontWeight: "bold"
-									}}>
-									Login
-								</Typography>
-								<ChevronRight sx={{ color: "#fff" }} />
+							<CircularProgress
+								size={24}
+								sx={{ mr: 1, color: "#fff" }}
+							/>
+						) : null}
+						<Typography
+							variant='body1'
+							sx={{
+								color: "#fff",
+								textTransform: "capitalize",
+								fontWeight: "bold"
+							}}>
+							Login
+						</Typography>
+						<ChevronRight sx={{ color: "#fff" }} />
 					</Button>
 				</Box>
 			</Box>
