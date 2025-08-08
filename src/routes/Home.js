@@ -21,9 +21,9 @@ const Home = () => {
   const user = auth.currentUser;
 
   return (
-    <Box sx={{ p: 3, pb: 12 }}>
+    <Box sx={{ p: 0, pb: 12 }}>
       {/* Welcome Header */}
-      <Card sx={{ mb: 3, background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}>
+      <Card sx={{ mb: 3, background: 'linear-gradient(135deg, #b88f34 0%, #d4af37 50%, #b8860b 100%)', color: 'white' }}>
         <CardContent sx={{ textAlign: 'center', py: 4 }}>
           <Avatar sx={{ width: 64, height: 64, mx: 'auto', mb: 2, bgcolor: 'rgba(255,255,255,0.2)' }}>
             {user?.displayName?.charAt(0) || user?.email?.charAt(0) || 'P'}
@@ -38,7 +38,7 @@ const Home = () => {
       </Card>
 
       {/* Quick Actions */}
-      <Typography variant="h5" component="h2" gutterBottom sx={{ fontWeight: 'bold', color: 'text.primary' }}>
+      {/* <Typography variant="h5" component="h2" gutterBottom sx={{ fontWeight: 'bold', color: 'text.primary' }}>
         Quick Actions
       </Typography>
       <Grid container spacing={2} sx={{ mb: 4 }}>
@@ -46,7 +46,6 @@ const Home = () => {
           <Button
             variant="contained"
             fullWidth
-            /* startIcon={<SportsIcon />} */
             sx={{ 
               py: 2, 
               backgroundColor: '#1976d2',
@@ -84,10 +83,10 @@ const Home = () => {
             Invite Friends
           </Button>
         </Grid>
-      </Grid>
+      </Grid> */}
 
       {/* Recent Activity */}
-      <Typography variant="h5" component="h2" gutterBottom sx={{ fontWeight: 'bold', color: 'text.primary' }}>
+      {/* <Typography variant="h5" component="h2" gutterBottom sx={{ fontWeight: 'bold', color: 'text.primary' }}>
         Recent Activity
       </Typography>
       <Card sx={{ mb: 4 }}>
@@ -106,15 +105,15 @@ const Home = () => {
             </Box>
           </Box>
         </CardContent>
-      </Card>
+      </Card> */}
 
       {/* Stats Dashboard */}
-      <Typography variant="h5" component="h2" gutterBottom sx={{ fontWeight: 'bold', color: 'text.primary' }}>
+      <Typography variant="h5" component="h2" textAlign="center" gutterBottom sx={{ fontWeight: 'bold', color: 'text.primary' }}>
         Your Stats
       </Typography>
-      <Grid container spacing={2}>
+      <Grid container spacing={2} sx={{ width: '100%', justifyContent: 'center' }}>
         <Grid item xs={4}>
-          <Paper sx={{ p: 2, textAlign: 'center' }}>
+          <Paper sx={{ p: 2, textAlign: 'center', minHeight: 100, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
             <Typography variant="h3" component="div" color="primary.main" sx={{ fontWeight: 'bold' }}>
               0
             </Typography>
@@ -124,7 +123,7 @@ const Home = () => {
           </Paper>
         </Grid>
         <Grid item xs={4}>
-          <Paper sx={{ p: 2, textAlign: 'center' }}>
+          <Paper sx={{ p: 2, textAlign: 'center', minHeight: 100, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
             <Typography variant="h3" component="div" color="success.main" sx={{ fontWeight: 'bold' }}>
               0
             </Typography>
@@ -134,8 +133,8 @@ const Home = () => {
           </Paper>
         </Grid>
         <Grid item xs={4}>
-          <Paper sx={{ p: 2, textAlign: 'center' }}>
-            <Star sx={{ fontSize: 40, color: 'warning.main' }} />
+          <Paper sx={{ p: 2, textAlign: 'center', minHeight: 100, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+            <Star sx={{ fontSize: 40, color: 'warning.main', mb: 0.5 }} />
             <Typography variant="caption" color="text.secondary" display="block">
               Skill Level
             </Typography>
