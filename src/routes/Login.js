@@ -254,13 +254,6 @@ function Login() {
 								</Typography>
 								<ChevronRight sx={{ color: "#fff" }} />
 					</Button>
-					<Typography
-						sx={{ textAlign: "center", color: "text.secondary" }}>
-						Dont have an account?{" "}
-						<Link href='/SignUp' color='primary'>
-							Sign Up
-						</Link>
-					</Typography>
 				</Box>
 			</Box>
 		</Container>
