@@ -8,9 +8,16 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { CheckCircle, SportsBaseballOutlined } from "@mui/icons-material";
-import { Navigate } from "react-router";
+import { useNavigate } from "react-router";
 
 export default function SuccessModal({ open, onClose }) {
+  const navigate = useNavigate();
+
+  const handlePlayClick = () => {
+    navigate("/Home");
+    onClose();
+  };
+
   return (
     <Modal
       open={open}
@@ -270,8 +277,7 @@ export default function SuccessModal({ open, onClose }) {
 
           {/* Action Button */}
           <Button
-            to="/Home"
-            component={Navigate}
+            onClick={handlePlayClick}
             variant="contained"
             size="large"
             fullWidth
