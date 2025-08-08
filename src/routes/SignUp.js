@@ -159,10 +159,9 @@ function SignUp() {
 				LastLoginAt: new Date(),
 				InviteId: inviteId
 			});
-		} else {
-			setIsLoading(false);
-			setShowSuccess(true);
 		}
+		setIsLoading(false);
+		setShowSuccess(true);
 	};
 
 	return (
