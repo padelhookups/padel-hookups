@@ -7,7 +7,7 @@ import {
   Backdrop,
   CircularProgress,
 } from "@mui/material";
-import { CheckCircle, SportsBaseballOutlined } from "@mui/icons-material";
+import { SportsBaseballOutlined } from "@mui/icons-material";
 import { useNavigate } from "react-router";
 
 export default function SuccessModal({ open, onClose }) {
@@ -15,7 +15,6 @@ export default function SuccessModal({ open, onClose }) {
 
   const handlePlayClick = () => {
     navigate("/Home");
-    onClose();
   };
 
   return (
