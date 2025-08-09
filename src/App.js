@@ -35,7 +35,7 @@ function App() {
 					<Route
 						path='/SignUp'
 						element={
-							<ProtectedRoute>
+							<ProtectedRoute user={user}>
 								<SignUp />
 							</ProtectedRoute>
 						}
@@ -44,7 +44,7 @@ function App() {
 					<Route
 						path='/Home'
 						element={
-							<ProtectedRoute>
+							<ProtectedRoute user={user}>
 								<Home />
 							</ProtectedRoute>
 						}
@@ -52,7 +52,7 @@ function App() {
 					<Route
 						path='/profile'
 						element={
-							<ProtectedRoute>
+							<ProtectedRoute user={user}>
 								<Profile />
 							</ProtectedRoute>
 						}
@@ -60,7 +60,7 @@ function App() {
 					<Route
 						path='/settings'
 						element={
-							<ProtectedRoute>
+							<ProtectedRoute user={user}>
 								<Settings />
 							</ProtectedRoute>
 						}
@@ -68,7 +68,7 @@ function App() {
 					<Route
 						path='/benefits'
 						element={
-							<ProtectedRoute>
+							<ProtectedRoute user={user}>
 								<Benefits />
 							</ProtectedRoute>
 						}
