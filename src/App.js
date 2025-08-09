@@ -13,6 +13,7 @@ import Home from "./routes/Home";
 import Profile from "./routes/Profile";
 import Settings from "./routes/Settings";
 import Benefits from "./routes/Benefits";
+import Admin from "./routes/Admin";
 
 import "./App.css";
 
@@ -67,6 +68,14 @@ function App() {
 						element={
 							<ProtectedRoute user={user}>
 								<Benefits />
+							</ProtectedRoute>
+						}
+					/>
+					<Route
+						path='/Admin'
+						element={
+							<ProtectedRoute user={user}>
+								<Admin />
 							</ProtectedRoute>
 						}
 					/>
