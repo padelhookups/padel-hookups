@@ -1,8 +1,9 @@
 import { BrowserRouter, Routes, Route } from "react-router";
 
-import {  onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged } from "firebase/auth";
 import firebase from "./firebase-config";
 
+import useAuth from "./utils/useAuth";
 import ProtectedRoute from "./utils/ProtectedRoute";
 import NotFound from "./components/NotFound";
 import Layout from "./components/Layout";
@@ -19,16 +20,12 @@ import Benefits from "./routes/Benefits";
 import "./App.css";
 
 function App() {
-	const auth = firebase.auth;
-	auth.useDeviceLanguage();
-	
-	onAuthStateChanged(auth, (user) => {
-		if (user) {
-			console.log("User is authenticated:", user); // Log user details if needed
-		} else {
-			console.log("User is not authenticated");
-		}
-	});
+	const { user, loading } = useAuth();
+
+	if (loading) {
+		// You can show a spinner or skeleton here while auth state loads
+		return <div>Loading...</div>;
+	}
 
 	return (
 		<BrowserRouter>
