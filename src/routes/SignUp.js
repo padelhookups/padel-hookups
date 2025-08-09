@@ -31,7 +31,7 @@ import {
 } from "@mui/icons-material";
 
 import logo from "../images/LogoWhite.svg";
-import SuccessModal from "../components/ModalSignUp";
+import SuccessModal from "../components/SuccessModal";
 
 function SignUp() {
 	const auth = firebase.auth;
@@ -723,6 +723,11 @@ function SignUp() {
 				<SuccessModal
 					open={showSuccess}
 					onClose={() => setShowSuccess(false)}
+					_title="Game, Set, Match!"
+					_description="Welcome to the padel community! Your racket is ready and the courts are waiting for your next hookup."
+					_buttonText="Let's Play!"
+					_navigateTo="/Home"
+					_navigate={true}
 				/>
 			</Box>
 		</Container>

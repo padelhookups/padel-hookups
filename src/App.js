@@ -1,8 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router";
 
-import { onAuthStateChanged } from "firebase/auth";
-import firebase from "./firebase-config";
-
 import useAuth from "./utils/useAuth";
 import ProtectedRoute from "./utils/ProtectedRoute";
 import NotFound from "./components/NotFound";
@@ -50,7 +47,7 @@ function App() {
 						}
 					/>
 					<Route
-						path='/profile'
+						path='/Profile'
 						element={
 							<ProtectedRoute user={user}>
 								<Profile />
@@ -58,7 +55,7 @@ function App() {
 						}
 					/>
 					<Route
-						path='/settings'
+						path='/Settings'
 						element={
 							<ProtectedRoute user={user}>
 								<Settings />
@@ -66,7 +63,7 @@ function App() {
 						}
 					/>
 					<Route
-						path='/benefits'
+						path='/Benefits'
 						element={
 							<ProtectedRoute user={user}>
 								<Benefits />

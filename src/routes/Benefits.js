@@ -1,4 +1,8 @@
 import { useEffect, useState } from "react";
+import firebase from "../firebase-config";
+import useAuth from "../utils/useAuth";
+import { collection, getDocs, addDoc } from "firebase/firestore";
+
 import {
 	Box,
 	Button,
@@ -11,15 +15,21 @@ import {
 	InputLabel,
 	Grid,
 	OutlinedInput,
+	TextField,
 	Typography,
 	SwipeableDrawer
 } from "@mui/material";
-import { Add, LocalOffer } from "@mui/icons-material";
+import {
+	Add,
+	Link,
+	LocalOffer,
+	Percent,
+	TextSnippet
+} from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
 import { grey } from "@mui/material/colors";
 
-import firebase from "../firebase-config";
-import { collection, getDocs, getFirestore } from "firebase/firestore";
+import SuccessModal from "../components/SuccessModal";
 
 const Puller = styled(Box)(({ theme }) => ({
 	width: 30,
@@ -39,13 +49,18 @@ const StyledBox = styled("div")(({ theme }) => ({
 }));
 
 const Benefits = () => {
-	const db = getFirestore(firebase.app);
+	const db = firebase.db;
+	const { user } = useAuth();
 
 	const [benefits, setBenefits] = useState([]);
 	const [open, setOpen] = useState(false);
+	const [showSuccess, setShowSuccess] = useState(false);
 
 	const [name, setName] = useState("");
 	const [description, setDescription] = useState("");
+	const [discount, setDiscount] = useState("");
+	const [website, setWebsite] = useState("");
+	const [couponCode, setCouponCode] = useState("");
 
 	useEffect(() => {
 		const fetchBenefits = async () => {
@@ -66,37 +81,34 @@ const Benefits = () => {
 		};
 		console.log("Fetching benefits...");
 		fetchBenefits();
-	}, [db]);
+	}, [db, showSuccess]); // Add showSuccess as dependency to refetch when a new benefit is added
 
-	/* const getCategoryIcon = (category) => {
-		switch (category) {
-			case "Courts":
-				return <SportsTennis />;
-			case "Equipment":
-				return <Store />;
-			case "Nutrition":
-				return <Restaurant />;
-			case "Fitness":
-				return <FitnessCenter />;
-			default:
-				return <LocalOffer />;
+	const handleSubmit = async (e) => {
+		e.preventDefault();
+		//Insert in Firestore
+		const newBenefit = {
+			Name: name,
+			Description: description,
+			Discount: discount,
+			Website: website,
+			CouponCode: couponCode
+		};
+		// Insert in Firestore using v9+ syntax
+		try {
+			await addDoc(collection(db, "Benefits"), newBenefit);
+			console.log("New benefit added:", newBenefit);
+			// Clear form fields
+			setName("");
+			setDescription("");
+			setDiscount("");
+			setWebsite("");
+			setCouponCode("");
+			setOpen(false);
+			setShowSuccess(true);
+		} catch (error) {
+			console.error("Error adding benefit:", error);
 		}
 	};
-
-	const getCategoryColor = (category) => {
-		switch (category) {
-			case "Courts":
-				return "primary";
-			case "Equipment":
-				return "secondary";
-			case "Nutrition":
-				return "success";
-			case "Fitness":
-				return "warning";
-			default:
-				return "default";
-		}
-	}; */
 
 	return (
 		<>
@@ -191,11 +203,8 @@ const Benefits = () => {
 											position: "absolute",
 											top: 16,
 											right: 16,
-											color: "primary.main",
-											backgroundColor: "white",
-											borderColor: "primary.main",
-											borderWidth: 1,
-											borderStyle: "dashed",
+											color: "white",
+											backgroundColor: "primary.main",
 											zIndex: 1
 										}}
 									/>
@@ -234,19 +243,28 @@ const Benefits = () => {
 						))}
 					</Grid>
 				</Box>
-				<Fab
-					color='primary'
-					aria-label='add'
-					sx={{ position: "fixed", bottom: 76, right: 16 }}
-					onClick={() => setOpen(true)}>
-					<Add sx={{ color: "white" }} />
-				</Fab>
+				{user?.IsAdmin && (
+					<Fab
+						color='primary'
+						aria-label='add'
+						sx={{ position: "fixed", bottom: 76, right: 16 }}
+						onClick={() => setOpen(true)}>
+							<Add sx={{ color: "white" }} />
+					</Fab>
+				)}
+				<SuccessModal
+					open={showSuccess}
+					_title='Benefit created!'
+					onClose={() => setShowSuccess(false)}
+					_description='Your benefit has been created and is now available.'
+					_buttonText='Continue'
+					_navigate={false}
+				/>
 			</Box>
 			<SwipeableDrawer
 				anchor='bottom'
 				open={open}
 				onClose={() => setOpen(false)}
-				/* swipeAreaWidth={drawerBleeding} */
 				disableSwipeToOpen={true}
 				keepMounted>
 				<Puller />
@@ -254,7 +272,13 @@ const Benefits = () => {
 					sx={{ px: 2, pb: 2, height: "100%", overflow: "auto" }}>
 					<Box
 						component='form'
-						sx={{pt:4, pb:2, px:2}}>
+						sx={{
+							"& > :not(style)": { mt: 4 },
+							pt: 4,
+							pb: 2,
+							px: 2
+						}}
+						onSubmit={handleSubmit}>
 						<Box
 							sx={{
 								width: "100%"
@@ -267,18 +291,70 @@ const Benefits = () => {
 										borderWidth: "2px" // outer second border
 									}
 								}}>
-								<InputLabel htmlFor='Name'>Name</InputLabel>
-								<OutlinedInput
+								<TextField
 									fullWidth
 									id='Name'
 									type='Name'
 									required
-									autoComplete='Name'
+									autoComplete='off'
 									value={name}
+									label='Name'
 									onChange={(e) => setName(e.target.value)}
+									slotProps={{
+										input: {
+											startAdornment: (
+												<InputAdornment position='start'>
+													<LocalOffer
+														sx={{
+															".Mui-focused &": {
+																color: "primary.main"
+															},
+															mr: 1,
+															my: 0.5,
+															cursor: "pointer"
+														}}
+													/>
+												</InputAdornment>
+											),
+											endAdornment: (
+												<InputAdornment position='end'>
+													<Box sx={{ width: 30 }} />{" "}
+													{/* width matches icon button */}
+												</InputAdornment>
+											)
+										}
+									}}
+								/>
+							</FormControl>
+						</Box>
+						<Box
+							sx={{
+								width: "100%"
+							}}>
+							<FormControl
+								sx={{
+									width: "100%",
+									"&:focus-within": {
+										borderColor: "primary.main",
+										borderWidth: "2px" // outer second border
+									}
+								}}>
+								<InputLabel htmlFor='Description'>
+									Description
+								</InputLabel>
+								<OutlinedInput
+									fullWidth
+									id='Description'
+									type='text'
+									required
+									autoComplete='off'
+									value={description}
+									onChange={(e) =>
+										setDescription(e.target.value)
+									}
 									startAdornment={
 										<InputAdornment position='start'>
-											<LocalOffer
+											<TextSnippet
 												sx={{
 													".Mui-focused &": {
 														color: "primary.main"
@@ -297,7 +373,132 @@ const Benefits = () => {
 											{/* width matches icon button */}
 										</InputAdornment>
 									}
-									label='Email'
+									label='Description'
+								/>
+							</FormControl>
+						</Box>
+						<Box
+							sx={{
+								width: "100%"
+							}}>
+							<FormControl
+								sx={{
+									width: "100%",
+									"&:focus-within": {
+										borderColor: "primary.main",
+										borderWidth: "2px" // outer second border
+									}
+								}}>
+								<InputLabel htmlFor='Discount'>
+									Discount
+								</InputLabel>
+								<OutlinedInput
+									fullWidth
+									id='Discount'
+									type='number'
+									required
+									autoComplete='off'
+									value={discount}
+									onChange={(e) =>
+										setDiscount(e.target.value)
+									}
+									startAdornment={
+										<InputAdornment position='start'>
+											<Percent
+												sx={{
+													".Mui-focused &": {
+														color: "primary.main"
+													},
+													mr: 1,
+													my: 0.5,
+													cursor: "pointer"
+												}}
+											/>
+										</InputAdornment>
+									}
+									label='Percent'
+								/>
+							</FormControl>
+						</Box>
+						<Box
+							sx={{
+								width: "100%"
+							}}>
+							<FormControl
+								sx={{
+									width: "100%",
+									"&:focus-within": {
+										borderColor: "primary.main",
+										borderWidth: "2px" // outer second border
+									}
+								}}>
+								<InputLabel htmlFor='Coupon Code'>
+									Coupon Code
+								</InputLabel>
+								<OutlinedInput
+									fullWidth
+									id='Coupon Code'
+									type='text'
+									autoComplete='off'
+									value={couponCode}
+									onChange={(e) =>
+										setCouponCode(e.target.value)
+									}
+									startAdornment={
+										<InputAdornment position='start'>
+											<Percent
+												sx={{
+													".Mui-focused &": {
+														color: "primary.main"
+													},
+													mr: 1,
+													my: 0.5,
+													cursor: "pointer"
+												}}
+											/>
+										</InputAdornment>
+									}
+									label='Coupon Code'
+								/>
+							</FormControl>
+						</Box>
+						<Box
+							sx={{
+								width: "100%"
+							}}>
+							<FormControl
+								sx={{
+									width: "100%",
+									"&:focus-within": {
+										borderColor: "primary.main",
+										borderWidth: "2px" // outer second border
+									}
+								}}>
+								<InputLabel htmlFor='Website'>
+									Website
+								</InputLabel>
+								<OutlinedInput
+									fullWidth
+									id='Website'
+									type='url'
+									autoComplete='off'
+									value={website}
+									onChange={(e) => setWebsite(e.target.value)}
+									startAdornment={
+										<InputAdornment position='start'>
+											<Link
+												sx={{
+													".Mui-focused &": {
+														color: "primary.main"
+													},
+													mr: 1,
+													my: 0.5,
+													cursor: "pointer"
+												}}
+											/>
+										</InputAdornment>
+									}
+									label='Percent'
 								/>
 							</FormControl>
 						</Box>
