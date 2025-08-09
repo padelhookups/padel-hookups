@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import {
 	getAuth,
@@ -38,6 +38,17 @@ function Login() {
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
+
+	useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged(user => {
+      if (user) {
+        // User is logged in, redirect to /Home
+        navigate("/Home", { replace: true });
+      }
+    });
+
+    return () => unsubscribe();
+  }, [auth, navigate]);
 
 	const handleSubmit = (e) => {
 		e.preventDefault();
