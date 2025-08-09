@@ -2,8 +2,8 @@ import { useEffect, useState } from "react"; // make sure this is imported
 import { useNavigate } from "react-router";
 
 /* FIREBASE */
-import app from "../firebase-config";
-import { getAuth, validatePassword, updatePassword } from "firebase/auth";
+import firebase from "../firebase-config";
+import { validatePassword, updatePassword } from "firebase/auth";
 import { doc, getDoc, getFirestore,setDoc } from "firebase/firestore";
 
 import {
@@ -34,10 +34,10 @@ import logo from "../images/LogoWhite.svg";
 import SuccessModal from "../components/ModalSignUp";
 
 function SignUp() {
-	const auth = getAuth(app);
-	const db = getFirestore(app);
+	const auth = firebase.auth;
+	const db = getFirestore(firebase.app);
 	const navigate = useNavigate();
-
+	
 	const [name, setName] = useState("");
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
@@ -76,7 +76,7 @@ function SignUp() {
 	}, [emailFromLink, inviteId, navigate]);
 
 	const validatePasswordJS = async () => {
-		const status = await validatePassword(getAuth(), password);
+		const status = await validatePassword(auth, password);
 		console.log(status);
 
 		if (!status.isValid) {

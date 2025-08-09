@@ -16,6 +16,9 @@ const theme = createTheme({
 			main: "#b88f34" // Your new primary color (e.g., blue)
 		}
 	},
+	typography: {
+		fontFamily: '"Segoe UI", sans-serif',
+	},
 	components: {
 		MuiLink: {
 			styleOverrides: {
