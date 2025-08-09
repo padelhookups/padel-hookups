@@ -6,6 +6,7 @@ import {
 	setPersistence,
 	browserLocalPersistence
 } from "firebase/auth";
+import firebase from "../firebase";
 
 import {
 	Box,
@@ -31,8 +32,9 @@ import {
 import logo from "../images/LogoWhite.svg";
 
 function Login() {
-	const auth = getAuth();
+	const auth = firebase.auth;
 	const navigate = useNavigate();
+	
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
@@ -47,11 +49,6 @@ function Login() {
 
 		setPersistence(auth, browserLocalPersistence)
 			.then(() => {
-				// Existing and future Auth states are now persisted in the current
-				// session only. Closing the window would clear any existing state even
-				// if a user forgets to sign out.
-				// ...
-				// New sign-in will be persisted with session persistence.
 				return signInWithEmailAndPassword(auth, email, password)
 					.then((userCredential) => {
 						console.log("user logged in successfully");

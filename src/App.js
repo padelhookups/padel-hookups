@@ -1,5 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
+
+import {  onAuthStateChanged } from "firebase/auth";
+import firebase from "../firebase";
 
 import ProtectedRoute from "./utils/ProtectedRoute";
 import NotFound from "./components/NotFound";
@@ -17,7 +19,7 @@ import Benefits from "./routes/Benefits";
 import "./App.css";
 
 function App() {
-	const auth = getAuth();
+	const auth = firebase.auth;
 	auth.useDeviceLanguage();
 	
 	onAuthStateChanged(auth, (user) => {
@@ -27,6 +29,7 @@ function App() {
 			console.log("User is not authenticated");
 		}
 	});
+
 	return (
 		<BrowserRouter>
 			<Layout>
