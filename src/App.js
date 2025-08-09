@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router";
 
 import {  onAuthStateChanged } from "firebase/auth";
-import firebase from "../firebase";
+import firebase from "./firebase-config";
 
 import ProtectedRoute from "./utils/ProtectedRoute";
 import NotFound from "./components/NotFound";

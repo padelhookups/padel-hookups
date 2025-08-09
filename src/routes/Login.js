@@ -6,7 +6,7 @@ import {
 	setPersistence,
 	browserLocalPersistence
 } from "firebase/auth";
-import firebase from "../firebase";
+import firebase from "../firebase-config";
 
 import {
 	Box,
