@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import {
-	getAuth,
 	signInWithEmailAndPassword,
 	setPersistence,
 	browserLocalPersistence
 } from "firebase/auth";
 import firebase from "../firebase-config";
+import useAuth from "../utils/useAuth";
 
 import {
 	Box,
@@ -17,7 +17,6 @@ import {
 	FormControlLabel,
 	InputAdornment,
 	InputLabel,
-	Link,
 	OutlinedInput,
 	Switch,
 	Typography
@@ -34,21 +33,21 @@ import logo from "../images/LogoWhite.svg";
 function Login() {
 	const auth = firebase.auth;
 	const navigate = useNavigate();
-	
+	const { user, loading } = useAuth();
+
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
 
 	useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(user => {
-      if (user) {
-        // User is logged in, redirect to /Home
-        navigate("/Home", { replace: true });
-      }
-    });
+		console.log("useEffect Login - user:", user);
 
-    return () => unsubscribe();
-  }, [auth, navigate]);
+		// If user is authenticated and not loading, redirect to home
+		if (user && !loading) {
+			console.log("User authenticated, redirecting to /Home");
+			navigate("/Home", { replace: true });
+		}
+	}, [user, loading, navigate]);
 
 	const handleSubmit = (e) => {
 		e.preventDefault();
@@ -63,16 +62,10 @@ function Login() {
 				return signInWithEmailAndPassword(auth, email, password)
 					.then((userCredential) => {
 						console.log("user logged in successfully");
-						navigate("/Home");
-
-						const user = userCredential.user;
-						// ...
+						// Remove manual navigation - let useEffect handle it
 					})
 					.catch((error) => {
 						console.log("Error logging in:", error);
-
-						const errorCode = error.code;
-						const errorMessage = error.message;
 					})
 					.finally(() => {
 						setIsLoading(false);
@@ -80,8 +73,7 @@ function Login() {
 			})
 			.catch((error) => {
 				// Handle Errors here.
-				const errorCode = error.code;
-				const errorMessage = error.message;
+				console.log("Error setting persistence:", error);
 			});
 	};
 
