@@ -61,6 +61,7 @@ function SignUp() {
 	const inviteId = urlParams.get("inviteId");
 	const isAdmin = urlParams.get("isAdmin");
 	console.log("Invite ID from URL:", inviteId);
+	console.log("IsAdmin from URL:", isAdmin);
 
 	useEffect(() => {
 		if (!emailFromLink) {
@@ -159,7 +160,7 @@ function SignUp() {
 				CreatedAt: new Date(),
 				LastLoginAt: new Date(),
 				InviteId: inviteId,
-				isAdmin: isAdmin
+				IsAdmin: isAdmin
 			});
 		}
 		setIsLoading(false);

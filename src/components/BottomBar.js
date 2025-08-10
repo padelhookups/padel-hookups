@@ -14,17 +14,17 @@ const BottomBar = () => {
 			label: "Home"
 		},
 		{
-			path: "/benefits",
+			path: "/Benefits",
 			icon: <LocalOffer />,
 			label: "Benefits"
 		},
 		{
-			path: "/profile",
+			path: "/Profile",
 			icon: <Person />,
 			label: "Profile"
 		},
 		{
-			path: "/settings",
+			path: "/Settings",
 			icon: <Settings />,
 			label: "Settings"
 		}

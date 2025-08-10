@@ -1,9 +1,9 @@
-import React from "react";
-import { getAuth, signOut } from "firebase/auth";
 import { useNavigate } from "react-router";
+import { getAuth, signOut } from "firebase/auth";
+import useAuth from "../utils/useAuth";
 import {
+	Alert,
 	Box,
-	Typography,
 	Card,
 	Button,
 	Switch,
@@ -12,18 +12,17 @@ import {
 	ListItemText,
 	ListItemSecondaryAction,
 	Divider,
-	Alert,
-	Grid
+	Typography,
 } from "@mui/material";
 import {
 	Lock,
 	Email,
 	Logout,
 	Security,
-	NotificationsActive
 } from "@mui/icons-material";
 
 const Settings = () => {
+  const { user } = useAuth();
 	const auth = getAuth();
 	const navigate = useNavigate();
 
@@ -134,7 +133,7 @@ const Settings = () => {
           </ListItem>
         </List>
       </Card> */}
-
+      {user?.IsAdmin && (
 			<Button
 				variant='outlined'
 				fullWidth
@@ -143,6 +142,7 @@ const Settings = () => {
 				sx={{ py: 1.5 }}>
 				Admin Settings
 			</Button>
+      )}
 			{/* Danger Zone */}
 			<Alert severity='warning' sx={{ my: 2 }}>
 				<Typography variant='subtitle2' gutterBottom>
