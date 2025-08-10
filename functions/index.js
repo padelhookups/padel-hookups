@@ -37,7 +37,7 @@ exports.sendInviteOnCreateUser = onDocumentCreated(
 		const data = snap.data();
 		const email = data.Email;
 		const name = data.Name;
-		const isAdmin = data.IsAdmin;
+		const isAdmin = data.IsAdmin || false;
 
 		if (!email) {
 			console.error("Email is missing from document.");
