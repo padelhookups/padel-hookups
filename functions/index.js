@@ -58,7 +58,7 @@ exports.sendInviteOnCreateUser = onDocumentCreated(
 		}
 
 		const actionCodeSettings = {
-			url: `https://padel-hookups.web.app/SignUp?email=${encodeURIComponent(email)}&inviteId=${snap.id}&isAdmin=${isAdmin}`,
+			url: `https://padel-hookups.web.app/SignUp?email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}&inviteId=${snap.id}&isAdmin=${isAdmin}`,
 			handleCodeInApp: true
 		};
 

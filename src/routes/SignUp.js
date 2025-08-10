@@ -59,9 +59,11 @@ function SignUp() {
 	const urlParams = new URLSearchParams(window.location.search);
 	const emailFromLink = urlParams.get("email");
 	const inviteId = urlParams.get("inviteId");
-	const isAdmin = urlParams.get("isAdmin");
+	const isAdmin = urlParams.get("isAdmin") || false;
+	const nameFromLink = urlParams.get("name") || "";
 	console.log("Invite ID from URL:", inviteId);
 	console.log("IsAdmin from URL:", isAdmin);
+	console.log("Name from URL:", nameFromLink);
 
 	useEffect(() => {
 		if (!emailFromLink) {
@@ -69,6 +71,10 @@ function SignUp() {
 			navigate("/");
 		} else {
 			setEmail(emailFromLink);
+		}
+
+		if (nameFromLink) {
+			setName(nameFromLink);
 		}
 
 		if (!inviteId) {
