@@ -59,6 +59,7 @@ function SignUp() {
 	const urlParams = new URLSearchParams(window.location.search);
 	const emailFromLink = urlParams.get("email");
 	const inviteId = urlParams.get("inviteId");
+	const isAdmin = urlParams.get("isAdmin");
 	console.log("Invite ID from URL:", inviteId);
 
 	useEffect(() => {
@@ -157,7 +158,8 @@ function SignUp() {
 				Email: email,
 				CreatedAt: new Date(),
 				LastLoginAt: new Date(),
-				InviteId: inviteId
+				InviteId: inviteId,
+				isAdmin: isAdmin
 			});
 		}
 		setIsLoading(false);

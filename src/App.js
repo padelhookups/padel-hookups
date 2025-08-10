@@ -14,6 +14,7 @@ import Profile from "./routes/Profile";
 import Settings from "./routes/Settings";
 import Benefits from "./routes/Benefits";
 import Admin from "./routes/Admin";
+import ManageUsers from "./routes/Admin/ManageUsers";
 
 import "./App.css";
 
@@ -79,6 +80,14 @@ function App() {
 							</ProtectedRoute>
 						}
 					/>
+					<Route
+						path='/ManageUsers'
+						element={
+							<ProtectedRoute user={user}>
+								<ManageUsers />
+							</ProtectedRoute>
+						}
+					/>
 					{/* Catch-all route for non-existent paths */}
 					<Route path='*' element={<NotFound />} />
 				</Routes>
@@ -88,3 +97,4 @@ function App() {
 }
 
 export default App;
+	

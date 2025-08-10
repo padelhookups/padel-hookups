@@ -37,6 +37,7 @@ exports.sendInviteOnCreateUser = onDocumentCreated(
 		const data = snap.data();
 		const email = data.Email;
 		const name = data.Name;
+		const isAdmin = data.IsAdmin;
 
 		if (!email) {
 			console.error("Email is missing from document.");
@@ -57,7 +58,7 @@ exports.sendInviteOnCreateUser = onDocumentCreated(
 		}
 
 		const actionCodeSettings = {
-			url: `https://padel-hookups.web.app/SignUp?email=${encodeURIComponent(email)}&inviteId=${snap.id}`,
+			url: `https://padel-hookups.web.app/SignUp?email=${encodeURIComponent(email)}&inviteId=${snap.id}&isAdmin=${isAdmin}`,
 			handleCodeInApp: true
 		};
 

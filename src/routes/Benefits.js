@@ -218,7 +218,7 @@ const Benefits = () => {
 										<Typography
 											variant='h6'
 											component='h2'
-											sx={{ fontWeight: "bold" }}>
+											sx={{ fontWeight: "bold", width: "70%" }}>
 											{benefit.Name}
 										</Typography>
 										<Typography
