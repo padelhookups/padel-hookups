@@ -12,11 +12,11 @@ const Layout = ({ children }) => {
   // Check if current route should show the bottom bar
   let showBottomBar = !excludedRoutes.includes(location.pathname);
 
-  if (location.pathname === '/ResetPassword' && !user) {
+  /* if (location.pathname === '/ChangePassword' && !user) {
     showBottomBar = false;
   }else{
     showBottomBar = true;
-  }
+  } */
 
   return (
     <>
