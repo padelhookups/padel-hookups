@@ -59,7 +59,7 @@ function SignUp() {
 	const urlParams = new URLSearchParams(window.location.search);
 	const emailFromLink = urlParams.get("email");
 	const inviteId = urlParams.get("inviteId");
-	const isAdmin = urlParams.get("isAdmin") || false;
+	const isAdmin = urlParams.get("isAdmin").toLowerCase() === "true" || false;
 	const nameFromLink = urlParams.get("name") || "";
 	console.log("Invite ID from URL:", inviteId);
 	console.log("IsAdmin from URL:", isAdmin);
@@ -166,7 +166,7 @@ function SignUp() {
 				CreatedAt: new Date(),
 				LastLoginAt: new Date(),
 				InviteId: inviteId,
-				IsAdmin: isAdmin.toLowerCase() === "true"
+				IsAdmin: isAdmin
 			});
 		}
 		setIsLoading(false);
