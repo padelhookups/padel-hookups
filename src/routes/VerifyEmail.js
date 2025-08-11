@@ -1,40 +1,66 @@
-import { getAuth, signInWithEmailLink,isSignInWithEmailLink } from "firebase/auth";
+import { getAuth, signInWithEmailLink, isSignInWithEmailLink } from "firebase/auth";
 import { useNavigate } from "react-router";
+import { useEffect } from "react";
 
 export default function VerifyEmail() {
 	const auth = getAuth();
 	const navigate = useNavigate();
 
-    console.log("Verifying email link...");
-    console.log("Is sign-in with email link:", isSignInWithEmailLink(auth, window.location.href));
+	useEffect(() => {
+		console.log("Verifying email link...");
+		console.log("Is sign-in with email link:", isSignInWithEmailLink(auth, window.location.href));
 
-	if (isSignInWithEmailLink(auth, window.location.href)) {
-		let email;
-		let inviteId
+		if (isSignInWithEmailLink(auth, window.location.href)) {
+			let email;
+			let inviteId;
+			let name;
+			let isAdmin;
 
-		// Try to extract email from continueUrl
-		const urlParams = new URLSearchParams(window.location.search);
-		const continueUrl = urlParams.get("continueUrl");
-		if (continueUrl) {
-			const contParams = new URLSearchParams(new URL(continueUrl).search);
-			email = contParams.get("email");
-			inviteId = contParams.get("inviteId");
+			// Try to extract parameters from continueUrl
+			const urlParams = new URLSearchParams(window.location.search);
+			const continueUrl = urlParams.get("continueUrl");
+			if (continueUrl) {
+				const contParams = new URLSearchParams(new URL(continueUrl).search);
+				email = contParams.get("email");
+				inviteId = contParams.get("inviteId");
+				name = contParams.get("name");
+				isAdmin = contParams.get("isAdmin");
+			}
+
+			// Fallback: localStorage (same device)
+			if (!email) {
+				email = window.localStorage.getItem("emailForSignIn");
+			}
+
+			// Last resort: ask user
+			if (!email) {
+				email = window.prompt("Please provide your email for confirmation");
+			}
+
+			signInWithEmailLink(auth, email, window.location.href)
+				.then(() => {
+					// Build the signup URL with all necessary parameters
+					const signupParams = new URLSearchParams();
+					if (email) signupParams.set('email', email);
+					if (inviteId) signupParams.set('inviteId', inviteId);
+					if (name) signupParams.set('name', name);
+					if (isAdmin) signupParams.set('isAdmin', isAdmin);
+					
+					navigate(`/SignUp?${signupParams.toString()}`, { replace: true });
+				})
+				.catch(console.error);
 		}
+	}, [auth, navigate]);
 
-		// Fallback: localStorage (same device)
-		if (!email) {
-			email = window.localStorage.getItem("emailForSignIn");
-		}
-
-		// Last resort: ask user
-		if (!email) {
-			email = window.prompt("Please provide your email for confirmation");
-		}
-
-		signInWithEmailLink(auth, email, window.location.href)
-			.then(() => {
-				navigate(`/SignUp?email=${encodeURIComponent(email)}&inviteId=${encodeURIComponent(inviteId)}`,{ replace: true });
-			})
-			.catch(console.error);
-	}
+	// Return a loading component while processing
+	return (
+		<div style={{ 
+			display: 'flex', 
+			justifyContent: 'center', 
+			alignItems: 'center', 
+			height: '100vh' 
+		}}>
+			<div>Verifying your email link...</div>
+		</div>
+	);
 }

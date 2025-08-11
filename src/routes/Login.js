@@ -47,7 +47,7 @@ function Login() {
 			console.log("User authenticated, redirecting to /Home");
 			navigate("/Home", { replace: true });
 		}
-	}, [user, loading, navigate]);
+	}, [user, loading]);
 
 	const handleSubmit = (e) => {
 		e.preventDefault();
@@ -62,7 +62,8 @@ function Login() {
 				return signInWithEmailAndPassword(auth, email, password)
 					.then((userCredential) => {
 						console.log("user logged in successfully");
-						// Remove manual navigation - let useEffect handle it
+						// Navigate to home after successful manual login
+						//navigate("/Home");
 					})
 					.catch((error) => {
 						console.log("Error logging in:", error);

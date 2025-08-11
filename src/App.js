@@ -20,6 +20,7 @@ import "./App.css";
 
 function App() {
 	const { user, loading } = useAuth();
+	console.log("App user:", user);
 
 	if (loading) {
 		// You can show a spinner or skeleton here while auth state loads

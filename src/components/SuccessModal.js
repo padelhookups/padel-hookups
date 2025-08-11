@@ -19,8 +19,8 @@ export default function SuccessModal({
 	const [buttonText, setButtonText] = useState(_buttonText);
 
 	const handlePlayClick = () => {
-		if (_navigate) {
-			navigate(_navigate);
+		if (_navigate && _navigateTo) {
+			navigate(_navigateTo);
 		} else {
 			onClose();
 		}

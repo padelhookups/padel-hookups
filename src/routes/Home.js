@@ -20,6 +20,8 @@ const Home = () => {
   const auth = getAuth();
   const user = auth.currentUser;
 
+  console.log("HOME");
+
   return (
     <Box sx={{ p: 0, pb: 12 }}>
       {/* Welcome Header */}

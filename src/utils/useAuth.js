@@ -11,6 +11,8 @@ export default function useAuth() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      console.log("Auth state changed:", firebaseUser);
+
       if (firebaseUser) {
         try {
           // Get user data from Firestore
