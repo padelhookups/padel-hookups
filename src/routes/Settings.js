@@ -38,6 +38,10 @@ const Settings = () => {
 		navigate("/Admin");
 	};
 
+	const handleChangePassword = () => {
+		navigate("/ChangePassword");
+	};
+
 	return (
 		<Box sx={{ p: 3, pb: 12 }}>
 			<Typography
@@ -64,20 +68,8 @@ const Settings = () => {
 							secondary='Update your account password'
 						/>
 						<ListItemSecondaryAction>
-							<Button variant='outlined' startIcon={<Lock />}>
+							<Button variant='outlined' startIcon={<Lock />} onClick={handleChangePassword}>
 								Change
-							</Button>
-						</ListItemSecondaryAction>
-					</ListItem>
-					<Divider />
-					<ListItem>
-						<ListItemText
-							primary='Update Email'
-							secondary='Change your email address'
-						/>
-						<ListItemSecondaryAction>
-							<Button variant='outlined' startIcon={<Email />}>
-								Update
 							</Button>
 						</ListItemSecondaryAction>
 					</ListItem>

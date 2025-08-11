@@ -5,6 +5,7 @@ import {
 	setPersistence,
 	browserLocalPersistence
 } from "firebase/auth";
+import { doc, updateDoc } from "firebase/firestore";
 import firebase from "../firebase-config";
 import useAuth from "../utils/useAuth";
 
@@ -32,6 +33,7 @@ import logo from "../images/LogoWhite.svg";
 
 function Login() {
 	const auth = firebase.auth;
+	const db = firebase.db;
 	const navigate = useNavigate();
 	const { user, loading } = useAuth();
 
@@ -45,7 +47,7 @@ function Login() {
 		// If user is authenticated and not loading, redirect to home
 		if (user && !loading) {
 			console.log("User authenticated, redirecting to /Home");
-			navigate("/Home", { replace: true });
+			updateUser();
 		}
 	}, [user, loading]);
 
@@ -53,6 +55,15 @@ function Login() {
 		e.preventDefault();
 		login();
 	};
+
+	const updateUser = async () => {
+		console.log("Updating user information...");
+		// Add your user update logic here
+		await updateDoc(doc(db, "Users", user.uid), {
+			LastLoginAt: new Date()
+		});
+		navigate("/Home", { replace: true });
+	}
 
 	const login = () => {
 		setIsLoading(true);

@@ -161,7 +161,7 @@ const Benefits = () => {
 										Total Savings
 									</Typography>
 									<Typography variant='h4'>
-										<b>120€</b> 💰
+										<b>{user?.TotalSavings || 0}€</b>💰
 									</Typography>
 								</CardContent>
 							</Card>

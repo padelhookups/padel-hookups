@@ -1,10 +1,9 @@
-import { useEffect, useState } from "react"; // make sure this is imported
-import { useNavigate } from "react-router";
+import { useEffect, useState } from "react";
 
 /* FIREBASE */
+import { updatePassword } from "firebase/auth";
 import firebase from "../firebase-config";
-import { validatePassword, updatePassword, updateProfile } from "firebase/auth";
-import { doc, getDoc, getFirestore, setDoc } from "firebase/firestore";
+import useAuth from "../utils/useAuth";
 
 import {
 	Box,
@@ -14,40 +13,34 @@ import {
 	FormControl,
 	InputAdornment,
 	InputLabel,
-	Link,
 	OutlinedInput,
-	Switch,
 	Typography
 } from "@mui/material";
 import {
-	AccountCircle,
-	Check,
-	Close,
 	ChevronRight,
 	Email,
 	Lock,
 	Visibility,
-	VisibilityOff
+	VisibilityOff,
+	Check,
+	Close
 } from "@mui/icons-material";
 
 import logo from "../images/LogoWhite.svg";
 import SuccessModal from "../components/SuccessModal";
 
-function SignUp() {
+function ChangePassword() {
+	const { user } = useAuth();
 	const auth = firebase.auth;
-	const db = getFirestore(firebase.app);
-	const navigate = useNavigate();
 
-	const [name, setName] = useState("");
 	const [email, setEmail] = useState("");
-	const [password, setPassword] = useState("");
+	const [newPassword, setNewPassword] = useState("");
 	const [confirmPassword, setConfirmPassword] = useState("");
 	const [isPasswordFocused, setIsPasswordFocused] = useState(false);
 	const [isConfirmPasswordFocused, setIsConfirmPasswordFocused] =
 		useState(false);
 	const [showPassword, setShowPassword] = useState(false);
 	const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-	//const [isTermsAccepted, setIsTermsAccepted] = useState(false);
 	const [lowerCaseValid, setLowerCaseValid] = useState(false);
 	const [upperCaseValid, setUpperCaseValid] = useState(false);
 	const [numberValid, setNumberValid] = useState(false);
@@ -56,53 +49,12 @@ function SignUp() {
 	const [isLoading, setIsLoading] = useState(false);
 	const [showSuccess, setShowSuccess] = useState(false);
 
-	const urlParams = new URLSearchParams(window.location.search);
-	const emailFromLink = urlParams.get("email");
-	const inviteId = urlParams.get("inviteId");
-	const isAdmin = urlParams.get("isAdmin").toLowerCase() === "true" || false;
-	const nameFromLink = urlParams.get("name") || "";
-	console.log("Invite ID from URL:", inviteId);
-	console.log("IsAdmin from URL:", isAdmin);
-	console.log("Name from URL:", nameFromLink);
-
-	useEffect(() => {
-		if (!emailFromLink) {
-			console.error("Email is missing from URL.");
-			navigate("/");
-		} else {
-			setEmail(emailFromLink);
-		}
-
-		if (nameFromLink) {
-			setName(nameFromLink);
-		}
-
-		if (!inviteId) {
-			console.error("Invite ID is missing from URL.");
-			navigate("/");
-		}
-	}, [emailFromLink, inviteId, navigate]);
-
-	const validatePasswordJS = async () => {
-		const status = await validatePassword(auth, password);
-		console.log(status);
-
-		if (!status.isValid) {
-			// Password could not be validated. Use the status to show what
-			// requirements are met and which are missing.
-			// If a criterion is undefined, it is not required by policy. If the
-			// criterion is defined but false, it is required but not fulfilled by
-			// the given password. For example:
-		}
-		return status.isValid;
-	};
-
 	const handlePasswordChange = (value) => {
-		setPassword(value);
+		setNewPassword(value);
 		passwordValidation(value);
 	};
 
-	const passwordValidation = (passwordValue = password) => {
+	const passwordValidation = (passwordValue = newPassword) => {
 		setLowerCaseValid(/[a-z]/.test(passwordValue));
 		setUpperCaseValid(/[A-Z]/.test(passwordValue));
 		setNumberValid(/[0-9]/.test(passwordValue));
@@ -116,88 +68,60 @@ function SignUp() {
 
 		if (isLoading) return;
 
-		const validPassword = await validatePasswordJS();
-		if (!validPassword) {
-			alert("Password does not meet complexity requirements.");
-			return;
+		// Check if passwords match before proceeding
+		if (newPassword !== confirmPassword) {
+			return; // Don't submit if passwords don't match
+		}
+
+		// Check if password meets all requirements
+		if (
+			!lowerCaseValid ||
+			!upperCaseValid ||
+			!numberValid ||
+			!specialCharValid ||
+			!lengthValid
+		) {
+			return; // Don't submit if password doesn't meet requirements
 		}
 
 		setIsLoading(true);
-		validateValidInvitation();
-	};
 
-	const validateValidInvitation = async () => {
-		// query firestore
-		// If valid, proceed with sign up
-		const docRef = doc(db, "Invites", inviteId);
-		const docSnap = await getDoc(docRef);
-
-		if (!docSnap.exists()) {
-			console.error("No valid invitation found for ID:", inviteId);
+		try {
+			updatePassword(auth.currentUser, newPassword)
+				.then(() => {
+					setIsLoading(false);
+					setShowSuccess(true);
+				})
+				.catch((error) => {
+					// An error ocurred
+					// ...
+				});
+		} catch (error) {
+			console.error("Error changing password", error);
 			setIsLoading(false);
-			alert("Invalid or expired invitation link.");
-			navigate("/");
-		} else {
-			handleUserPassword();
+			alert("Error changing password. Please try again.");
 		}
 	};
 
-	const handleUserPassword = () => {
-		updatePassword(auth.currentUser, password)
-			.then(() => {
-				handleDisplayName();
-			})
-			.catch((error) => {
-				// An error ocurred
-				// ...
-			});
-	};
-
-	const handleDisplayName = () => {
-		updateProfile(auth.currentUser, {
-			displayName: name
-		})
-			.then(() => {
-				console.log("Display name updated successfully");
-				handleUser();
-			})
-			.catch((error) => {
-				// An error occurred
-				console.error("Error updating display name:", error);
-			});
-	};
-
-	const handleUser = async () => {
-		const docRef = doc(db, "Users", auth.currentUser.uid);
-		const docSnap = await getDoc(docRef);
-
-		if (!docSnap.exists()) {
-			console.warn("Non existent user, will be created");
-			// Create user document in Firestore
-			await setDoc(docRef, {
-				Name: name,
-				Email: email,
-				CreatedAt: new Date(),
-				LastLoginAt: new Date(),
-				InviteId: inviteId,
-				IsAdmin: isAdmin,
-				TotalSavings: 0
-			});
-		}
-		setIsLoading(false);
-		setShowSuccess(true);
-	};
+	useEffect(() => {
+		setEmail(user?.email || "");
+	}, [user]);
 
 	return (
-		<Container fixed>
+		<Container
+			fixed
+			sx={{
+				maxHeight: "calc(100vh - 60px)",
+				height: "calc(100vh - 60px)"
+			}}>
 			<Box
 				sx={{
-					minHeight: "100vh",
 					width: "100%",
 					display: "flex",
 					flexDirection: "column",
 					alignItems: "center",
-					justifyContent: "center"
+					justifyContent: "center",
+					pb: "80px"
 				}}>
 				<Box
 					component='img'
@@ -211,10 +135,10 @@ function SignUp() {
 				<Typography
 					variant='h4'
 					sx={{ mt: 5, mb: 1, textAlign: "center" }}>
-					<b>Create your account</b>
+					<b>Change Password</b>
 				</Typography>
 				<Typography variant='subtitle1'>
-					Join the Padel Hookups community
+					Change your account password
 				</Typography>
 				<Box
 					component='form'
@@ -241,59 +165,13 @@ function SignUp() {
 									borderWidth: "2px" // outer second border
 								}
 							}}>
-							<InputLabel htmlFor='name'>Name</InputLabel>
-							<OutlinedInput
-								fullWidth
-								id='name'
-								type='text'
-								value={name}
-								autoComplete='name'
-								required
-								onChange={(e) => setName(e.target.value)}
-								startAdornment={
-									<InputAdornment position='start'>
-										<AccountCircle
-											sx={{
-												".Mui-focused &": {
-													color: "primary.main"
-												},
-												mr: 1,
-												my: 0.5,
-												cursor: "pointer"
-											}}
-										/>
-									</InputAdornment>
-								}
-								endAdornment={
-									// Empty space to balance layout
-									<InputAdornment position='end'>
-										<Box sx={{ width: 30 }} />{" "}
-										{/* width matches icon button */}
-									</InputAdornment>
-								}
-								label='Name'
-							/>
-						</FormControl>
-					</Box>
-					<Box
-						sx={{
-							width: "100%"
-						}}>
-						<FormControl
-							sx={{
-								width: "100%",
-								"&:focus-within": {
-									borderColor: "primary.main",
-									borderWidth: "2px" // outer second border
-								}
-							}}>
 							<InputLabel htmlFor='email'>Email</InputLabel>
 							<OutlinedInput
 								id='email'
 								value={email}
+								disabled={!!email}
 								type='email'
 								autoComplete='email'
-								disabled={!!emailFromLink}
 								required
 								onChange={(e) => setEmail(e.target.value)}
 								startAdornment={
@@ -327,10 +205,12 @@ function SignUp() {
 									borderWidth: "2px" // outer second border
 								}
 							}}>
-							<InputLabel htmlFor='password'>Password</InputLabel>
+							<InputLabel htmlFor='newPassword'>
+								New Password
+							</InputLabel>
 							<OutlinedInput
-								id='password'
-								value={password}
+								id='newPassword'
+								value={newPassword}
 								type={showPassword ? "text" : "password"}
 								autoComplete='new-password'
 								required
@@ -382,10 +262,10 @@ function SignUp() {
 										)}
 									</InputAdornment>
 								}
-								label='Password'
+								label='New Password'
 							/>
 						</FormControl>
-						{(password || isPasswordFocused) && (
+						{(newPassword || isPasswordFocused) && (
 							<Box
 								sx={{
 									mt: 1,
@@ -556,14 +436,13 @@ function SignUp() {
 								"&:focus-within": {
 									borderColor: "primary.main",
 									borderWidth: "2px" // outer second border
-								},
-								mb: 0
+								}
 							}}>
-							<InputLabel htmlFor='confirm-password'>
+							<InputLabel htmlFor='confirmPassword'>
 								Confirm Password
 							</InputLabel>
 							<OutlinedInput
-								id='confirm-password'
+								id='confirmPassword'
 								value={confirmPassword}
 								type={showConfirmPassword ? "text" : "password"}
 								autoComplete='new-password'
@@ -626,7 +505,7 @@ function SignUp() {
 							/>
 						</FormControl>
 					</Box>
-					{password &&
+					{newPassword &&
 						(confirmPassword || isConfirmPasswordFocused) && (
 							<Box
 								sx={{
@@ -644,7 +523,7 @@ function SignUp() {
 										alignItems: "center"
 									}}>
 									{confirmPassword === null ||
-									password !== confirmPassword ||
+									newPassword !== confirmPassword ||
 									confirmPassword.trim() === "" ? (
 										<Close
 											sx={{ color: "error.main", mr: 1 }}
@@ -672,36 +551,6 @@ function SignUp() {
 					<Box
 						sx={{
 							display: "flex",
-							alignItems: "center",
-							width: "100%",
-							mt: "0 !important",
-							pt: 2
-						}}>
-						<Switch required />
-						<Typography
-							variant='body2'
-							sx={{
-								ml: 0,
-								fontSize: "0.875rem",
-								fontWeight: 500,
-								lineHeight: 1.4,
-								whiteSpace: "normal",
-								wordBreak: "break-word",
-								maxWidth: "75%" // ensures wrapping
-							}}>
-							I agree to the{" "}
-							<Link href='/SignUp' color='primary'>
-								Terms of Service{" "}
-							</Link>
-							and{" "}
-							<Link href='/privacy' color='primary'>
-								Privacy Policy
-							</Link>
-						</Typography>
-					</Box>
-					<Box
-						sx={{
-							display: "flex",
 							alignItems: "flex-center",
 							justifyContent: "center",
 							flexDirection: "column",
@@ -712,7 +561,19 @@ function SignUp() {
 							fullWidth
 							variant='contained'
 							type='submit'
-							id='sign-in-button'>
+							disabled={
+								isLoading ||
+								(newPassword &&
+									confirmPassword &&
+									newPassword !== confirmPassword) ||
+								(newPassword &&
+									(!lowerCaseValid ||
+										!upperCaseValid ||
+										!numberValid ||
+										!specialCharValid ||
+										!lengthValid))
+							}
+							id='change-password-button'>
 							{isLoading ? (
 								<CircularProgress
 									size={24}
@@ -726,31 +587,20 @@ function SignUp() {
 									textTransform: "capitalize",
 									fontWeight: "bold"
 								}}>
-								Update Account
+								Update Password
 							</Typography>
 							<ChevronRight sx={{ color: "#fff" }} />
 						</Button>
-						<Typography
-							sx={{
-								mt: 2,
-								textAlign: "center",
-								color: "text.secondary"
-							}}>
-							Already have an account?{" "}
-							<Link href='/' color='primary'>
-								Sign In
-							</Link>
-						</Typography>
 					</Box>
 				</Box>
 				{/* MUI Success Modal */}
 				<SuccessModal
 					open={showSuccess}
 					onClose={() => setShowSuccess(false)}
-					_title='Game, Set, Match!'
-					_description='Welcome to the padel community! Your racket is ready and the courts are waiting for your next hookup.'
-					_buttonText="Let's Play!"
-					_navigateTo='/Home'
+					_title='Password changed!'
+					_description='You can now use your new password to log in.'
+					_buttonText='Continue'
+					_navigateTo='/Settings'
 					_navigate={true}
 				/>
 			</Box>
@@ -758,4 +608,4 @@ function SignUp() {
 	);
 }
 
-export default SignUp;
+export default ChangePassword;

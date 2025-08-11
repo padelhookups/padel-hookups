@@ -15,6 +15,7 @@ import Settings from "./routes/Settings";
 import Benefits from "./routes/Benefits";
 import Admin from "./routes/Admin";
 import ManageUsers from "./routes/Admin/ManageUsers";
+import ChangePassword from "./routes/ChangePassword";
 
 import "./App.css";
 
@@ -62,6 +63,14 @@ function App() {
 						element={
 							<ProtectedRoute user={user}>
 								<Settings />
+							</ProtectedRoute>
+						}
+					/>
+					<Route
+						path='/ChangePassword'
+						element={
+							<ProtectedRoute user={user}>
+								<ChangePassword />
 							</ProtectedRoute>
 						}
 					/>
