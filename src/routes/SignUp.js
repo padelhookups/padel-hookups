@@ -166,7 +166,7 @@ function SignUp() {
 				CreatedAt: new Date(),
 				LastLoginAt: new Date(),
 				InviteId: inviteId,
-				IsAdmin: isAdmin
+				IsAdmin: isAdmin.toLowerCase() === "true"
 			});
 		}
 		setIsLoading(false);
