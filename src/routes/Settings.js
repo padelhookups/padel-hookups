@@ -57,9 +57,9 @@ const Settings = () => {
 			</Typography>
 			<Card sx={{ mb: 3 }}>
 				<List>
-					<ListItem>
+					<ListItem sx={{ flex: "unset !important" }}>
 						<ListItemText
-							sx={{ width: "50%" }}
+							sx={{ width: "60%" }}
 							primary='Change Password'
 							secondary='Update your account password'
 						/>
@@ -85,9 +85,9 @@ const Settings = () => {
 			</Typography>
 			<Card sx={{ mb: 3 }}>
 				<List>
-					<ListItem>
+					<ListItem sx={{ flex: "unset !important" }}>
 						<ListItemText
-							sx={{ width: "50%" }}
+							sx={{ width: "80%" }}
 							primary='Push Notifications'
 							secondary='Receive push notifications on your device'
 						/>
