@@ -23,8 +23,14 @@ import ChangePassword from "./routes/ChangePassword";
 import "./App.css";
 
 function App() {
-	const { isInstalled, canInstall, promptInstall, openApp } =
-		usePWAInstallOrOpen("web+padel://open");
+	const {
+		isInstalled,
+		isRunningInApp,
+		isChecking,
+		canInstall,
+		promptInstall,
+		openApp
+	} = usePWAInstallOrOpen("web+padel://open");
 	const { user, loading } = useAuth();
 	const [showInstallModal, setShowInstallModal] = useState(false);
 	const [hasShownAutoModal, setHasShownAutoModal] = useState(false);
@@ -56,6 +62,9 @@ function App() {
 	}, [hasShownAutoModal]); */
 
 	useEffect(() => {
+		if (isChecking) return;
+		 if (isRunningInApp) return;
+		 
 		if (isInstalled) {
 			if (window.confirm("Open the installed app?")) {
 				openApp();
@@ -65,7 +74,14 @@ function App() {
 			setShowInstallModal(true);
 			setHasShownAutoModal(true);
 		}
-	}, [isInstalled, canInstall, promptInstall, openApp]);
+	}, [
+		isInstalled,
+		isRunningInApp,
+		isChecking,
+		canInstall,
+		promptInstall,
+		openApp
+	]);
 
 	const handleInstallClick = async () => {
 		const result = await promptInstall();
@@ -76,7 +92,7 @@ function App() {
 		}
 		setShowInstallModal(false);
 	};
-	
+
 	const handleCloseInstallModal = () => {
 		setShowInstallModal(false);
 		// Keep the floating button visible if user dismisses the modal
@@ -163,7 +179,7 @@ function App() {
 						<Route path='*' element={<NotFound />} />
 					</Routes>
 					<InstallAppModal
-						key={showInstallModal ? 'open' : 'closed'}
+						key={showInstallModal ? "open" : "closed"}
 						open={showInstallModal}
 						onClose={handleCloseInstallModal}
 						onConfirm={handleInstallClick}
