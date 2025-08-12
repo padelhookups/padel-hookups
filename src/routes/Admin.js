@@ -20,7 +20,8 @@ import {
 	People,
 	Settings,
 	BarChart,
-	Notifications
+	Notifications,
+	Height
 } from "@mui/icons-material";
 
 import ManageUsers from "./Admin/ManageUsers";
@@ -40,15 +41,15 @@ const Admin = () => {
 	};
 
 	const TabPanel = ({ children, value, index }) => (
-		<div hidden={value !== index}>
-			{value === index && <Box sx={{ p: 3 }}>{children}</Box>}
+		<div hidden={value !== index} style={{ height: '100%', display: value === index ? 'flex' : 'none', flexDirection: 'column' }}>
+			{value === index && <Box sx={{ flex: 1, overflow: 'auto' }}>{children}</Box>}
 		</div>
 	);
 
 	return (
-		<>
+		<Box sx={{ height: 'calc(100vh - 58px)', display: 'flex', flexDirection: 'column' }}>
 			<Paper sx={{ borderRadius: 0, bgcolor: "#b88f34", color: "white" }}>
-				<Box sx={{ p: 3 }}>
+				<Box sx={{ py: 3, px: 2 }}>
 					<Typography
 						variant='h4'
 						component='h1'
@@ -69,11 +70,11 @@ const Admin = () => {
 					{/* <Tab icon={<Settings />} label='Settings' /> */}
 				</Tabs>
 			</Paper>
-			<Box sx={{ flex: 1, overflow: "auto" }}>
+			<Box sx={{ flex: 1, overflow: "hidden", display: 'flex', flexDirection: 'column' }}>
 				{/* Users Tab */}
 				<TabPanel value={tabValue} index={0}>
-                    <ManageUsers />
-                </TabPanel>
+					<ManageUsers />
+				</TabPanel>
 				{/* <TabPanel value={tabValue} index={1}>
 					<Grid container spacing={3}>
 						<Grid sx={{ width: "100%" }} item xs={12} md={6}>
@@ -129,7 +130,7 @@ const Admin = () => {
 					</Grid>
 				</TabPanel> */}
 			</Box>
-		</>
+		</Box>
 	);
 };
 

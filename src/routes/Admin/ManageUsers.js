@@ -259,7 +259,17 @@ const ManageUsers = () => {
 
 	return (
 		<>
-			<Box sx={{ p: 3, pb: 12 }}>
+			<Box
+				sx={{
+					px: 1,
+					pt: 2,
+					sx: {
+						display: "flex",
+						flexDirection: "column",
+						alignItems: "center",
+						flex: 1
+					}
+				}}>
 				<Typography textAlign='center' variant='body1' sx={{ mb: 3 }}>
 					Total Users: {users.length}
 				</Typography>
@@ -285,7 +295,7 @@ const ManageUsers = () => {
 				{/* Users List */}
 				{filteredUsers.length > 0 && (
 					<>
-						<Card>
+						<Card style={{ flex: 1 }}>
 							<CardContent sx={{ p: "0 !important" }}>
 								<List>
 									{filteredUsers.map((user, index) => (
@@ -319,26 +329,20 @@ const ManageUsers = () => {
 															}}>
 															{user.Name ||
 																"No Name"}
-															<Chip
-																label={
-																	user.IsAdmin
-																		? "Admin"
-																		: "User"
-																}
-																size='small'
-																variant='filled'
-																sx={{
-																	mt: 0.5,
-																	ml: 1,
-																	backgroundColor:
-																		user.IsAdmin
-																			? "primary.main"
-																			: "white",
-																	color: user.IsAdmin
-																		? "white"
-																		: "primary.main"
-																}}
-															/>
+															{user.IsAdmin && (
+																<Chip
+																	label='Admin'
+																	size='small'
+																	variant='filled'
+																	sx={{
+																		mt: 0.5,
+																		ml: 1,
+																		backgroundColor:
+																			"primary.main",
+																		color: "white"
+																	}}
+																/>
+															)}
 														</Typography>
 													}
 												/>
@@ -389,8 +393,7 @@ const ManageUsers = () => {
 					keepMounted
 					onClose={() => setDrawerOpen(false)}>
 					<Puller />
-					<StyledBox
-						sx={{ px: 2, pb: 2, height: "100%", overflow: "auto" }}>
+					<StyledBox sx={{ px: 2, pb: 2 }}>
 						{/* Animated Header with Icon */}
 						<Box
 							sx={{
@@ -413,7 +416,10 @@ const ManageUsers = () => {
 								}}>
 								Invite a new Player!
 							</Typography>
-							<AnimatedPadelIcon size={100} containerSx={{ ml: 2 }} />
+							<AnimatedPadelIcon
+								size={100}
+								containerSx={{ ml: 2 }}
+							/>
 						</Box>
 
 						<Box
@@ -738,8 +744,12 @@ const ManageUsers = () => {
 									mt: 2
 								}}
 								type='submit'
-								disabled={editUser.Name && editUser.Email ? false : true}
-								startIcon={<Edit sx={{color:"white"}} />}>
+								disabled={
+									editUser.Name && editUser.Email
+										? false
+										: true
+								}
+								startIcon={<Edit sx={{ color: "white" }} />}>
 								<Typography
 									variant='button'
 									color='white'

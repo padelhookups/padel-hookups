@@ -100,7 +100,7 @@ function App() {
 	return (
 		<BrowserRouter>
 			<Layout>
-				<>
+				<div className='App' style={{ maxHeight: "calc(100vh - 55px)" }}>
 					<Routes>
 						<Route path='/' element={<Login />} />
 						<Route
@@ -177,7 +177,7 @@ function App() {
 						onClose={handleCloseInstallModal}
 						onConfirm={handleInstallClick}
 					/>
-				</>
+				</div>
 			</Layout>
 		</BrowserRouter>
 	);
