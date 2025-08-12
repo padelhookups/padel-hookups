@@ -29,7 +29,7 @@ const Home = () => {
 				flexDirection: "column",
 				overflow: "hidden",
 				position: "relative",
-				WebkitOverflowScrolling: "touch",
+				WebkitOverflowScrolling: "touch"
 			}}>
 			{/* Welcome Header */}
 			<Card
@@ -42,7 +42,7 @@ const Home = () => {
 					borderBottomLeftRadius: 25,
 					borderBottomRightRadius: 25,
 					flexShrink: 0,
-					zIndex: 1,
+					zIndex: 1
 				}}>
 				<CardContent sx={{ textAlign: "center", py: 4 }}>
 					<Avatar
@@ -53,10 +53,12 @@ const Home = () => {
 							mb: 2,
 							bgcolor: "rgba(255,255,255,0.2)"
 						}}>
-						{user?.displayName?.charAt(0) +
-							user?.displayName.split(" ")[1].charAt(0) ||
-							user?.email?.charAt(0) ||
-							"P"}
+						{user?.displayName
+							? user.displayName
+									.split(" ")
+									.map((word) => word.charAt(0))
+									.join("")
+							: "?"}
 					</Avatar>
 					<Typography variant='h4' component='h1' gutterBottom>
 						Welcome back,{" "}
