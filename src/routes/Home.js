@@ -22,13 +22,13 @@ const Home = () => {
 		<Box
 			sx={{
 				p: 0,
-				height: "100%",
-				minHeight: "100%",
-				maxHeight: "100%",
+				height: "calc(100vh - 60px)",
+				minHeight: "calc(100vh - 60px)",
+				maxHeight: "calc(100vh - 60px)",
 				display: "flex",
 				flexDirection: "column",
-        justifyContent: "flex-start",
 				overflow: "hidden",
+				position: "relative",
 				WebkitOverflowScrolling: "touch",
 			}}>
 			{/* Welcome Header */}
@@ -42,6 +42,7 @@ const Home = () => {
 					borderBottomLeftRadius: 25,
 					borderBottomRightRadius: 25,
 					flexShrink: 0,
+					zIndex: 1,
 				}}>
 				<CardContent sx={{ textAlign: "center", py: 4 }}>
 					<Avatar
@@ -71,7 +72,7 @@ const Home = () => {
 			</Card>
 
 			{/* Work in Progress Section */}
-			<Paper
+			<Box
 				sx={{
 					pt: 4,
 					pb: 2,
@@ -82,15 +83,13 @@ const Home = () => {
 					background:
 						"linear-gradient(135deg, rgba(184, 143, 52, 0.1) 0%, rgba(212, 175, 55, 0.1) 100%)",
 					overflow: "hidden",
-					boxShadow: "none",
 					flex: 1,
 					display: "flex",
 					flexDirection: "column",
 					justifyContent: "center",
-          alignItems: "center",
-          borderRadius: 0,
+					alignItems: "center",
 					minHeight: 0,
-					WebkitOverflowScrolling: "touch",
+					zIndex: 0,
 					"&::before": {
 						content: '""',
 						position: "absolute",
@@ -181,7 +180,7 @@ const Home = () => {
 					}}>
 					🚀 Stay Tuned! 🚀
 				</Typography>
-			</Paper>
+			</Box>
 		</Box>
 	);
 };

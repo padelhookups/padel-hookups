@@ -45,19 +45,24 @@ const BottomBar = () => {
 				bottom: 0,
 				left: 0,
 				right: 0,
-				zIndex: '1000 !important',
+				zIndex: 1200,
 				paddingBottom: "env(safe-area-inset-bottom)",
+				borderTop: "1px solid rgba(0, 0, 0, 0.12)",
 				WebkitTransform: "translateZ(0)",
 				transform: "translateZ(0)",
+				willChange: "transform",
 			}}
-			elevation={3}>
+			elevation={8}>
 			<BottomNavigation
 				value={currentValue !== -1 ? currentValue : false}
 				onChange={handleChange}
 				showLabels
 				sx={{
-					height: 58,
-					minHeight: 58,
+					height: 60,
+					minHeight: 60,
+					"& .MuiBottomNavigationAction-root": {
+						minWidth: "auto",
+					}
 				}}>
 				{menuItems.map((item, index) => (
 					<BottomNavigationAction
