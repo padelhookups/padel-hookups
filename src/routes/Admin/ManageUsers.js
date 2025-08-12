@@ -387,6 +387,7 @@ const ManageUsers = () => {
 
 				{/* Add User Drawer */}
 				<SwipeableDrawer
+					sx={{zIndex: 1300}}
 					anchor='bottom'
 					open={drawerOpen}
 					disableSwipeToOpen={true}
@@ -584,6 +585,7 @@ const ManageUsers = () => {
 
 				{/* Edit User Drawer */}
 				<SwipeableDrawer
+					sx={{zIndex: 1300}}
 					anchor='bottom'
 					open={editDrawerOpen}
 					onClose={() => setEditDrawerOpen(false)}

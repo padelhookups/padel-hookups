@@ -45,13 +45,20 @@ const BottomBar = () => {
 				bottom: 0,
 				left: 0,
 				right: 0,
-				zIndex: 1000
+				zIndex: '1000 !important',
+				paddingBottom: "env(safe-area-inset-bottom)",
+				WebkitTransform: "translateZ(0)",
+				transform: "translateZ(0)",
 			}}
 			elevation={3}>
 			<BottomNavigation
 				value={currentValue !== -1 ? currentValue : false}
 				onChange={handleChange}
-				showLabels>
+				showLabels
+				sx={{
+					height: 58,
+					minHeight: 58,
+				}}>
 				{menuItems.map((item, index) => (
 					<BottomNavigationAction
 						key={item.path}

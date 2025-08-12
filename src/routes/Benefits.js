@@ -262,6 +262,7 @@ const Benefits = () => {
 				/>
 			</Box>
 			<SwipeableDrawer
+				sx={{zIndex: 1300}}
 				anchor='bottom'
 				open={open}
 				onClose={() => setOpen(false)}
