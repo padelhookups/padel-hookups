@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from "react-router";
 
 import useAuth from "./utils/useAuth";
 import ProtectedRoute from "./utils/ProtectedRoute";
+import { usePWAInstallOrOpen } from "./utils/UsePWAInstallOrOpen";
 import NotFound from "./components/NotFound";
 import Layout from "./components/Layout";
 import InstallAppModal from "./components/InstallAppModal";
@@ -22,66 +23,60 @@ import ChangePassword from "./routes/ChangePassword";
 import "./App.css";
 
 function App() {
+	const { isInstalled, canInstall, promptInstall, openApp } =
+		usePWAInstallOrOpen("web+padel://open");
 	const { user, loading } = useAuth();
-	console.log("App user:", user);
-
-	const [deferredPrompt, setDeferredPrompt] = useState(null);
-	const [appInstalled, setAppInstalled] = useState(false);
-	const [showPrompt, setShowPrompt] = useState(false);
 	const [showInstallModal, setShowInstallModal] = useState(false);
 	const [hasShownAutoModal, setHasShownAutoModal] = useState(false);
 
-	async function isAppInstalled() {
-		if (navigator.getInstalledRelatedApps) {
-			const relatedApps = await navigator.getInstalledRelatedApps();
-			return relatedApps.some(
-				(app) =>
-					app.id === "your.app.id" ||
-					app.url.includes("yourdomain.com")
-			);
+	const isMobileDevice = () => {
+		return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+			navigator.userAgent
+		);
+	};
+
+	/* useEffect(() => {
+		function openAppOrStay() {
+			console.log("App not installed");
+
+			window.addEventListener("beforeinstallprompt", (e) => {
+				e.preventDefault();
+				setDeferredPrompt(e);
+				// Auto-show the install modal after a short delay for better UX
+				// Only show once per session
+				if (!hasShownAutoModal && isMobileDevice()) {
+					setTimeout(() => {
+						setShowInstallModal(true);
+						setHasShownAutoModal(true);
+					}, 1000); // 2 second delay
+				}
+			});
 		}
-		return false;
-	}
+		openAppOrStay();
+	}, [hasShownAutoModal]); */
 
 	useEffect(() => {
-		window.addEventListener("beforeinstallprompt", (e) => {
-			e.preventDefault();
-			setDeferredPrompt(e);
-			// Auto-show the install modal after a short delay for better UX
-			// Only show once per session
-			if (!hasShownAutoModal) {
-				setTimeout(() => {
-					setShowInstallModal(true);
-					setHasShownAutoModal(true);
-				}, 1000); // 2 second delay
+		if (isInstalled) {
+			if (window.confirm("Open the installed app?")) {
+				openApp();
 			}
-		});
-		async function checkInstalled() {
-			const installed = await isAppInstalled();
-			setAppInstalled(installed);
-			if (
-				installed &&
-				!window.matchMedia("(display-mode: standalone)").matches
-			) {
-				setShowPrompt(true);
-			}
+		} else if (canInstall && !hasShownAutoModal) {
+			//setDeferredPrompt(e);
+			setShowInstallModal(true);
+			setHasShownAutoModal(true);
 		}
-		checkInstalled();
-	}, [hasShownAutoModal]);
+	}, [isInstalled, canInstall, promptInstall, openApp]);
 
 	const handleInstallClick = async () => {
-		if (!deferredPrompt) return;
-		deferredPrompt.prompt();
-		const { outcome } = await deferredPrompt.userChoice;
-		console.log(`User response: ${outcome}`);
-		setDeferredPrompt(null);
+		const result = await promptInstall();
+		if (result) {
+			console.log("User accepted the install prompt");
+		} else {
+			console.log("User dismissed the install prompt");
+		}
 		setShowInstallModal(false);
 	};
-
-	const handleShowInstallModal = () => {
-		setShowInstallModal(true);
-	};
-
+	
 	const handleCloseInstallModal = () => {
 		setShowInstallModal(false);
 		// Keep the floating button visible if user dismisses the modal
@@ -168,6 +163,7 @@ function App() {
 						<Route path='*' element={<NotFound />} />
 					</Routes>
 					<InstallAppModal
+						key={showInstallModal ? 'open' : 'closed'}
 						open={showInstallModal}
 						onClose={handleCloseInstallModal}
 						onConfirm={handleInstallClick}

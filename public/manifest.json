@@ -18,6 +18,13 @@
       "sizes": "512x512"
     }
   ],
+  "related_applications": [
+    {
+      "platform": "webapp",
+      "url": "https://padel-hookups.web.app/manifest.json"
+    }
+  ],
+  "prefer_related_applications": false,
   "protocol_handlers": [
     {
       "protocol": "web+padel",
