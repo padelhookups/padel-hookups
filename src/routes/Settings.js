@@ -87,7 +87,7 @@ const Settings = () => {
 				<List>
 					<ListItem sx={{ flex: "unset !important" }}>
 						<ListItemText
-							sx={{ width: "80%" }}
+							sx={{ width: "65%" }}
 							primary='Push Notifications'
 							secondary='Receive push notifications on your device'
 						/>
