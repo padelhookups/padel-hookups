@@ -1,150 +1,184 @@
-import React from 'react';
-import { getAuth } from 'firebase/auth';
+import React from "react";
+import { getAuth } from "firebase/auth";
 import {
-  Box,
-  Typography,
-  Card,
-  CardContent,
-  Button,
-  Grid,
-  Avatar,
-  Paper
-} from '@mui/material';
-import {
-  CalendarMonth,
-  People,
-  Star
-} from '@mui/icons-material';
+	Box,
+	Typography,
+	Card,
+	CardContent,
+	Button,
+	Avatar,
+	Paper,
+	Chip
+} from "@mui/material";
+import { Construction, Schedule, SportsBaseball } from "@mui/icons-material";
 
 const Home = () => {
-  const auth = getAuth();
-  const user = auth.currentUser;
+	const auth = getAuth();
+	const user = auth.currentUser;
 
-  console.log("HOME");
+	console.log("HOME");
 
-  return (
-    <Box sx={{ p: 0, pb: 12 }}>
-      {/* Welcome Header */}
-      <Card sx={{ mb: 3, background: 'linear-gradient(135deg, #b88f34 0%, #d4af37 50%, #b8860b 100%)', color: 'white' }}>
-        <CardContent sx={{ textAlign: 'center', py: 4 }}>
-          <Avatar sx={{ width: 64, height: 64, mx: 'auto', mb: 2, bgcolor: 'rgba(255,255,255,0.2)' }}>
-            {user?.displayName?.charAt(0) + user?.displayName.split(' ')[1].charAt(0) || user?.email?.charAt(0) || 'P'}
-          </Avatar>
-          <Typography variant="h4" component="h1" gutterBottom>
-            Welcome back, {user?.displayName || user?.email?.split('@')[0] || 'Player'}!
-          </Typography>
-          <Typography variant="body1" sx={{ opacity: 0.9 }}>
-            Ready for your next padel adventure? 🎾
-          </Typography>
-        </CardContent>
-      </Card>
+	return (
+		<Box
+			sx={{
+				p: 0,
+				height: "calc(100vh - 58px)",
+				maxHeight: "calc(100vh - 58px)",
+				display: "flex",
+				flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+			}}>
+			{/* Welcome Header */}
+			<Card
+				sx={{
+					background:
+						"linear-gradient(135deg, #b88f34 0%, #d4af37 50%, #b8860b 100%)",
+					color: "white",
+					borderTopLeftRadius: 0,
+					borderTopRightRadius: 0,
+					borderBottomLeftRadius: 25,
+					borderBottomRightRadius: 25
+				}}>
+				<CardContent sx={{ textAlign: "center", py: 4 }}>
+					<Avatar
+						sx={{
+							width: 64,
+							height: 64,
+							mx: "auto",
+							mb: 2,
+							bgcolor: "rgba(255,255,255,0.2)"
+						}}>
+						{user?.displayName?.charAt(0) +
+							user?.displayName.split(" ")[1].charAt(0) ||
+							user?.email?.charAt(0) ||
+							"P"}
+					</Avatar>
+					<Typography variant='h4' component='h1' gutterBottom>
+						Welcome back,{" "}
+						{user?.displayName ||
+							user?.email?.split("@")[0] ||
+							"Player"}
+						!
+					</Typography>
+					<Typography variant='body1' sx={{ opacity: 0.9 }}>
+						Ready for your next padel adventure? 🎾
+					</Typography>
+				</CardContent>
+			</Card>
 
-      {/* Quick Actions */}
-      {/* <Typography variant="h5" component="h2" gutterBottom sx={{ fontWeight: 'bold', color: 'text.primary' }}>
-        Quick Actions
-      </Typography>
-      <Grid container spacing={2} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={4}>
-          <Button
-            variant="contained"
-            fullWidth
-            sx={{ 
-              py: 2, 
-              backgroundColor: '#1976d2',
-              '&:hover': { backgroundColor: '#1565c0' }
-            }}
-          >
-            Find a Match
-          </Button>
-        </Grid>
-        <Grid item xs={12} sm={4}>
-          <Button
-            variant="contained"
-            fullWidth
-            startIcon={<CalendarMonth />}
-            sx={{ 
-              py: 2,
-              backgroundColor: '#2e7d32',
-              '&:hover': { backgroundColor: '#1b5e20' }
-            }}
-          >
-            Book a Court
-          </Button>
-        </Grid>
-        <Grid item xs={12} sm={4}>
-          <Button
-            variant="contained"
-            fullWidth
-            startIcon={<People />}
-            sx={{ 
-              py: 2,
-              backgroundColor: '#0288d1',
-              '&:hover': { backgroundColor: '#0277bd' }
-            }}
-          >
-            Invite Friends
-          </Button>
-        </Grid>
-      </Grid> */}
+			{/* Work in Progress Section */}
+			<Paper
+				sx={{
+					pt: 4,
+					pb: 2,
+					px: 4,
+					position: "relative",
+					marginTop: "-20px",
+					textAlign: "center",
+					background:
+						"linear-gradient(135deg, rgba(184, 143, 52, 0.1) 0%, rgba(212, 175, 55, 0.1) 100%)",
+					overflow: "hidden",
+					boxShadow: "none",
+					flex: 1,
+					display: "flex",
+					flexDirection: "column",
+					justifyContent: "center",
+          alignItems: "center",
+          borderRadius: 0,
+					"&::before": {
+						content: '""',
+						position: "absolute",
+						top: 0,
+						left: "-100%",
+						width: "100%",
+						height: "100%",
+						background:
+							"linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)",
+						animation: "shimmer 3s infinite"
+					}
+				}}>
+				<Construction
+					sx={{
+						fontSize: 60,
+						color: "primary.main",
+						mb: 2,
+						animation: "bounce 2s infinite",
+						"@keyframes bounce": {
+							"0%, 20%, 50%, 80%, 100%": {
+								transform: "translateY(0)"
+							},
+							"40%": { transform: "translateY(-10px)" },
+							"60%": { transform: "translateY(-5px)" }
+						}
+					}}
+				/>
 
-      {/* Recent Activity */}
-      {/* <Typography variant="h5" component="h2" gutterBottom sx={{ fontWeight: 'bold', color: 'text.primary' }}>
-        Recent Activity
-      </Typography>
-      <Card sx={{ mb: 4 }}>
-        <CardContent>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Avatar sx={{ bgcolor: 'primary.light' }}>
-              🎾
-            </Avatar>
-            <Box>
-              <Typography variant="h6" component="h3">
-                Welcome to Padel Hookups!
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Complete your profile to start finding matches
-              </Typography>
-            </Box>
-          </Box>
-        </CardContent>
-      </Card> */}
+				<Typography
+					variant='h4'
+					component='h2'
+					gutterBottom
+					sx={{
+						fontWeight: "bold",
+						color: "primary.main",
+						textShadow: "2px 2px 4px rgba(0,0,0,0.1)"
+					}}>
+					Work in Progress
+				</Typography>
 
-      {/* Stats Dashboard */}
-      <Typography variant="h5" component="h2" textAlign="center" gutterBottom sx={{ fontWeight: 'bold', color: 'text.primary' }}>
-        Your Stats
-      </Typography>
-      <Grid container spacing={2} sx={{ width: '100%', justifyContent: 'center' }}>
-        <Grid item xs={4}>
-          <Paper sx={{ p: 2, textAlign: 'center', minHeight: 100, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-            <Typography variant="h3" component="div" color="primary.main" sx={{ fontWeight: 'bold' }}>
-              0
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Matches Played
-            </Typography>
-          </Paper>
-        </Grid>
-        <Grid item xs={4}>
-          <Paper sx={{ p: 2, textAlign: 'center', minHeight: 100, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-            <Typography variant="h3" component="div" color="success.main" sx={{ fontWeight: 'bold' }}>
-              0
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Wins
-            </Typography>
-          </Paper>
-        </Grid>
-        <Grid item xs={4}>
-          <Paper sx={{ p: 2, textAlign: 'center', minHeight: 100, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
-            <Star sx={{ fontSize: 40, color: 'warning.main', mb: 0.5 }} />
-            <Typography variant="caption" color="text.secondary" display="block">
-              Skill Level
-            </Typography>
-          </Paper>
-        </Grid>
-      </Grid>
-    </Box>
-  );
+				<Typography
+					variant='h6'
+					sx={{
+						mb: 3,
+						color: "text.secondary",
+						fontStyle: "italic"
+					}}>
+					We're building something amazing for you!
+				</Typography>
+
+				<Box
+					sx={{
+						display: "flex",
+						justifyContent: "center",
+						gap: 1,
+						mb: 3,
+						flexWrap: "wrap"
+					}}>
+					<Chip
+						icon={<SportsBaseball />}
+						label='Match Tracking'
+						variant='outlined'
+						color='primary'
+						sx={{ fontSize: "0.9rem" }}
+					/>
+					<Chip
+						icon={<Schedule />}
+						label='Game Statistics'
+						variant='outlined'
+						color='primary'
+						sx={{ fontSize: "0.9rem" }}
+					/>
+					<Chip
+						label='Player Rankings'
+						variant='outlined'
+						color='primary'
+						sx={{ fontSize: "0.9rem" }}
+					/>
+				</Box>
+
+				<Typography
+					variant='h5'
+					sx={{
+						color: "primary.main",
+						fontWeight: "bold",
+						letterSpacing: 1,
+						textTransform: "uppercase"
+					}}>
+					🚀 Stay Tuned! 🚀
+				</Typography>
+			</Paper>
+		</Box>
+	);
 };
 
 export default Home;
