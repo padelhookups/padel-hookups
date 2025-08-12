@@ -59,6 +59,7 @@ const Settings = () => {
 				<List>
 					<ListItem>
 						<ListItemText
+							sx={{ width: "50%" }}
 							primary='Change Password'
 							secondary='Update your account password'
 						/>
@@ -86,6 +87,7 @@ const Settings = () => {
 				<List>
 					<ListItem>
 						<ListItemText
+							sx={{ width: "50%" }}
 							primary='Push Notifications'
 							secondary='Receive push notifications on your device'
 						/>

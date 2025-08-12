@@ -125,6 +125,12 @@ const ManageUsers = () => {
 			await addDoc(collection(db, "Invites"), newUser);
 			setNewUser({ Name: "", Email: "", IsAdmin: false });
 			setDrawerOpen(false);
+			setSuccessModalData({
+				title: "User Invited Successfully!",
+				description: `${newUser.Name} has been invited to join the platform. They will receive an email invitation.`,
+				buttonText: "Continue"
+			});
+			setSuccessModalOpen(true);
 			fetchUsers(); // Refresh the list
 		} catch (error) {
 			console.error("Error adding user: ", error);
