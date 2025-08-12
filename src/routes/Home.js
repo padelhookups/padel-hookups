@@ -26,7 +26,6 @@ const Home = () => {
 				maxHeight: "calc(100vh - 58px)",
 				display: "flex",
 				flexDirection: "column",
-        alignItems: "center",
         justifyContent: "center",
 			}}>
 			{/* Welcome Header */}
