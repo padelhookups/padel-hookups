@@ -66,7 +66,7 @@ const Admin = () => {
 					onChange={(event, newValue) => handleTabChange(newValue)}
 					variant='fullWidth'>
 					<Tab icon={<People />} label='Users' />
-					<Tab icon={<Settings />} label='Settings' />
+					{/* <Tab icon={<Settings />} label='Settings' /> */}
 				</Tabs>
 			</Paper>
 			<Box sx={{ flex: 1, overflow: "auto" }}>
@@ -74,7 +74,7 @@ const Admin = () => {
 				<TabPanel value={tabValue} index={0}>
                     <ManageUsers />
                 </TabPanel>
-				<TabPanel value={tabValue} index={1}>
+				{/* <TabPanel value={tabValue} index={1}>
 					<Grid container spacing={3}>
 						<Grid sx={{ width: "100%" }} item xs={12} md={6}>
 							<Card>
@@ -127,7 +127,7 @@ const Admin = () => {
 							</Card>
 						</Grid>
 					</Grid>
-				</TabPanel>
+				</TabPanel> */}
 			</Box>
 		</>
 	);

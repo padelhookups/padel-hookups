@@ -12,17 +12,12 @@ import {
 	ListItemText,
 	ListItemSecondaryAction,
 	Divider,
-	Typography,
+	Typography
 } from "@mui/material";
-import {
-	Lock,
-	Email,
-	Logout,
-	Security,
-} from "@mui/icons-material";
+import { Lock, Email, Logout, Security } from "@mui/icons-material";
 
 const Settings = () => {
-  const { user } = useAuth();
+	const { user } = useAuth();
 	const auth = getAuth();
 	const navigate = useNavigate();
 
@@ -68,7 +63,10 @@ const Settings = () => {
 							secondary='Update your account password'
 						/>
 						<ListItemSecondaryAction>
-							<Button variant='outlined' startIcon={<Lock />} onClick={handleChangePassword}>
+							<Button
+								variant='outlined'
+								startIcon={<Lock />}
+								onClick={handleChangePassword}>
 								Change
 							</Button>
 						</ListItemSecondaryAction>
@@ -125,18 +123,18 @@ const Settings = () => {
           </ListItem>
         </List>
       </Card> */}
-      {user?.IsAdmin && (
-			<Button
-				variant='outlined'
-				fullWidth
-				startIcon={<Security />}
-				onClick={handleAdminSettings}
-				sx={{ py: 1.5 }}>
-				Admin Settings
-			</Button>
-      )}
+			{user?.IsAdmin && (
+				<Button
+					variant='outlined'
+					fullWidth
+					startIcon={<Security />}
+					onClick={handleAdminSettings}
+					sx={{ py: 1.5 }}>
+					Admin Settings
+				</Button>
+			)}
 			{/* Danger Zone */}
-			<Alert severity='warning' sx={{ my: 2 }}>
+			<Alert severity='warning' color='error' sx={{ my: 2 }}>
 				<Typography variant='subtitle2' gutterBottom>
 					Danger Zone
 				</Typography>

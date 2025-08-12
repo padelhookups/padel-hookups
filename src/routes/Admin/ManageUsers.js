@@ -13,6 +13,8 @@ import firebase from "../../firebase-config";
 import useAuth from "../../utils/useAuth";
 import ConfirmDeleteModal from "../../components/ConfirmDeleteModal";
 import ConfirmEditModal from "../../components/ConfirmEditModal";
+import SuccessModal from "../../components/SuccessModal";
+import AnimatedPadelIcon from "../../components/AnimatedPadelIcon";
 
 import {
 	Box,
@@ -38,7 +40,15 @@ import {
 	Switch,
 	FormControlLabel
 } from "@mui/material";
-import { Add, Email, Person, Search, Settings, Edit, Delete } from "@mui/icons-material";
+import {
+	Add,
+	Email,
+	Person,
+	Search,
+	Settings,
+	Edit,
+	Delete
+} from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
 import { grey } from "@mui/material/colors";
 
@@ -73,6 +83,12 @@ const ManageUsers = () => {
 	const [editModalOpen, setEditModalOpen] = useState(false);
 	const [selectedUser, setSelectedUser] = useState(null);
 	const [userToDelete, setUserToDelete] = useState(null);
+	const [successModalOpen, setSuccessModalOpen] = useState(false);
+	const [successModalData, setSuccessModalData] = useState({
+		title: "",
+		description: "",
+		buttonText: "OK"
+	});
 	const [newUser, setNewUser] = useState({
 		Name: "",
 		Email: "",
@@ -120,7 +136,7 @@ const ManageUsers = () => {
 		setEditUser({
 			Name: user.Name || "",
 			Email: user.Email || "",
-			IsAdmin: user.IsAdmin === "admin" || user.IsAdmin === true,
+			IsAdmin: user.IsAdmin === "admin" || user.IsAdmin === true
 		});
 		setEditDrawerOpen(true);
 	};
@@ -145,12 +161,24 @@ const ManageUsers = () => {
 					setEditDrawerOpen(false);
 					setSelectedUser(null);
 					setEditModalOpen(false);
+					setSuccessModalData({
+						title: "User Updated Successfully!",
+						description: `${editUser.Name}'s information has been updated successfully.`,
+						buttonText: "Continue"
+					});
+					setSuccessModalOpen(true);
 					fetchUsers(); // Refresh the list
 				})
 				.catch((error) => {
 					setEditDrawerOpen(false);
 					setSelectedUser(null);
 					setEditModalOpen(false);
+					setSuccessModalData({
+						title: "User Updated!",
+						description: `${editUser.Name}'s information has been updated successfully.`,
+						buttonText: "Continue"
+					});
+					setSuccessModalOpen(true);
 					fetchUsers(); // Refresh the list
 					console.error("Error updating display name:", error);
 				});
@@ -172,6 +200,12 @@ const ManageUsers = () => {
 				setUserToDelete(null);
 				setEditDrawerOpen(false);
 				setSelectedUser(null);
+				setSuccessModalData({
+					title: "User Deleted Successfully!",
+					description: `${userToDelete.Name} has been permanently removed from the system.`,
+					buttonText: "Continue"
+				});
+				setSuccessModalOpen(true);
 				fetchUsers(); // Refresh the list
 			}
 		} catch (error) {
@@ -316,14 +350,14 @@ const ManageUsers = () => {
 				)}
 
 				{users.length === 0 && (
-					<Alert severity='warning' color="primary" sx={{ mt: 2 }}>
+					<Alert severity='warning' color='primary' sx={{ mt: 2 }}>
 						No users found. Click the + button to add the first
 						user.
 					</Alert>
 				)}
 
 				{users.length > 0 && filteredUsers.length === 0 && (
-					<Alert severity='warning' color="primary" sx={{ mt: 2 }}>
+					<Alert severity='warning' color='primary' sx={{ mt: 2 }}>
 						No users match your search criteria.
 					</Alert>
 				)}
@@ -350,12 +384,36 @@ const ManageUsers = () => {
 					onClose={() => setDrawerOpen(false)}>
 					<Puller />
 					<StyledBox
-						sx={{ px: 2, pb: 9, height: "100%", overflow: "auto" }}>
+						sx={{ px: 2, pb: 2, height: "100%", overflow: "auto" }}>
+						{/* Animated Header with Icon */}
+						<Box
+							sx={{
+								display: "flex",
+								flexDirection: "row",
+								alignItems: "center",
+								justifyContent: "center",
+								pt: 3,
+								pb: 2
+							}}>
+							<Typography
+								variant='h5'
+								component='h2'
+								sx={{
+									fontWeight: "bold",
+									textAlign: "center",
+									color: "primary.main",
+									textShadow: "0 2px 4px rgba(0,0,0,0.1)",
+									letterSpacing: "0.5px"
+								}}>
+								Invite a new Player!
+							</Typography>
+							<AnimatedPadelIcon size={100} containerSx={{ ml: 2 }} />
+						</Box>
+
 						<Box
 							component='form'
 							sx={{
 								"& > :not(style)": { mt: 4 },
-								pt: 4,
 								pb: 2,
 								px: 2
 							}}
@@ -497,13 +555,8 @@ const ManageUsers = () => {
 								</FormControl>
 							</Box>
 							<Button
-								variant='outlined'
+								variant='contained'
 								fullWidth
-								sx={{
-									mt: 2,
-									backgroundColor: "primary.main",
-									color: "white"
-								}}
 								type='submit'
 								disabled={!newUser.Name || !newUser.Email}>
 								<Typography
@@ -673,16 +726,14 @@ const ManageUsers = () => {
 								</FormControl>
 							</Box>
 							<Button
-								variant='outlined'
+								variant='contained'
 								fullWidth
 								sx={{
-									mt: 2,
-									backgroundColor: "primary.main",
-									color: "white"
+									mt: 2
 								}}
 								type='submit'
-								disabled={!editUser.Name || !editUser.Email}
-								startIcon={<Edit />}>
+								disabled={editUser.Name && editUser.Email ? false : true}
+								startIcon={<Edit sx={{color:"white"}} />}>
 								<Typography
 									variant='button'
 									color='white'
@@ -693,14 +744,14 @@ const ManageUsers = () => {
 							<Button
 								variant='outlined'
 								fullWidth
-								color="error"
+								color='error'
 								sx={{
-									mt: '1rem !important',									
+									mt: "1rem !important",
 									color: "white"
 								}}
 								type='button'
 								disabled={!editUser.Name || !editUser.Email}
-								startIcon={<Delete color="error" />}
+								startIcon={<Delete color='error' />}
 								onClick={() => handleDeleteUser(selectedUser)}>
 								<Typography
 									variant='button'
@@ -718,10 +769,10 @@ const ManageUsers = () => {
 					open={deleteModalOpen}
 					onClose={() => setDeleteModalOpen(false)}
 					onConfirm={handleConfirmDelete}
-					_title="Delete User"
-					_description={`Are you sure you want to delete ${userToDelete?.Name || 'this user'}? This action cannot be undone and will permanently remove the user from the system.`}
-					_confirmText="Delete User"
-					_cancelText="Cancel"
+					_title='Delete User'
+					_description={`Are you sure you want to delete ${userToDelete?.Name || "this user"}? This action cannot be undone and will permanently remove the user from the system.`}
+					_confirmText='Delete User'
+					_cancelText='Cancel'
 				/>
 
 				{/* Confirm Edit Modal */}
@@ -729,10 +780,19 @@ const ManageUsers = () => {
 					open={editModalOpen}
 					onClose={() => setEditModalOpen(false)}
 					onConfirm={handleConfirmUpdate}
-					_title="Save Changes"
-					_description={`Are you sure you want to save the changes to ${selectedUser?.Name || 'this user'}?`}
-					_confirmText="Save Changes"
-					_cancelText="Cancel"
+					_title='Save Changes'
+					_description={`Are you sure you want to save the changes to ${selectedUser?.Name || "this user"}?`}
+					_confirmText='Save Changes'
+					_cancelText='Cancel'
+				/>
+
+				{/* Success Modal */}
+				<SuccessModal
+					open={successModalOpen}
+					onClose={() => setSuccessModalOpen(false)}
+					_title={successModalData.title}
+					_description={successModalData.description}
+					_buttonText={successModalData.buttonText}
 				/>
 			</Box>
 		</>

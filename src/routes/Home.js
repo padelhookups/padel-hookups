@@ -28,7 +28,7 @@ const Home = () => {
       <Card sx={{ mb: 3, background: 'linear-gradient(135deg, #b88f34 0%, #d4af37 50%, #b8860b 100%)', color: 'white' }}>
         <CardContent sx={{ textAlign: 'center', py: 4 }}>
           <Avatar sx={{ width: 64, height: 64, mx: 'auto', mb: 2, bgcolor: 'rgba(255,255,255,0.2)' }}>
-            {user?.displayName?.charAt(0) || user?.email?.charAt(0) || 'P'}
+            {user?.displayName?.charAt(0) + user?.displayName.split(' ')[1].charAt(0) || user?.email?.charAt(0) || 'P'}
           </Avatar>
           <Typography variant="h4" component="h1" gutterBottom>
             Welcome back, {user?.displayName || user?.email?.split('@')[0] || 'Player'}!
