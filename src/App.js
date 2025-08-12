@@ -26,15 +26,27 @@ function App() {
 	console.log("App user:", user);
 
 	const [deferredPrompt, setDeferredPrompt] = useState(null);
-	const [showButton, setShowButton] = useState(false);
+	const [appInstalled, setAppInstalled] = useState(false);
+	const [showPrompt, setShowPrompt] = useState(false);
 	const [showInstallModal, setShowInstallModal] = useState(false);
 	const [hasShownAutoModal, setHasShownAutoModal] = useState(false);
+
+	async function isAppInstalled() {
+		if (navigator.getInstalledRelatedApps) {
+			const relatedApps = await navigator.getInstalledRelatedApps();
+			return relatedApps.some(
+				(app) =>
+					app.id === "your.app.id" ||
+					app.url.includes("yourdomain.com")
+			);
+		}
+		return false;
+	}
 
 	useEffect(() => {
 		window.addEventListener("beforeinstallprompt", (e) => {
 			e.preventDefault();
 			setDeferredPrompt(e);
-			setShowButton(true);
 			// Auto-show the install modal after a short delay for better UX
 			// Only show once per session
 			if (!hasShownAutoModal) {
@@ -44,6 +56,17 @@ function App() {
 				}, 1000); // 2 second delay
 			}
 		});
+		async function checkInstalled() {
+			const installed = await isAppInstalled();
+			setAppInstalled(installed);
+			if (
+				installed &&
+				!window.matchMedia("(display-mode: standalone)").matches
+			) {
+				setShowPrompt(true);
+			}
+		}
+		checkInstalled();
 	}, [hasShownAutoModal]);
 
 	const handleInstallClick = async () => {
@@ -52,7 +75,6 @@ function App() {
 		const { outcome } = await deferredPrompt.userChoice;
 		console.log(`User response: ${outcome}`);
 		setDeferredPrompt(null);
-		setShowButton(false);
 		setShowInstallModal(false);
 	};
 
