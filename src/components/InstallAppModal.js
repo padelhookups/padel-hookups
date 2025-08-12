@@ -1,5 +1,5 @@
 import { Modal, Box, Typography, Button, Fade, Backdrop } from "@mui/material";
-import { GetApp, PhoneAndroid, Smartphone } from "@mui/icons-material";
+import { GetApp, PhoneAndroid, Smartphone, Launch, OpenInNew } from "@mui/icons-material";
 
 export default function InstallAppModal({
 	open,
@@ -8,12 +8,61 @@ export default function InstallAppModal({
 	_title,
 	_description,
 	_confirmText,
-	_cancelText
+	_cancelText,
+	_type = "install", // "install" or "open"
+	_showAnimation = true,
+	_features = null, // null for default, [] for none, or custom array
+	_primaryColor = "#b88f34"
 }) {
-	const title = _title || "Install Padel Hookups";
-	const description = _description || "Get the best experience! Install Padel Hookups on your device for quick access, and native app performance.";
-	const confirmText = _confirmText || "📲 Install Now";
-	const cancelText = _cancelText || "Maybe Later";
+	const isInstallType = _type === "install";
+	const isOpenType = _type === "open";
+
+	// Dynamic defaults based on type
+	const getDefaults = () => {
+		if (isOpenType) {
+			return {
+				title: "Open Padel Hookups",
+				description: "The app is already installed! Would you like to open it now for the best experience?",
+				confirmText: "🚀 Open App",
+				cancelText: "Stay Here"
+			};
+		}
+		// Default to install type
+		return {
+			title: "Install Padel Hookups",
+			description: "Get the best experience! Install Padel Hookups on your device for quick access, and native app performance.",
+			confirmText: "📲 Install Now",
+			cancelText: "Maybe Later"
+		};
+	};
+
+	const defaults = getDefaults();
+	const title = _title || defaults.title;
+	const description = _description || defaults.description;
+	const confirmText = _confirmText || defaults.confirmText;
+	const cancelText = _cancelText || defaults.cancelText;
+
+	// Default features based on type
+	const getDefaultFeatures = () => {
+		if (isOpenType) {
+			return [
+				"✓ Faster performance",
+				"✓ Offline capabilities"
+			];
+		}
+		return [
+			"✓ Quick access from your home screen",
+			"✓ Native app experience"
+		];
+	};
+
+	const features = _features === null ? getDefaultFeatures() : _features;
+
+	// Dynamic icon based on type
+	const getMainIcon = () => {
+		if (isOpenType) return <Launch sx={{ fontSize: "24px" }} />;
+		return <GetApp sx={{ fontSize: "24px" }} />;
+	};
 
 	const handleConfirmClick = () => {
 		onConfirm();
@@ -52,152 +101,155 @@ export default function InstallAppModal({
 						outline: "none",
 						textAlign: "center"
 					}}>
-					{/* Animated Install Scene */}
-					<Box
-						sx={{
-							mb: 3,
-							position: "relative",
-							height: "120px",
-							display: "flex",
-							alignItems: "center",
-							justifyContent: "center"
-						}}>
+					{/* Animated Scene */}
+					{_showAnimation && (
 						<Box
 							sx={{
+								mb: 3,
 								position: "relative",
-								width: "100px",
-								height: "100px",
-								animation: "fadeInScale 0.8s ease-out"
+								height: "120px",
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center"
 							}}>
-							{/* Animated Install Icon */}
 							<Box
 								sx={{
-									position: "absolute",
-									width: "80px",
-									height: "80px",
-									left: "50%",
-									top: "50%",
-									transform: "translate(-50%, -50%)",
-									animation: "installPulse 2s ease-in-out infinite"
+									position: "relative",
+									width: "100px",
+									height: "100px",
+									animation: "fadeInScale 0.8s ease-out"
 								}}>
-								{/* Install Circle */}
+								{/* Animated Main Icon */}
 								<Box
 									sx={{
-										position: "relative",
-										width: "70px",
-										height: "70px",
-										margin: "0 auto"
+										position: "absolute",
+										width: "80px",
+										height: "80px",
+										left: "50%",
+										top: "50%",
+										transform: "translate(-50%, -50%)",
+										animation: "installPulse 2s ease-in-out infinite"
 									}}>
-									{/* SVG Install Circle */}
-									<svg
-										width='64'
-										height='64'
-										viewBox='0 0 64 64'
-										style={{
-											position: "absolute",
-											top: 0,
-											left: "50%",
-											transform: "translateX(-50%)"
-										}}>
-										<circle
-											cx='32'
-											cy='32'
-											r='28'
-											fill='#b88f34'
-											stroke='#a67c2a'
-											strokeWidth='3'
-										/>
-									</svg>
-
-									{/* Download Icon */}
+									{/* Main Circle */}
 									<Box
 										sx={{
-											position: "absolute",
-											width: "24px",
-											height: "24px",
-											color: "white",
-											top: "45%",
-											left: "50%",
-											transform: "translate(-50%, -50%)",
-											animation: "downloadBounce 1.5s ease-in-out infinite"
+											position: "relative",
+											width: "70px",
+											height: "70px",
+											margin: "0 auto"
 										}}>
-										<GetApp sx={{ fontSize: "24px" }} />
+										{/* SVG Circle */}
+										<svg
+											width='64'
+											height='64'
+											viewBox='0 0 64 64'
+											style={{
+												position: "absolute",
+												top: 0,
+												left: "50%",
+												transform: "translateX(-50%)"
+											}}>
+											<circle
+												cx='32'
+												cy='32'
+												r='28'
+												fill={_primaryColor}
+												stroke={_primaryColor}
+												strokeWidth='3'
+												opacity='0.9'
+											/>
+										</svg>
+
+										{/* Main Icon */}
+										<Box
+											sx={{
+												position: "absolute",
+												width: "24px",
+												height: "24px",
+												color: "white",
+												top: "45%",
+												left: "50%",
+												transform: "translate(-50%, -50%)",
+												animation: isOpenType ? "launchBounce 1.5s ease-in-out infinite" : "downloadBounce 1.5s ease-in-out infinite"
+											}}>
+											{getMainIcon()}
+										</Box>
 									</Box>
 								</Box>
+
+								{/* Animated Phone Icon */}
+								<Box
+									sx={{
+										position: "absolute",
+										width: "20px",
+										height: "20px",
+										left: "100%",
+										top: "0%",
+										transform: "translate(-50%, -50%)",
+										animation: "phoneFloat 3s ease-in-out infinite",
+										color: _primaryColor
+									}}>
+									<PhoneAndroid sx={{ fontSize: "20px" }} />
+								</Box>
+
+								{/* Secondary Phone Icon */}
+								<Box
+									sx={{
+										position: "absolute",
+										width: "18px",
+										height: "18px",
+										left: "0%",
+										top: "20%",
+										transform: "translate(-50%, -50%)",
+										animation: "phoneFloat2 3.5s ease-in-out infinite",
+										color: _primaryColor,
+										opacity: 0.7
+									}}>
+									<Smartphone sx={{ fontSize: "18px" }} />
+								</Box>
+
+								{/* Pulsing Ring */}
+								<Box
+									sx={{
+										position: "absolute",
+										width: "80px",
+										height: "80px",
+										borderRadius: "50%",
+										border: `3px solid ${_primaryColor}`,
+										left: "50%",
+										top: "43%",
+										transform: "translate(-50%, -50%)",
+										animation: "goldenPulse 2s ease-in-out infinite",
+										opacity: 0.4
+									}}
+								/>
+
+								{/* Secondary Pulsing Ring */}
+								<Box
+									sx={{
+										position: "absolute",
+										width: "95px",
+										height: "95px",
+										borderRadius: "50%",
+										border: `2px solid ${_primaryColor}`,
+										left: "50%",
+										top: "43%",
+										transform: "translate(-50%, -50%)",
+										animation: "goldenPulse2 2.5s ease-in-out infinite",
+										opacity: 0.2
+									}}
+								/>
 							</Box>
-
-							{/* Animated Phone Icon */}
-							<Box
-								sx={{
-									position: "absolute",
-									width: "20px",
-									height: "20px",
-									left: "100%",
-									top: "0%",
-									transform: "translate(-50%, -50%)",
-									animation: "phoneFloat 3s ease-in-out infinite",
-									color: "#b88f34"
-								}}>
-								<PhoneAndroid sx={{ fontSize: "20px" }} />
-							</Box>
-
-							{/* Secondary Phone Icon */}
-							<Box
-								sx={{
-									position: "absolute",
-									width: "18px",
-									height: "18px",
-									left: "0%",
-									top: "20%",
-									transform: "translate(-50%, -50%)",
-									animation: "phoneFloat2 3.5s ease-in-out infinite",
-									color: "#b88f34",
-									opacity: 0.7
-								}}>
-								<Smartphone sx={{ fontSize: "18px" }} />
-							</Box>
-
-							{/* Pulsing Golden Ring */}
-							<Box
-								sx={{
-									position: "absolute",
-									width: "80px",
-									height: "80px",
-									borderRadius: "50%",
-									border: "3px solid #b88f34",
-									left: "50%",
-									top: "43%",
-									transform: "translate(-50%, -50%)",
-									animation: "goldenPulse 2s ease-in-out infinite",
-									opacity: 0.4
-								}}
-							/>
-
-							{/* Secondary Pulsing Ring */}
-							<Box
-								sx={{
-									position: "absolute",
-									width: "95px",
-									height: "95px",
-									borderRadius: "50%",
-									border: "2px solid #b88f34",
-									left: "50%",
-									top: "43%",
-									transform: "translate(-50%, -50%)",
-									animation: "goldenPulse2 2.5s ease-in-out infinite",
-									opacity: 0.2
-								}}
-							/>
 						</Box>
-					</Box>
+					)}
 
-					{/* Install Text */}
+					{/* Title */}
 					<Typography
 						variant='h4'
 						component='h2'
 						sx={{
 							fontWeight: "bold",
-							color: "#b88f34",
+							color: _primaryColor,
 							mb: 2
 						}}>
 						{title}
@@ -214,14 +266,23 @@ export default function InstallAppModal({
 					</Typography>
 
 					{/* Features List */}
-					<Box sx={{ mb: 4, textAlign: "left" }}>
-						<Typography variant='body2' sx={{ color: "text.secondary", mb: 1, display: "flex", alignItems: "center" }}>
-							✓ Quick access from your home screen
-						</Typography>
-						<Typography variant='body2' sx={{ color: "text.secondary", mb: 1, display: "flex", alignItems: "center" }}>
-							✓ Native app experience
-						</Typography>
-					</Box>
+					{features && features.length > 0 && (
+						<Box sx={{ mb: 4, textAlign: "left" }}>
+							{features.map((feature, index) => (
+								<Typography 
+									key={index}
+									variant='body2' 
+									sx={{ 
+										color: "text.secondary", 
+										mb: 1, 
+										display: "flex", 
+										alignItems: "center" 
+									}}>
+									{feature}
+								</Typography>
+							))}
+						</Box>
+					)}
 
 					{/* Action Buttons */}
 					<Box sx={{ display: "flex", gap: 2, flexDirection: { xs: "column", sm: "row" } }}>
@@ -252,7 +313,7 @@ export default function InstallAppModal({
 							size='large'
 							fullWidth
 							sx={{
-								background: "linear-gradient(45deg, #b88f34 30%, rgba(184, 143, 52, 0.9) 90%)",
+								background: `linear-gradient(45deg, ${_primaryColor} 30%, ${_primaryColor}e6 90%)`,
 								color: "white",
 								fontWeight: 600,
 								py: 1.5,
@@ -260,8 +321,8 @@ export default function InstallAppModal({
 								textTransform: "none",
 								fontSize: "1rem",
 								"&:hover": {
-									background: "linear-gradient(45deg, rgba(184, 143, 52, 0.9) 30%, #b88f34 90%)",
-									boxShadow: "0 8px 25px rgba(184, 143, 52, 0.3)",
+									background: `linear-gradient(45deg, ${_primaryColor}e6 30%, ${_primaryColor} 90%)`,
+									boxShadow: `0 8px 25px ${_primaryColor}4d`,
 									transform: "translateY(-2px)"
 								},
 								transition: "all 0.3s ease"
@@ -293,6 +354,11 @@ export default function InstallAppModal({
               @keyframes downloadBounce {
                 0%, 100% { transform: translate(-50%, -50%) translateY(0px); }
                 50% { transform: translate(-50%, -50%) translateY(-3px); }
+              }
+
+              @keyframes launchBounce {
+                0%, 100% { transform: translate(-50%, -50%) translateY(0px) rotate(0deg); }
+                50% { transform: translate(-50%, -50%) translateY(-3px) rotate(5deg); }
               }
 
               @keyframes phoneFloat {

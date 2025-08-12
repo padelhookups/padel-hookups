@@ -64,7 +64,7 @@ function App() {
 	useEffect(() => {
 		if (isChecking) return;
 		 if (isRunningInApp) return;
-		 
+
 		if (isInstalled) {
 			if (window.confirm("Open the installed app?")) {
 				openApp();
@@ -74,14 +74,7 @@ function App() {
 			setShowInstallModal(true);
 			setHasShownAutoModal(true);
 		}
-	}, [
-		isInstalled,
-		isRunningInApp,
-		isChecking,
-		canInstall,
-		promptInstall,
-		openApp
-	]);
+	}, [isInstalled, isRunningInApp, isChecking, canInstall, promptInstall, openApp, hasShownAutoModal]);
 
 	const handleInstallClick = async () => {
 		const result = await promptInstall();
