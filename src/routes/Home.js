@@ -19,14 +19,18 @@ const Home = () => {
 	console.log("HOME");
 
 	return (
-		<Box
+		<>
+			<Paper
 			sx={{
+				m:0,
 				p: 0,
+				/* Push content below iOS status bar / notch */				
 				height: "calc(100vh - 58px)",
 				maxHeight: "calc(100vh - 58px)",
 				display: "flex",
 				flexDirection: "column",
-				justifyContent: "center"
+				justifyContent: "center",
+				
 			}}>
 			{/* Welcome Header */}
 			<Card
@@ -72,7 +76,6 @@ const Home = () => {
 			<Box
 				sx={{
 					pt: 4,
-					pb: 2,
 					px: 4,
 					position: "relative",
 					marginTop: "-20px",
@@ -176,7 +179,9 @@ const Home = () => {
 					🚀 Stay Tuned! 🚀
 				</Typography>
 			</Box>
-		</Box>
+		</Paper>
+		</>
+		
 	);
 };
 

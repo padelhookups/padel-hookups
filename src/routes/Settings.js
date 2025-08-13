@@ -44,9 +44,7 @@ const Settings = () => {
 				sx={{
 					borderRadius: 0,
 					bgcolor: "#b88f34",
-					color: "white",
-					/* Push content below iOS status bar / notch */
-					pt: 'calc(env(safe-area-inset-top) + 8px)'
+					color: "white"
 				}}
 			>
 				<Box sx={{ py: 3, px:2 }}>

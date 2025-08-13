@@ -76,7 +76,7 @@ const Profile = () => {
 	};
 
 	return (
-		<Box sx={{ p: 3, pb: 12 }}>
+		<Box sx={{ p: 3 }}>
 			{/* Profile Header */}
 			<Card sx={{ mb: 3 }}>
 				<CardContent sx={{ textAlign: "center", py: 4 }}>
