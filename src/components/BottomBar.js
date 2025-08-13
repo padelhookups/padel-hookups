@@ -46,11 +46,11 @@ const BottomBar = () => {
 				left: 0,
 				right: 0,
 				zIndex: 1000,
-				// Total height includes safe-area inset
-				height: "calc(var(--bottom-nav-height, 60px) + env(safe-area-inset-bottom))",
-				pb: "env(safe-area-inset-bottom)",
+				height: "calc(var(--bottom-nav-height) + env(safe-area-inset-bottom))",
 				display: "flex",
-				alignItems: "stretch"
+				alignItems: "stretch",
+				// Remove extra pb that inflated internal gap
+				pb: 0
 			}}
 			elevation={8}>
 			<BottomNavigation
@@ -58,11 +58,14 @@ const BottomBar = () => {
 				onChange={handleChange}
 				showLabels
 				sx={{
-					height: "var(--bottom-nav-height, 60px)",
-					minHeight: "var(--bottom-nav-height, 60px)",
+					height: "calc(var(--bottom-nav-height) + env(safe-area-inset-bottom))",
+					minHeight: "calc(var(--bottom-nav-height) + env(safe-area-inset-bottom))",
 					width: "100%",
+					// Keep actions vertically centered in remaining space
 					"& .MuiBottomNavigationAction-root": {
 						minWidth: "auto",
+						// Optional: push icons up slightly if safe area large
+						pb: "env(safe-area-inset-bottom)"
 					}
 				}}>
 				{menuItems.map((item) => (

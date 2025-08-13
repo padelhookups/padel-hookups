@@ -19,10 +19,16 @@ html, body, #root, .app-container {
   flex-grow: 1; /* take all available vertical space */
   overflow-y: auto; /* allow scrolling if needed */
   padding-top: env(safe-area-inset-top);
-  /* Reserve space for fixed bottom nav (60px) + safe area */
-  padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom));
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
+  /* Only safe-area now; spacer will reserve nav height when needed */
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Spacer inserted before BottomBar when it is rendered */
+.bottom-nav-spacer {
+  height: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom));
+  flex-shrink: 0;
 }
 
 /* iOS Safari specific fixes */
@@ -42,7 +48,7 @@ html, body, #root, .app-container {
   bottom: 0;
   left: 0;
   right: 0;
-  height: var(--bottom-nav-height);
+  height: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom));
   padding-bottom: env(safe-area-inset-bottom);
   background: white;
   border-top: 1px solid #e0e0e0;
