@@ -10,7 +10,7 @@ import {
 	Paper,
 	Chip
 } from "@mui/material";
-import { Construction, Schedule, SportsBaseball } from "@mui/icons-material";
+import { CalendarMonth, Construction, Timeline, } from "@mui/icons-material";
 
 const Home = () => {
 	const auth = getAuth();
@@ -143,25 +143,26 @@ const Home = () => {
 							flexWrap: "wrap"
 						}}>
 						<Chip
-							icon={<SportsBaseball />}
-							label='Match Tracking'
+							icon={<CalendarMonth />}
+							label='Tour 2025'
 							variant='outlined'
 							color='primary'
 							sx={{ fontSize: "0.9rem" }}
 						/>
-						<Chip
+						{/* <Chip
 							icon={<Schedule />}
 							label='Game Statistics'
 							variant='outlined'
 							color='primary'
 							sx={{ fontSize: "0.9rem" }}
-						/>
+						/>*/}
 						<Chip
 							label='Player Rankings'
+							icon={<Timeline />}
 							variant='outlined'
 							color='primary'
 							sx={{ fontSize: "0.9rem" }}
-						/>
+						/> 
 					</Box>
 
 					<Typography
