@@ -17,6 +17,7 @@ import {
 	OutlinedInput,
 	TextField,
 	Typography,
+	Paper,
 	SwipeableDrawer
 } from "@mui/material";
 import {
@@ -112,19 +113,17 @@ const Benefits = () => {
 
 	return (
 		<>
-			<Box
+			<Paper
 				sx={{
-					px: 0,
-					position: "relative"
-				}}>
-				<Card
-					sx={{
-						px: 4,
-						backgroundColor: "primary.main",
-						color: "white",
-						boxShadow: "none"
-					}}>
-					<CardContent sx={{ textAlign: "left", py: 4, px: 0 }}>
+					borderRadius: 0,
+					bgcolor: "#b88f34",
+					color: "white",
+					/* Push header below iOS notch */
+					pt: 'env(safe-area-inset-top)'
+				}}
+			>
+				<Box sx={{ py: 3, px: 2 }}>
+					<CardContent sx={{ textAlign: "left", pt: 0, px: 0 }}>
 						<Box
 							sx={{
 								display: "flex",
@@ -170,8 +169,8 @@ const Benefits = () => {
 							</Card>
 						</Box>
 					</CardContent>
-				</Card>
-			</Box>
+				</Box>
+			</Paper>
 			<Box
 				sx={{
 					px: 0,
