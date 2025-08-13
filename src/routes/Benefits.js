@@ -115,10 +115,7 @@ const Benefits = () => {
 			<Box
 				sx={{
 					px: 0,
-					position: "relative",
-					height: "calc(100vh - 58px)",
-					maxHeight: "calc(100vh - 58px)",
-					overflow: "auto"
+					position: "relative"
 				}}>
 				<Card
 					sx={{
@@ -174,7 +171,14 @@ const Benefits = () => {
 						</Box>
 					</CardContent>
 				</Card>
-				<Box sx={{ px: 4, pt: 4, pb: '40px' }}>
+			</Box>
+			<Box
+				sx={{
+					px: 0,
+					/* Remove huge extra space; container already pads for bottom nav */
+					pb: 3
+				}}>
+				<Box sx={{ px: 4, pt: 4, pb: "40px" }}>
 					{/* Partners Grid */}
 					{/* <Typography
 					variant='h5'
