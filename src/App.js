@@ -20,8 +20,6 @@ import Admin from "./routes/Admin";
 import ManageUsers from "./routes/Admin/ManageUsers";
 import ChangePassword from "./routes/ChangePassword";
 
-import "./App.css";
-
 function App() {
 	const {
 		isInstalled,
