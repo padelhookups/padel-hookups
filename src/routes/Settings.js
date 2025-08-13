@@ -44,7 +44,9 @@ const Settings = () => {
 				sx={{
 					borderRadius: 0,
 					bgcolor: "#b88f34",
-					color: "white"
+					color: "white",
+					/* Push header below iOS notch */
+					pt: 'env(safe-area-inset-top)'
 				}}
 			>
 				<Box sx={{ py: 3, px:2 }}>
