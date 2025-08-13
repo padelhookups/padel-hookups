@@ -40,7 +40,15 @@ const Settings = () => {
 
 	return (
 		<>
-			<Paper sx={{ borderRadius: 0, bgcolor: "#b88f34", color: "white" }}>
+			<Paper
+				sx={{
+					borderRadius: 0,
+					bgcolor: "#b88f34",
+					color: "white",
+					/* Push content below iOS status bar / notch */
+					pt: 'calc(env(safe-area-inset-top) + 8px)'
+				}}
+			>
 				<Box sx={{ py: 3, px:2 }}>
 					<Typography
 						variant='h4'
@@ -54,7 +62,13 @@ const Settings = () => {
 				</Box>
 			</Paper>
 
-			<Box sx={{ p: 3, pb: 12 }}>
+			<Box
+				sx={{
+					p: 3,
+					/* Remove huge extra space; container already pads for bottom nav */
+					pb: 3
+				}}
+			>
 				{/* Account Settings */}
 				<Typography
 					variant='h6'
