@@ -46,6 +46,11 @@ const BottomBar = () => {
 				left: 0,
 				right: 0,
 				zIndex: 1000,
+				// Total height includes safe-area inset
+				height: "calc(var(--bottom-nav-height, 60px) + env(safe-area-inset-bottom))",
+				pb: "env(safe-area-inset-bottom)",
+				display: "flex",
+				alignItems: "stretch"
 			}}
 			elevation={8}>
 			<BottomNavigation
@@ -53,13 +58,14 @@ const BottomBar = () => {
 				onChange={handleChange}
 				showLabels
 				sx={{
-					height: 60,
-					minHeight: 60,
+					height: "var(--bottom-nav-height, 60px)",
+					minHeight: "var(--bottom-nav-height, 60px)",
+					width: "100%",
 					"& .MuiBottomNavigationAction-root": {
 						minWidth: "auto",
 					}
 				}}>
-				{menuItems.map((item, index) => (
+				{menuItems.map((item) => (
 					<BottomNavigationAction
 						key={item.path}
 						label={item.label}
