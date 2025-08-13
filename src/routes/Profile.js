@@ -16,7 +16,8 @@ import {
 	SwipeableDrawer,
 	TextField,
 	FormControl,
-	InputAdornment
+	InputAdornment,
+	Paper
 } from "@mui/material";
 import {
 	Email,
@@ -76,10 +77,18 @@ const Profile = () => {
 	};
 
 	return (
-		<Box sx={{ p: 3 }}>
-			{/* Profile Header */}
-			<Card sx={{ mb: 3 }}>
-				<CardContent sx={{ textAlign: "center", py: 4 }}>
+		<>
+			<Paper
+				sx={{
+					borderRadius: 0,
+					bgcolor: "white",
+					color: "b88f34",
+					textAlign: "center",
+					/* Push header below iOS notch */
+					pt: "env(safe-area-inset-top)"
+				}}>
+				{/* Profile Header */}
+				<Box sx={{ py: 3, px: 2 }}>
 					<Avatar
 						sx={{
 							width: 100,
@@ -117,174 +126,186 @@ const Profile = () => {
 							variant='outlined'
 						/>
 					</Box>
-				</CardContent>
-			</Card>
+				</Box>
+			</Paper>
+			<Box
+				sx={{
+					p: 3,
+					/* Remove huge extra space; container already pads for bottom nav */
+					pb: 3
+				}}>
+				{/* User Information */}
+				<Typography
+					variant='h5'
+					component='h2'
+					gutterBottom
+					sx={{ fontWeight: "bold" }}>
+					Your Information
+				</Typography>
+				<Card sx={{ mb: 3 }}>
+					<List>
+						<ListItem>
+							<ListItemIcon>
+								<Person />
+							</ListItemIcon>
+							<ListItemText
+								primary='Display Name'
+								secondary={user?.displayName || "Not set"}
+							/>
+						</ListItem>
+						<Divider />
+						<ListItem>
+							<ListItemIcon>
+								<Email />
+							</ListItemIcon>
+							<ListItemText
+								primary='Email'
+								secondary={user?.email}
+							/>
+						</ListItem>
+						<Divider />
+						<ListItem>
+							<ListItemIcon>
+								<CalendarToday />
+							</ListItemIcon>
+							<ListItemText
+								primary='Member Since'
+								secondary={
+									user?.metadata?.creationTime
+										? new Date(
+												user.metadata.creationTime
+											).toLocaleDateString()
+										: "Unknown"
+								}
+							/>
+						</ListItem>
+					</List>
+				</Card>
 
-			{/* User Information */}
-			<Typography
-				variant='h5'
-				component='h2'
-				gutterBottom
-				sx={{ fontWeight: "bold" }}>
-				Your Information
-			</Typography>
-			<Card sx={{ mb: 3 }}>
-				<List>
-					<ListItem>
-						<ListItemIcon>
-							<Person />
-						</ListItemIcon>
-						<ListItemText
-							primary='Display Name'
-							secondary={user?.displayName || "Not set"}
-						/>
-					</ListItem>
-					<Divider />
-					<ListItem>
-						<ListItemIcon>
-							<Email />
-						</ListItemIcon>
-						<ListItemText primary='Email' secondary={user?.email} />
-					</ListItem>
-					<Divider />
-					<ListItem>
-						<ListItemIcon>
-							<CalendarToday />
-						</ListItemIcon>
-						<ListItemText
-							primary='Member Since'
-							secondary={
-								user?.metadata?.creationTime
-									? new Date(
-											user.metadata.creationTime
-										).toLocaleDateString()
-									: "Unknown"
-							}
-						/>
-					</ListItem>
-				</List>
-			</Card>
+				{/* Action Button */}
+				<Button
+					variant='contained'
+					size='large'
+					startIcon={<Edit />}
+					fullWidth
+					sx={{ mt: 2, color: "white" }}
+					onClick={() => setOpen(true)}>
+					<Typography variant='button'>Edit Profile</Typography>
+				</Button>
 
-			{/* Action Button */}
-			<Button
-				variant='contained'
-				size='large'
-				startIcon={<Edit />}
-				fullWidth
-				sx={{ mt: 2, color: "white" }}
-				onClick={() => setOpen(true)}>
-				<Typography variant='button'>Edit Profile</Typography>
-			</Button>
-
-			{/* Edit Profile Drawer */}
-			<SwipeableDrawer
-				sx={{ zIndex: 1300 }}
-				anchor='bottom'
-				open={open}
-				onClose={() => setOpen(false)}
-				disableSwipeToOpen={true}
-				keepMounted>
-				<Puller />
-				<StyledBox
-					sx={{ px: 2, pb: 2, height: "100%", overflow: "auto" }}>
-					<Box
-						component='form'
-						sx={{
-							"& > :not(style)": { mt: 4 },
-							pt: 4,
-							pb: 2,
-							px: 2
-						}}
-						onSubmit={(e) => {
-							// Let browser handle HTML5 validation first
-							if (!e.target.checkValidity()) {
-								return; // Let browser show validation messages
-							}
-							e.preventDefault();
-							handleUpdateProfile();
-						}}>
-						<Box sx={{ width: "100%" }}>
-							<FormControl
-								sx={{
-									width: "100%",
-									"&:focus-within": {
-										borderColor: "primary.main",
-										borderWidth: "2px"
-									}
-								}}>
-								<TextField
-									fullWidth
-									id='displayName'
-									type='text'
-									required
-									autoComplete='off'
-									value={displayName}
-									label='Display Name'
-									onChange={(e) =>
-										setDisplayName(e.target.value)
-									}
-									slotProps={{
-										input: {
-											startAdornment: (
-												<InputAdornment position='start'>
-													<Person
-														sx={{
-															".Mui-focused &": {
-																color: "primary.main"
-															},
-															mr: 1,
-															my: 0.5,
-															cursor: "pointer"
-														}}
-													/>
-												</InputAdornment>
-											),
-											endAdornment: (
-												<InputAdornment position='end'>
-													<Box sx={{ width: 30 }} />
-												</InputAdornment>
-											)
+				{/* Edit Profile Drawer */}
+				<SwipeableDrawer
+					sx={{ zIndex: 1300 }}
+					anchor='bottom'
+					open={open}
+					onClose={() => setOpen(false)}
+					disableSwipeToOpen={true}
+					keepMounted>
+					<Puller />
+					<StyledBox
+						sx={{ px: 2, pb: 2, height: "100%", overflow: "auto" }}>
+						<Box
+							component='form'
+							sx={{
+								"& > :not(style)": { mt: 4 },
+								pt: 4,
+								pb: 2,
+								px: 2
+							}}
+							onSubmit={(e) => {
+								// Let browser handle HTML5 validation first
+								if (!e.target.checkValidity()) {
+									return; // Let browser show validation messages
+								}
+								e.preventDefault();
+								handleUpdateProfile();
+							}}>
+							<Box sx={{ width: "100%" }}>
+								<FormControl
+									sx={{
+										width: "100%",
+										"&:focus-within": {
+											borderColor: "primary.main",
+											borderWidth: "2px"
 										}
-									}}
-								/>
-							</FormControl>
+									}}>
+									<TextField
+										fullWidth
+										id='displayName'
+										type='text'
+										required
+										autoComplete='off'
+										value={displayName}
+										label='Display Name'
+										onChange={(e) =>
+											setDisplayName(e.target.value)
+										}
+										slotProps={{
+											input: {
+												startAdornment: (
+													<InputAdornment position='start'>
+														<Person
+															sx={{
+																".Mui-focused &":
+																	{
+																		color: "primary.main"
+																	},
+																mr: 1,
+																my: 0.5,
+																cursor: "pointer"
+															}}
+														/>
+													</InputAdornment>
+												),
+												endAdornment: (
+													<InputAdornment position='end'>
+														<Box
+															sx={{ width: 30 }}
+														/>
+													</InputAdornment>
+												)
+											}
+										}}
+									/>
+								</FormControl>
+							</Box>
+							<Button
+								variant='contained'
+								fullWidth
+								type='submit'
+								disabled={!displayName}>
+								<Typography
+									variant='button'
+									color='white'
+									sx={{ fontWeight: "bold" }}>
+									Update Profile
+								</Typography>
+							</Button>
 						</Box>
-						<Button
-							variant='contained'
-							fullWidth
-							type='submit'
-							disabled={!displayName}>
-							<Typography
-								variant='button'
-								color='white'
-								sx={{ fontWeight: "bold" }}>
-								Update Profile
-							</Typography>
-						</Button>
-					</Box>
-				</StyledBox>
-			</SwipeableDrawer>
+					</StyledBox>
+				</SwipeableDrawer>
 
-			<SuccessModal
-				open={showSuccess}
-				_title='Profile Updated!'
-				onClose={() => setShowSuccess(false)}
-				_description='Your profile has been updated successfully.'
-				_buttonText='Continue'
-				_navigate={false}
-			/>
+				<SuccessModal
+					open={showSuccess}
+					_title='Profile Updated!'
+					onClose={() => setShowSuccess(false)}
+					_description='Your profile has been updated successfully.'
+					_buttonText='Continue'
+					_navigate={false}
+				/>
 
-			{/* Confirm Edit Modal */}
-			<ConfirmEditModal
-				open={editModalOpen}
-				onClose={() => setEditModalOpen(false)}
-				onConfirm={handleConfirmUpdate}
-				_title='Update Profile'
-				_description={`Are you sure you want to save the changes to your profile?`}
-				_confirmText='Save Changes'
-				_cancelText='Cancel'
-			/>
-		</Box>
+				{/* Confirm Edit Modal */}
+				<ConfirmEditModal
+					open={editModalOpen}
+					onClose={() => setEditModalOpen(false)}
+					onConfirm={handleConfirmUpdate}
+					_title='Update Profile'
+					_description={`Are you sure you want to save the changes to your profile?`}
+					_confirmText='Save Changes'
+					_cancelText='Cancel'
+				/>
+			</Box>
+		</>
 	);
 };
 
