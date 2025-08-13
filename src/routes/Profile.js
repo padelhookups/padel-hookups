@@ -1,10 +1,11 @@
 import React, { useState } from "react";
 import { getAuth, updateProfile } from "firebase/auth";
+import { doc, updateDoc, Timestamp } from "firebase/firestore";
+import firebase from "../firebase-config";
 import {
 	Box,
 	Typography,
 	Card,
-	CardContent,
 	Button,
 	Avatar,
 	Chip,
@@ -55,6 +56,7 @@ const StyledBox = styled("div")(({ theme }) => ({
 
 const Profile = () => {
 	const auth = getAuth();
+	const db = firebase.db;
 	const user = auth.currentUser;
 
 	const [open, setOpen] = useState(false);
@@ -71,6 +73,12 @@ const Profile = () => {
 		try {
 			await updateProfile(user, {
 				displayName: displayName
+			});
+
+			// Update date of birth in Firestore or another database			
+			const userRef = doc(db, "Users", user.uid);
+			await updateDoc(userRef, {
+				DateOfBirth: dateOfBirth ? Timestamp.fromDate(dateOfBirth.toDate()) : null
 			});
 			// Note: Firebase Auth doesn't store custom fields like dateOfBirth
 			// You would need to store this in Firestore or another database

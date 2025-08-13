@@ -11,40 +11,51 @@ import "./index.css";
 import reportWebVitals from "./reportWebVitals";
 
 const theme = createTheme({
-	palette: {
-		primary: {
-			main: "#b88f34" // Your new primary color (e.g., blue)
-		}
-	},
-	typography: {
-		fontFamily: '"Segoe UI", sans-serif',
-	},
-	components: {
-		MuiLink: {
-			styleOverrides: {
-				root: {
-					textDecoration: "none", // Removes underline
-					"&:hover": {
-						textDecoration: "none" // Keeps it off on hover too
-					}
-				}
-			},
-			defaultProps: {
-				underline: "none" // Prevents default underline
-			}
-		}
-	}
+  palette: {
+    primary: {
+      main: "#b88f34", // Your new primary color (e.g., blue)
+    },
+  },
+  typography: {
+    fontFamily: '"Segoe UI", sans-serif',
+  },
+  components: {
+    MuiLink: {
+      styleOverrides: {
+        root: {
+          textDecoration: "none", // Removes underline
+          "&:hover": {
+            textDecoration: "none", // Keeps it off on hover too
+          },
+        },
+      },
+      defaultProps: {
+        underline: "none", // Prevents default underline
+      },
+    },
+  },
 });
+
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker
+    .register("./firebase-messaging-sw.js", { type: "module" })
+    .then((registration) => {
+      console.log("Service Worker registered:", registration);
+    })
+    .catch((err) => {
+      console.error("Service Worker registration failed:", err);
+    });
+}
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
-	<React.StrictMode>
-		<ThemeProvider theme={theme}>
-			<Provider store={store}>
-				<App />
-			</Provider>
-		</ThemeProvider>
-	</React.StrictMode>
+  <React.StrictMode>
+    <ThemeProvider theme={theme}>
+      <Provider store={store}>
+        <App />
+      </Provider>
+    </ThemeProvider>
+  </React.StrictMode>
 );
 
 // If you want to start measuring performance in your app, pass a function

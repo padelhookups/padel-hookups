@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route } from "react-router";
 
+import firebase from "./firebase-config";
 import useAuth from "./utils/useAuth";
 import ProtectedRoute from "./utils/ProtectedRoute";
 import { usePWAInstallOrOpen } from "./utils/UsePWAInstallOrOpen";
@@ -32,33 +33,7 @@ function App() {
 	const { user, loading } = useAuth();
 	const [showInstallModal, setShowInstallModal] = useState(false);
 	const [hasShownAutoModal, setHasShownAutoModal] = useState(false);
-
-	const isMobileDevice = () => {
-		return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-			navigator.userAgent
-		);
-	};
-
-	/* useEffect(() => {
-		function openAppOrStay() {
-			console.log("App not installed");
-
-			window.addEventListener("beforeinstallprompt", (e) => {
-				e.preventDefault();
-				setDeferredPrompt(e);
-				// Auto-show the install modal after a short delay for better UX
-				// Only show once per session
-				if (!hasShownAutoModal && isMobileDevice()) {
-					setTimeout(() => {
-						setShowInstallModal(true);
-						setHasShownAutoModal(true);
-					}, 1000); // 2 second delay
-				}
-			});
-		}
-		openAppOrStay();
-	}, [hasShownAutoModal]); */
-
+	
 	useEffect(() => {
 		if (isChecking) return;
 		 if (isRunningInApp) return;
@@ -94,6 +69,12 @@ function App() {
 		// You can show a spinner or skeleton here while auth state loads
 		return <div>Loading...</div>;
 	}
+
+	firebase.onMessageListener()
+		.then((payload) => {
+			console.log("Message received. ", payload);
+			// ...
+		});
 
 	return (
 		<BrowserRouter>
