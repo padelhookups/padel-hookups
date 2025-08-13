@@ -112,11 +112,17 @@ const Benefits = () => {
 
 	return (
 		<>
-			<Box sx={{ pb: 12, px: 0, position: "relative" }}>
+			<Box
+				sx={{
+					px: 0,
+					position: "relative",
+					height: "calc(100vh - 58px)",
+					maxHeight: "calc(100vh - 58px)",
+					overflow: "auto"
+				}}>
 				<Card
 					sx={{
 						px: 4,
-						mb: 4,
 						backgroundColor: "primary.main",
 						color: "white",
 						boxShadow: "none"
@@ -168,7 +174,7 @@ const Benefits = () => {
 						</Box>
 					</CardContent>
 				</Card>
-				<Box sx={{ px: 4 }}>
+				<Box sx={{ px: 4, pt: 4, pb: '40px' }}>
 					{/* Partners Grid */}
 					{/* <Typography
 					variant='h5'
@@ -218,7 +224,10 @@ const Benefits = () => {
 										<Typography
 											variant='h6'
 											component='h2'
-											sx={{ fontWeight: "bold", width: "70%" }}>
+											sx={{
+												fontWeight: "bold",
+												width: "70%"
+											}}>
 											{benefit.Name}
 										</Typography>
 										<Typography
@@ -249,7 +258,7 @@ const Benefits = () => {
 						aria-label='add'
 						sx={{ position: "fixed", bottom: 76, right: 16 }}
 						onClick={() => setOpen(true)}>
-							<Add sx={{ color: "white" }} />
+						<Add sx={{ color: "white" }} />
 					</Fab>
 				)}
 				<SuccessModal
@@ -262,7 +271,7 @@ const Benefits = () => {
 				/>
 			</Box>
 			<SwipeableDrawer
-				sx={{zIndex: 1300}}
+				sx={{ zIndex: 1300 }}
 				anchor='bottom'
 				open={open}
 				onClose={() => setOpen(false)}
