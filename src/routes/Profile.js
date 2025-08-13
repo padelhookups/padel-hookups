@@ -19,12 +19,16 @@ import {
 	InputAdornment,
 	Paper
 } from "@mui/material";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import {
 	Email,
 	Person,
 	VerifiedUser,
 	CalendarToday,
-	Edit
+	Edit,
+	Cake
 } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
 import { grey } from "@mui/material/colors";
@@ -57,6 +61,7 @@ const Profile = () => {
 	const [showSuccess, setShowSuccess] = useState(false);
 	const [editModalOpen, setEditModalOpen] = useState(false);
 	const [displayName, setDisplayName] = useState(user?.displayName || "");
+	const [dateOfBirth, setDateOfBirth] = useState(user?.DateOfBirth || null);
 
 	const handleUpdateProfile = () => {
 		setEditModalOpen(true);
@@ -67,7 +72,10 @@ const Profile = () => {
 			await updateProfile(user, {
 				displayName: displayName
 			});
+			// Note: Firebase Auth doesn't store custom fields like dateOfBirth
+			// You would need to store this in Firestore or another database
 			console.log("Profile updated successfully");
+			console.log("Date of birth:", dateOfBirth);
 			setOpen(false);
 			setEditModalOpen(false);
 			setShowSuccess(true);
@@ -166,6 +174,16 @@ const Profile = () => {
 						<Divider />
 						<ListItem>
 							<ListItemIcon>
+								<Cake />
+							</ListItemIcon>
+							<ListItemText
+								primary='Date of Birth'
+								secondary={dateOfBirth ? dateOfBirth.format('MM/DD/YYYY') : "Not set"}
+							/>
+						</ListItem>
+						<Divider />
+						<ListItem>
+							<ListItemIcon>
 								<CalendarToday />
 							</ListItemIcon>
 							<ListItemText
@@ -204,84 +222,115 @@ const Profile = () => {
 					<Puller />
 					<StyledBox
 						sx={{ px: 2, pb: 2, height: "100%", overflow: "auto" }}>
-						<Box
-							component='form'
-							sx={{
-								"& > :not(style)": { mt: 4 },
-								pt: 4,
-								pb: 2,
-								px: 2
-							}}
-							onSubmit={(e) => {
-								// Let browser handle HTML5 validation first
-								if (!e.target.checkValidity()) {
-									return; // Let browser show validation messages
-								}
-								e.preventDefault();
-								handleUpdateProfile();
-							}}>
-							<Box sx={{ width: "100%" }}>
-								<FormControl
-									sx={{
-										width: "100%",
-										"&:focus-within": {
-											borderColor: "primary.main",
-											borderWidth: "2px"
-										}
-									}}>
-									<TextField
-										fullWidth
-										id='displayName'
-										type='text'
-										required
-										autoComplete='off'
-										value={displayName}
-										label='Display Name'
-										onChange={(e) =>
-											setDisplayName(e.target.value)
-										}
+						<LocalizationProvider dateAdapter={AdapterDayjs}>
+							<Box
+								component='form'
+								sx={{
+									"& > :not(style)": { mt: 4 },
+									pt: 4,
+									pb: 2,
+									px: 2
+								}}
+								onSubmit={(e) => {
+									// Let browser handle HTML5 validation first
+									if (!e.target.checkValidity()) {
+										return; // Let browser show validation messages
+									}
+									e.preventDefault();
+									handleUpdateProfile();
+								}}>
+								<Box sx={{ width: "100%" }}>
+									<FormControl
+										sx={{
+											width: "100%",
+											"&:focus-within": {
+												borderColor: "primary.main",
+												borderWidth: "2px"
+											}
+										}}>
+										<TextField
+											fullWidth
+											id='displayName'
+											type='text'
+											required
+											autoComplete='off'
+											value={displayName}
+											label='Display Name'
+											onChange={(e) =>
+												setDisplayName(e.target.value)
+											}
+											slotProps={{
+												input: {
+													startAdornment: (
+														<InputAdornment position='start'>
+															<Person
+																sx={{
+																	".Mui-focused &":
+																		{
+																			color: "primary.main"
+																		},
+																	mr: 1,
+																	my: 0.5,
+																	cursor: "pointer"
+																}}
+															/>
+														</InputAdornment>
+													),
+													endAdornment: (
+														<InputAdornment position='end'>
+															<Box
+																sx={{ width: 30 }}
+															/>
+														</InputAdornment>
+													)
+												}
+											}}
+										/>
+									</FormControl>
+								</Box>
+								<Box sx={{ width: "100%" }}>
+									<DatePicker
+										label="Date of Birth"
+										value={dateOfBirth}
+										onChange={(newValue) => setDateOfBirth(newValue)}
 										slotProps={{
-											input: {
-												startAdornment: (
-													<InputAdornment position='start'>
-														<Person
-															sx={{
-																".Mui-focused &":
-																	{
-																		color: "primary.main"
-																	},
-																mr: 1,
-																my: 0.5,
-																cursor: "pointer"
-															}}
-														/>
-													</InputAdornment>
-												),
-												endAdornment: (
-													<InputAdornment position='end'>
-														<Box
-															sx={{ width: 30 }}
-														/>
-													</InputAdornment>
-												)
+											textField: {
+												fullWidth: true,
+												InputProps: {
+													startAdornment: (
+														<InputAdornment position='start'>
+															<Cake
+																sx={{
+																	".Mui-focused &":
+																		{
+																			color: "primary.main"
+																		},
+																	mr: 1,
+																	my: 0.5,
+																	cursor: "pointer"
+																}}
+															/>
+														</InputAdornment>
+													)
+												}
 											}
 										}}
 									/>
-								</FormControl>
+								</Box>
+								<Button
+									variant='contained'
+									fullWidth
+									type='submit'
+									disabled={!displayName}>
+									<Typography
+										variant='button'
+										color='white'
+										sx={{ fontWeight: "bold" }}>
+										Update Profile
+									</Typography>
+								</Button>
 							</Box>
-							<Button
-								variant='contained'
-								fullWidth
-								type='submit'
-								disabled={!displayName}>
-								<Typography
-									variant='button'
-									color='white'
-									sx={{ fontWeight: "bold" }}>
-									Update Profile
-								</Typography>
-							</Button>
-						</Box>
+						</LocalizationProvider>
 					</StyledBox>
 				</SwipeableDrawer>
 

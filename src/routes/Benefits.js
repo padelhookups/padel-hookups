@@ -122,7 +122,7 @@ const Benefits = () => {
 					pt: 'env(safe-area-inset-top)'
 				}}
 			>
-				<Box sx={{ py: 3, px: 2 }}>
+				<Box sx={{ py: 3, px: 4 }}>
 					<CardContent sx={{ textAlign: "left", pt: 0, px: 0 }}>
 						<Box
 							sx={{

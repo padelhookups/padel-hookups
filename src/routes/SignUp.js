@@ -19,6 +19,9 @@ import {
 	Switch,
 	Typography
 } from "@mui/material";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import {
 	AccountCircle,
 	Check,
@@ -27,7 +30,8 @@ import {
 	Email,
 	Lock,
 	Visibility,
-	VisibilityOff
+	VisibilityOff,
+	Cake
 } from "@mui/icons-material";
 
 import logo from "../images/LogoWhite.svg";
@@ -42,12 +46,14 @@ function SignUp() {
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [confirmPassword, setConfirmPassword] = useState("");
+	const [dateOfBirth, setDateOfBirth] = useState(null);
 	const [isPasswordFocused, setIsPasswordFocused] = useState(false);
 	const [isConfirmPasswordFocused, setIsConfirmPasswordFocused] =
 		useState(false);
 	const [showPassword, setShowPassword] = useState(false);
 	const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-	//const [isTermsAccepted, setIsTermsAccepted] = useState(false);
+	const [isTermsAccepted, setIsTermsAccepted] = useState(false);
+	const [isRgpdAccepted, setIsRgpdAccepted] = useState(false);
 	const [lowerCaseValid, setLowerCaseValid] = useState(false);
 	const [upperCaseValid, setUpperCaseValid] = useState(false);
 	const [numberValid, setNumberValid] = useState(false);
@@ -59,7 +65,7 @@ function SignUp() {
 	const urlParams = new URLSearchParams(window.location.search);
 	const emailFromLink = urlParams.get("email");
 	const inviteId = urlParams.get("inviteId");
-	const isAdmin = urlParams.get("isAdmin").toLowerCase() === "true" || false;
+	const isAdmin = urlParams.get("isAdmin")?.toLowerCase() === "true" || false;
 	const nameFromLink = urlParams.get("name") || "";
 	console.log("Invite ID from URL:", inviteId);
 	console.log("IsAdmin from URL:", isAdmin);
@@ -177,11 +183,14 @@ function SignUp() {
 			await setDoc(docRef, {
 				Name: name,
 				Email: email,
+				DateOfBirth: dateOfBirth ? dateOfBirth.toISOString() : null,
 				CreatedAt: new Date(),
 				LastLoginAt: new Date(),
 				InviteId: inviteId,
 				IsAdmin: isAdmin,
-				TotalSavings: 0
+				TotalSavings: 0,
+				RgpdAccepted: isRgpdAccepted,
+				TermsAccepted: isTermsAccepted
 			});
 		}
 		setIsLoading(false);
@@ -216,533 +225,604 @@ function SignUp() {
 				<Typography variant='subtitle1'>
 					Join the Padel Hookups community
 				</Typography>
-				<Box
-					component='form'
-					onSubmit={handleSubmit}
-					sx={{
-						"& > :not(style)": { mt: 4 },
-						width: {
-							xs: "75%", // full width on small screens
-							sm: "75%", // still full on small (or slightly wider)
-							md: "50%", // 50% on medium
-							lg: "50%", // narrower on large screens
-							xl: "50%" // even narrower on extra large
-						}
-					}}>
+				<LocalizationProvider dateAdapter={AdapterDayjs}>
 					<Box
+						component='form'
+						onSubmit={handleSubmit}
 						sx={{
-							width: "100%"
+							"& > :not(style)": { mt: 4 },
+							width: {
+								xs: "75%", // full width on small screens
+								sm: "75%", // still full on small (or slightly wider)
+								md: "50%", // 50% on medium
+								lg: "50%", // narrower on large screens
+								xl: "50%" // even narrower on extra large
+							}
 						}}>
-						<FormControl
+						<Box
 							sx={{
-								width: "100%",
-								"&:focus-within": {
-									borderColor: "primary.main",
-									borderWidth: "2px" // outer second border
-								}
+								width: "100%"
 							}}>
-							<InputLabel htmlFor='name'>Name</InputLabel>
-							<OutlinedInput
-								fullWidth
-								id='name'
-								type='text'
-								value={name}
-								autoComplete='name'
-								required
-								onChange={(e) => setName(e.target.value)}
-								startAdornment={
-									<InputAdornment position='start'>
-										<AccountCircle
-											sx={{
-												".Mui-focused &": {
-													color: "primary.main"
-												},
-												mr: 1,
-												my: 0.5,
-												cursor: "pointer"
-											}}
-										/>
-									</InputAdornment>
-								}
-								endAdornment={
-									// Empty space to balance layout
-									<InputAdornment position='end'>
-										<Box sx={{ width: 30 }} />{" "}
-										{/* width matches icon button */}
-									</InputAdornment>
-								}
-								label='Name'
-							/>
-						</FormControl>
-					</Box>
-					<Box
-						sx={{
-							width: "100%"
-						}}>
-						<FormControl
-							sx={{
-								width: "100%",
-								"&:focus-within": {
-									borderColor: "primary.main",
-									borderWidth: "2px" // outer second border
-								}
-							}}>
-							<InputLabel htmlFor='email'>Email</InputLabel>
-							<OutlinedInput
-								id='email'
-								value={email}
-								type='email'
-								autoComplete='email'
-								disabled={!!emailFromLink}
-								required
-								onChange={(e) => setEmail(e.target.value)}
-								startAdornment={
-									<InputAdornment position='start'>
-										<Email
-											sx={{
-												color: "action.active",
-												mr: 1,
-												my: 0.5,
-												".Mui-focused &": {
-													color: "primary.main"
-												}
-											}}
-										/>
-									</InputAdornment>
-								}
-								endAdornment={<Box sx={{ width: 40 }} />}
-								label='Email'
-							/>
-						</FormControl>
-					</Box>
-					<Box
-						sx={{
-							width: "100%"
-						}}>
-						<FormControl
-							sx={{
-								width: "100%",
-								"&:focus-within": {
-									borderColor: "primary.main",
-									borderWidth: "2px" // outer second border
-								}
-							}}>
-							<InputLabel htmlFor='password'>Password</InputLabel>
-							<OutlinedInput
-								id='password'
-								value={password}
-								type={showPassword ? "text" : "password"}
-								autoComplete='new-password'
-								required
-								onChange={(e) =>
-									handlePasswordChange(e.target.value)
-								}
-								onFocus={() => setIsPasswordFocused(true)}
-								onBlur={() => setIsPasswordFocused(false)}
-								startAdornment={
-									<InputAdornment position='start'>
-										<Lock
-											sx={{
-												color: "action.active",
-												mr: 1,
-												my: 0.5,
-												".Mui-focused &": {
-													color: "primary.main"
-												}
-											}}
-										/>
-									</InputAdornment>
-								}
-								endAdornment={
-									<InputAdornment position='end'>
-										{showPassword ? (
-											<VisibilityOff
+							<FormControl
+								sx={{
+									width: "100%",
+									"&:focus-within": {
+										borderColor: "primary.main",
+										borderWidth: "2px" // outer second border
+									}
+								}}>
+								<InputLabel htmlFor='name'>Name</InputLabel>
+								<OutlinedInput
+									fullWidth
+									id='name'
+									type='text'
+									value={name}
+									autoComplete='name'
+									required
+									onChange={(e) => setName(e.target.value)}
+									startAdornment={
+										<InputAdornment position='start'>
+											<AccountCircle
 												sx={{
-													color: "action.active",
+													".Mui-focused &": {
+														color: "primary.main"
+													},
 													mr: 1,
 													my: 0.5,
 													cursor: "pointer"
 												}}
-												onClick={() =>
-													setShowPassword(false)
-												}
+											/>
+										</InputAdornment>
+									}
+									endAdornment={
+										// Empty space to balance layout
+										<InputAdornment position='end'>
+											<Box sx={{ width: 30 }} />{" "}
+											{/* width matches icon button */}
+										</InputAdornment>
+									}
+									label='Name'
+								/>
+							</FormControl>
+						</Box>
+						<Box
+							sx={{
+								width: "100%"
+							}}>
+							<FormControl
+								sx={{
+									width: "100%",
+									"&:focus-within": {
+										borderColor: "primary.main",
+										borderWidth: "2px" // outer second border
+									}
+								}}>
+								<InputLabel htmlFor='email'>Email</InputLabel>
+								<OutlinedInput
+									id='email'
+									value={email}
+									type='email'
+									autoComplete='email'
+									disabled={!!emailFromLink}
+									required
+									onChange={(e) => setEmail(e.target.value)}
+									startAdornment={
+										<InputAdornment position='start'>
+											<Email
+												sx={{
+													color: "action.active",
+													mr: 1,
+													my: 0.5,
+													".Mui-focused &": {
+														color: "primary.main"
+													}
+												}}
+											/>
+										</InputAdornment>
+									}
+									endAdornment={<Box sx={{ width: 40 }} />}
+									label='Email'
+								/>
+							</FormControl>
+						</Box>
+						<Box sx={{ width: "100%" }}>
+							<DatePicker
+								label="Date of Birth"
+								value={dateOfBirth}
+								onChange={(newValue) => setDateOfBirth(newValue)}
+								slotProps={{
+									textField: {
+										fullWidth: true,
+										required: true,
+										InputProps: {
+											startAdornment: (
+												<InputAdornment position='start'>
+													<Cake
+														sx={{
+															color: "action.active",
+															mr: 1,
+															my: 0.5,
+															".Mui-focused &": {
+																color: "primary.main"
+															}
+														}}
+													/>
+												</InputAdornment>
+											),
+											endAdornment: (
+												<InputAdornment position='end'>
+													<Box sx={{ width: 30 }} />
+												</InputAdornment>
+											)
+										}
+									}
+								}}
+							/>
+						</Box>
+						<Box
+							sx={{
+								width: "100%"
+							}}>
+							<FormControl
+								sx={{
+									width: "100%",
+									"&:focus-within": {
+										borderColor: "primary.main",
+										borderWidth: "2px" // outer second border
+									}
+								}}>
+								<InputLabel htmlFor='password'>Password</InputLabel>
+								<OutlinedInput
+									id='password'
+									value={password}
+									type={showPassword ? "text" : "password"}
+									autoComplete='new-password'
+									required
+									onChange={(e) =>
+										handlePasswordChange(e.target.value)
+									}
+									onFocus={() => setIsPasswordFocused(true)}
+									onBlur={() => setIsPasswordFocused(false)}
+									startAdornment={
+										<InputAdornment position='start'>
+											<Lock
+												sx={{
+													color: "action.active",
+													mr: 1,
+													my: 0.5,
+													".Mui-focused &": {
+														color: "primary.main"
+													}
+												}}
+											/>
+										</InputAdornment>
+									}
+									endAdornment={
+										<InputAdornment position='end'>
+											{showPassword ? (
+												<VisibilityOff
+													sx={{
+														color: "action.active",
+														mr: 1,
+														my: 0.5,
+														cursor: "pointer"
+													}}
+													onClick={() =>
+														setShowPassword(false)
+													}
+												/>
+											) : (
+												<Visibility
+													sx={{
+														color: "action.active",
+														mr: 1,
+														my: 0.5,
+														cursor: "pointer"
+													}}
+													onClick={() =>
+														setShowPassword(true)
+													}
+												/>
+											)}
+										</InputAdornment>
+									}
+									label='Password'
+								/>
+							</FormControl>
+							{(password || isPasswordFocused) && (
+								<Box
+									sx={{
+										mt: 1,
+										p: 2,
+										display: "flex",
+										flexDirection: "column",
+										backgroundColor: "grey.100",
+										borderRadius: 2
+									}}>
+									<Typography
+										variant='body2'
+										sx={{
+											mb: 0.5,
+											fontWeight: "bold"
+										}}>
+										Password requirements:
+									</Typography>
+									<Box
+										sx={{
+											display: "flex",
+											flexDirection: "row",
+											alignItems: "center"
+										}}>
+										{lowerCaseValid ? (
+											<Check
+												sx={{
+													color: "success.main",
+													mr: 1
+												}}
+												fontSize='small'
 											/>
 										) : (
-											<Visibility
+											<Close
+												sx={{ color: "error.main", mr: 1 }}
+												fontSize='small'
+											/>
+										)}
+										<Typography
+											variant='caption'
+											sx={{
+												color: "text.secondary"
+											}}>
+											Contains lowercase letter
+										</Typography>
+									</Box>
+									<Box
+										sx={{
+											display: "flex",
+											flexDirection: "row",
+											alignItems: "center"
+										}}>
+										{upperCaseValid ? (
+											<Check
+												sx={{
+													color: "success.main",
+													mr: 1
+												}}
+												fontSize='small'
+											/>
+										) : (
+											<Close
+												sx={{ color: "error.main", mr: 1 }}
+												fontSize='small'
+											/>
+										)}
+										<Typography
+											variant='caption'
+											sx={{
+												color: "text.secondary"
+											}}>
+											Contains uppercase letter
+										</Typography>
+									</Box>
+									<Box
+										sx={{
+											display: "flex",
+											flexDirection: "row",
+											alignItems: "center"
+										}}>
+										{!numberValid ? (
+											<Close
+												sx={{ color: "error.main", mr: 1 }}
+												fontSize='small'
+											/>
+										) : (
+											<Check
+												sx={{
+													color: "success.main",
+													mr: 1
+												}}
+												fontSize='small'
+											/>
+										)}
+										<Typography
+											variant='caption'
+											sx={{
+												color: "text.secondary"
+											}}>
+											Contains numeric character
+										</Typography>
+									</Box>
+									<Box
+										sx={{
+											display: "flex",
+											flexDirection: "row",
+											alignItems: "center"
+										}}>
+										{!specialCharValid ? (
+											<Close
+												sx={{ color: "error.main", mr: 1 }}
+												fontSize='small'
+											/>
+										) : (
+											<Check
+												sx={{
+													color: "success.main",
+													mr: 1
+												}}
+												fontSize='small'
+											/>
+										)}
+										<Typography
+											variant='caption'
+											sx={{
+												color: "text.secondary"
+											}}>
+											Contains special character (!@#$%^&*)
+										</Typography>
+									</Box>
+									<Box
+										sx={{
+											display: "flex",
+											flexDirection: "row",
+											alignItems: "center"
+										}}>
+										{!lengthValid ? (
+											<Close
+												sx={{ color: "error.main", mr: 1 }}
+												fontSize='small'
+											/>
+										) : (
+											<Check
+												sx={{
+													color: "success.main",
+													mr: 1
+												}}
+												fontSize='small'
+											/>
+										)}
+										<Typography
+											variant='caption'
+											sx={{
+												color: "text.secondary"
+											}}>
+											At least 8 characters long
+										</Typography>
+									</Box>
+								</Box>
+							)}
+						</Box>
+						<Box
+							sx={{
+								width: "100%"
+							}}>
+							<FormControl
+								sx={{
+									width: "100%",
+									"&:focus-within": {
+										borderColor: "primary.main",
+										borderWidth: "2px" // outer second border
+									},
+									mb: 0
+								}}>
+								<InputLabel htmlFor='confirm-password'>
+									Confirm Password
+								</InputLabel>
+								<OutlinedInput
+									id='confirm-password'
+									value={confirmPassword}
+									type={showConfirmPassword ? "text" : "password"}
+									autoComplete='new-password'
+									required
+									onChange={(e) =>
+										setConfirmPassword(e.target.value)
+									}
+									onFocus={() =>
+										setIsConfirmPasswordFocused(true)
+									}
+									onBlur={() =>
+										setIsConfirmPasswordFocused(false)
+									}
+									startAdornment={
+										<InputAdornment position='start'>
+											<Lock
 												sx={{
 													color: "action.active",
 													mr: 1,
 													my: 0.5,
-													cursor: "pointer"
+													".Mui-focused &": {
+														color: "primary.main"
+													}
 												}}
-												onClick={() =>
-													setShowPassword(true)
-												}
+											/>
+										</InputAdornment>
+									}
+									endAdornment={
+										<InputAdornment position='end'>
+											{showConfirmPassword ? (
+												<VisibilityOff
+													sx={{
+														color: "action.active",
+														mr: 1,
+														my: 0.5,
+														cursor: "pointer"
+													}}
+													onClick={() =>
+														setShowConfirmPassword(
+															false
+														)
+													}
+												/>
+											) : (
+												<Visibility
+													sx={{
+														color: "action.active",
+														mr: 1,
+														my: 0.5,
+														cursor: "pointer"
+													}}
+													onClick={() =>
+														setShowConfirmPassword(true)
+													}
+												/>
+											)}
+										</InputAdornment>
+									}
+									label='Confirm Password'
+								/>
+							</FormControl>
+						</Box>
+						{password &&
+							(confirmPassword || isConfirmPasswordFocused) && (
+								<Box
+									sx={{
+										mt: 1,
+										p: 2,
+										display: "flex",
+										flexDirection: "column",
+										backgroundColor: "grey.100",
+										borderRadius: 2
+									}}>
+									<Box
+										sx={{
+											display: "flex",
+											flexDirection: "row",
+											alignItems: "center"
+										}}>
+										{confirmPassword === null ||
+										password !== confirmPassword ||
+										confirmPassword.trim() === "" ? (
+											<Close
+												sx={{ color: "error.main", mr: 1 }}
+												fontSize='small'
+											/>
+										) : (
+											<Check
+												sx={{
+													color: "success.main",
+													mr: 1
+												}}
+												fontSize='small'
 											/>
 										)}
-									</InputAdornment>
-								}
-								label='Password'
+										<Typography
+											variant='caption'
+											sx={{
+												color: "text.secondary"
+											}}>
+											Password must match
+										</Typography>
+									</Box>
+								</Box>
+							)}
+						<Box
+							sx={{
+								display: "flex",
+								alignItems: "center",
+								width: "100%",
+								mt: "0 !important",
+								pt: 2
+							}}>
+							<Switch 
+								required 
+								checked={isTermsAccepted}
+								onChange={(e) => setIsTermsAccepted(e.target.checked)}
 							/>
-						</FormControl>
-						{(password || isPasswordFocused) && (
-							<Box
+							<Typography
+								variant='body2'
 								sx={{
-									mt: 1,
-									p: 2,
-									display: "flex",
-									flexDirection: "column",
-									backgroundColor: "grey.100",
-									borderRadius: 2
+									ml: 0,
+									fontSize: "0.875rem",
+									fontWeight: 500,
+									lineHeight: 1.4,
+									whiteSpace: "normal",
+									wordBreak: "break-word",
+									maxWidth: "75%" // ensures wrapping
 								}}>
+								I agree to the{" "}
+								<Link href='/SignUp' color='primary'>
+									Terms of Service{" "}
+								</Link>
+								and{" "}
+								<Link href='/privacy' color='primary'>
+									Privacy Policy
+								</Link>
+							</Typography>
+						</Box>
+						<Box
+							sx={{
+								display: "flex",
+								alignItems: "center",
+								width: "100%",
+								mt: "0 !important",
+								pt: 1
+							}}>
+							<Switch 
+								required 
+								checked={isRgpdAccepted}
+								onChange={(e) => setIsRgpdAccepted(e.target.checked)}
+							/>
+							<Typography
+								variant='body2'
+								sx={{
+									ml: 0,
+									fontSize: "0.875rem",
+									fontWeight: 500,
+									lineHeight: 1.4,
+									whiteSpace: "normal",
+									wordBreak: "break-word",
+									maxWidth: "75%" // ensures wrapping
+								}}>
+								I consent to the processing of my personal data in accordance with{" "}
+								<Link href='/rgpd' color='primary'>
+									GDPR regulations
+								</Link>
+							</Typography>
+						</Box>
+						<Box
+							sx={{
+								display: "flex",
+								alignItems: "flex-center",
+								justifyContent: "center",
+								flexDirection: "column",
+								maxWidth: "100%",
+								width: "100%"
+							}}>
+							<Button
+								fullWidth
+								variant='contained'
+								type='submit'
+								id='sign-in-button'
+								disabled={!isTermsAccepted || !isRgpdAccepted}>
+								{isLoading ? (
+									<CircularProgress
+										size={24}
+										sx={{ mr: 1, color: "#fff" }}
+									/>
+								) : null}
 								<Typography
-									variant='body2'
+									variant='body1'
 									sx={{
-										mb: 0.5,
+										color: "#fff",
+										textTransform: "capitalize",
 										fontWeight: "bold"
 									}}>
-									Password requirements:
+									Update Account
 								</Typography>
-								<Box
-									sx={{
-										display: "flex",
-										flexDirection: "row",
-										alignItems: "center"
-									}}>
-									{lowerCaseValid ? (
-										<Check
-											sx={{
-												color: "success.main",
-												mr: 1
-											}}
-											fontSize='small'
-										/>
-									) : (
-										<Close
-											sx={{ color: "error.main", mr: 1 }}
-											fontSize='small'
-										/>
-									)}
-									<Typography
-										variant='caption'
-										sx={{
-											color: "text.secondary"
-										}}>
-										Contains lowercase letter
-									</Typography>
-								</Box>
-								<Box
-									sx={{
-										display: "flex",
-										flexDirection: "row",
-										alignItems: "center"
-									}}>
-									{upperCaseValid ? (
-										<Check
-											sx={{
-												color: "success.main",
-												mr: 1
-											}}
-											fontSize='small'
-										/>
-									) : (
-										<Close
-											sx={{ color: "error.main", mr: 1 }}
-											fontSize='small'
-										/>
-									)}
-									<Typography
-										variant='caption'
-										sx={{
-											color: "text.secondary"
-										}}>
-										Contains uppercase letter
-									</Typography>
-								</Box>
-								<Box
-									sx={{
-										display: "flex",
-										flexDirection: "row",
-										alignItems: "center"
-									}}>
-									{!numberValid ? (
-										<Close
-											sx={{ color: "error.main", mr: 1 }}
-											fontSize='small'
-										/>
-									) : (
-										<Check
-											sx={{
-												color: "success.main",
-												mr: 1
-											}}
-											fontSize='small'
-										/>
-									)}
-									<Typography
-										variant='caption'
-										sx={{
-											color: "text.secondary"
-										}}>
-										Contains numeric character
-									</Typography>
-								</Box>
-								<Box
-									sx={{
-										display: "flex",
-										flexDirection: "row",
-										alignItems: "center"
-									}}>
-									{!specialCharValid ? (
-										<Close
-											sx={{ color: "error.main", mr: 1 }}
-											fontSize='small'
-										/>
-									) : (
-										<Check
-											sx={{
-												color: "success.main",
-												mr: 1
-											}}
-											fontSize='small'
-										/>
-									)}
-									<Typography
-										variant='caption'
-										sx={{
-											color: "text.secondary"
-										}}>
-										Contains special character (!@#$%^&*)
-									</Typography>
-								</Box>
-								<Box
-									sx={{
-										display: "flex",
-										flexDirection: "row",
-										alignItems: "center"
-									}}>
-									{!lengthValid ? (
-										<Close
-											sx={{ color: "error.main", mr: 1 }}
-											fontSize='small'
-										/>
-									) : (
-										<Check
-											sx={{
-												color: "success.main",
-												mr: 1
-											}}
-											fontSize='small'
-										/>
-									)}
-									<Typography
-										variant='caption'
-										sx={{
-											color: "text.secondary"
-										}}>
-										At least 8 characters long
-									</Typography>
-								</Box>
-							</Box>
-						)}
-					</Box>
-					<Box
-						sx={{
-							width: "100%"
-						}}>
-						<FormControl
-							sx={{
-								width: "100%",
-								"&:focus-within": {
-									borderColor: "primary.main",
-									borderWidth: "2px" // outer second border
-								},
-								mb: 0
-							}}>
-							<InputLabel htmlFor='confirm-password'>
-								Confirm Password
-							</InputLabel>
-							<OutlinedInput
-								id='confirm-password'
-								value={confirmPassword}
-								type={showConfirmPassword ? "text" : "password"}
-								autoComplete='new-password'
-								required
-								onChange={(e) =>
-									setConfirmPassword(e.target.value)
-								}
-								onFocus={() =>
-									setIsConfirmPasswordFocused(true)
-								}
-								onBlur={() =>
-									setIsConfirmPasswordFocused(false)
-								}
-								startAdornment={
-									<InputAdornment position='start'>
-										<Lock
-											sx={{
-												color: "action.active",
-												mr: 1,
-												my: 0.5,
-												".Mui-focused &": {
-													color: "primary.main"
-												}
-											}}
-										/>
-									</InputAdornment>
-								}
-								endAdornment={
-									<InputAdornment position='end'>
-										{showConfirmPassword ? (
-											<VisibilityOff
-												sx={{
-													color: "action.active",
-													mr: 1,
-													my: 0.5,
-													cursor: "pointer"
-												}}
-												onClick={() =>
-													setShowConfirmPassword(
-														false
-													)
-												}
-											/>
-										) : (
-											<Visibility
-												sx={{
-													color: "action.active",
-													mr: 1,
-													my: 0.5,
-													cursor: "pointer"
-												}}
-												onClick={() =>
-													setShowConfirmPassword(true)
-												}
-											/>
-										)}
-									</InputAdornment>
-								}
-								label='Confirm Password'
-							/>
-						</FormControl>
-					</Box>
-					{password &&
-						(confirmPassword || isConfirmPasswordFocused) && (
-							<Box
-								sx={{
-									mt: 1,
-									p: 2,
-									display: "flex",
-									flexDirection: "column",
-									backgroundColor: "grey.100",
-									borderRadius: 2
-								}}>
-								<Box
-									sx={{
-										display: "flex",
-										flexDirection: "row",
-										alignItems: "center"
-									}}>
-									{confirmPassword === null ||
-									password !== confirmPassword ||
-									confirmPassword.trim() === "" ? (
-										<Close
-											sx={{ color: "error.main", mr: 1 }}
-											fontSize='small'
-										/>
-									) : (
-										<Check
-											sx={{
-												color: "success.main",
-												mr: 1
-											}}
-											fontSize='small'
-										/>
-									)}
-									<Typography
-										variant='caption'
-										sx={{
-											color: "text.secondary"
-										}}>
-										Password must match
-									</Typography>
-								</Box>
-							</Box>
-						)}
-					<Box
-						sx={{
-							display: "flex",
-							alignItems: "center",
-							width: "100%",
-							mt: "0 !important",
-							pt: 2
-						}}>
-						<Switch required />
-						<Typography
-							variant='body2'
-							sx={{
-								ml: 0,
-								fontSize: "0.875rem",
-								fontWeight: 500,
-								lineHeight: 1.4,
-								whiteSpace: "normal",
-								wordBreak: "break-word",
-								maxWidth: "75%" // ensures wrapping
-							}}>
-							I agree to the{" "}
-							<Link href='/SignUp' color='primary'>
-								Terms of Service{" "}
-							</Link>
-							and{" "}
-							<Link href='/privacy' color='primary'>
-								Privacy Policy
-							</Link>
-						</Typography>
-					</Box>
-					<Box
-						sx={{
-							display: "flex",
-							alignItems: "flex-center",
-							justifyContent: "center",
-							flexDirection: "column",
-							maxWidth: "100%",
-							width: "100%"
-						}}>
-						<Button
-							fullWidth
-							variant='contained'
-							type='submit'
-							id='sign-in-button'>
-							{isLoading ? (
-								<CircularProgress
-									size={24}
-									sx={{ mr: 1, color: "#fff" }}
-								/>
-							) : null}
+								<ChevronRight sx={{ color: "#fff" }} />
+							</Button>
 							<Typography
-								variant='body1'
 								sx={{
-									color: "#fff",
-									textTransform: "capitalize",
-									fontWeight: "bold"
+									mt: 2,
+									textAlign: "center",
+									color: "text.secondary"
 								}}>
-								Update Account
+								Already have an account?{" "}
+								<Link href='/' color='primary'>
+									Sign In
+								</Link>
 							</Typography>
-							<ChevronRight sx={{ color: "#fff" }} />
-						</Button>
-						<Typography
-							sx={{
-								mt: 2,
-								textAlign: "center",
-								color: "text.secondary"
-							}}>
-							Already have an account?{" "}
-							<Link href='/' color='primary'>
-								Sign In
-							</Link>
-						</Typography>
+						</Box>
 					</Box>
-				</Box>
+				</LocalizationProvider>
 				{/* MUI Success Modal */}
 				<SuccessModal
 					open={showSuccess}
