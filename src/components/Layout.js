@@ -21,7 +21,6 @@ const Layout = ({ children }) => {
 	return (
 		<>
 			{children}
-			{showBottomBar && <div className="bottom-nav-spacer" />}
 			{showBottomBar && <BottomBar />}
 		</>
 	);
