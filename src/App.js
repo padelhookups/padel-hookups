@@ -98,7 +98,7 @@ function App() {
 	return (
 		<BrowserRouter>
 			<Layout>
-				<div className='App' style={{ maxHeight: "calc(100vh - 55px)" }}>
+				<div className='app-container' style={{ maxHeight: "calc(100vh - 55px)" }}>
 					<Routes>
 						<Route path='/' element={<Login />} />
 						<Route
