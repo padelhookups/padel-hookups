@@ -45,12 +45,7 @@ const BottomBar = () => {
 				bottom: 0,
 				left: 0,
 				right: 0,
-				zIndex: 1200,
-				paddingBottom: "env(safe-area-inset-bottom)",
-				borderTop: "1px solid rgba(0, 0, 0, 0.12)",
-				WebkitTransform: "translateZ(0)",
-				transform: "translateZ(0)",
-				willChange: "transform",
+				zIndex: 1000,
 			}}
 			elevation={8}>
 			<BottomNavigation

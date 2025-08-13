@@ -22,14 +22,11 @@ const Home = () => {
 		<Box
 			sx={{
 				p: 0,
-				height: "calc(100vh - 60px)",
-				minHeight: "calc(100vh - 60px)",
-				maxHeight: "calc(100vh - 60px)",
+				height: "calc(100vh - 58px)",
+				maxHeight: "calc(100vh - 58px)",
 				display: "flex",
 				flexDirection: "column",
-				overflow: "hidden",
-				position: "relative",
-				WebkitOverflowScrolling: "touch"
+				justifyContent: "center"
 			}}>
 			{/* Welcome Header */}
 			<Card
@@ -40,9 +37,7 @@ const Home = () => {
 					borderTopLeftRadius: 0,
 					borderTopRightRadius: 0,
 					borderBottomLeftRadius: 25,
-					borderBottomRightRadius: 25,
-					flexShrink: 0,
-					zIndex: 1
+					borderBottomRightRadius: 25
 				}}>
 				<CardContent sx={{ textAlign: "center", py: 4 }}>
 					<Avatar
@@ -90,8 +85,6 @@ const Home = () => {
 					flexDirection: "column",
 					justifyContent: "center",
 					alignItems: "center",
-					minHeight: 0,
-					zIndex: 0,
 					"&::before": {
 						content: '""',
 						position: "absolute",

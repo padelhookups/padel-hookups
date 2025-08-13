@@ -263,10 +263,10 @@ const ManageUsers = () => {
 				sx={{
 					px: 1,
 					pt: 2,
-					height: "100%",
 					display: "flex",
 					flexDirection: "column",
-					overflow: "hidden",
+					alignItems: "center",
+					flex: 1
 				}}>
 				<Typography textAlign='center' variant='body1' sx={{ mb: 3 }}>
 					Total Users: {users.length}
@@ -385,7 +385,7 @@ const ManageUsers = () => {
 
 				{/* Add User Drawer */}
 				<SwipeableDrawer
-					sx={{ zIndex: 1400 }}
+					sx={{ zIndex: 1300 }}
 					anchor='bottom'
 					open={drawerOpen}
 					disableSwipeToOpen={true}
@@ -583,7 +583,7 @@ const ManageUsers = () => {
 
 				{/* Edit User Drawer */}
 				<SwipeableDrawer
-					sx={{ zIndex: 1400 }}
+					sx={{ zIndex: 1300 }}
 					anchor='bottom'
 					open={editDrawerOpen}
 					onClose={() => setEditDrawerOpen(false)}
@@ -789,7 +789,6 @@ const ManageUsers = () => {
 					_description={`Are you sure you want to delete ${userToDelete?.Name || "this user"}? This action cannot be undone and will permanently remove the user from the system.`}
 					_confirmText='Delete User'
 					_cancelText='Cancel'
-					sx={{ zIndex: 1500 }}
 				/>
 
 				{/* Confirm Edit Modal */}
@@ -801,7 +800,6 @@ const ManageUsers = () => {
 					_description={`Are you sure you want to save the changes to ${selectedUser?.Name || "this user"}?`}
 					_confirmText='Save Changes'
 					_cancelText='Cancel'
-					sx={{ zIndex: 1500 }}
 				/>
 
 				{/* Success Modal */}
@@ -811,7 +809,6 @@ const ManageUsers = () => {
 					_title={successModalData.title}
 					_description={successModalData.description}
 					_buttonText={successModalData.buttonText}
-					sx={{ zIndex: 1500 }}
 				/>
 			</Box>
 		</>
