@@ -51,7 +51,7 @@ const Home = () => {
 							: "?"}
 					</Avatar>
 					<Typography variant='h4' component='h1' gutterBottom>
-						Welcome backk,{" "}
+						Welcome back,{" "}
 						{user?.displayName ||
 							user?.email?.split("@")[0] ||
 							"Player"}
