@@ -1,5 +1,10 @@
 import { Modal, Box, Typography, Button, Fade, Backdrop } from "@mui/material";
-import { LocalOffer, ContentCopy, OpenInNew, SportsBaseballOutlined } from "@mui/icons-material";
+import {
+	LocalOffer,
+	ContentCopy,
+	OpenInNew,
+	SportsBaseballOutlined
+} from "@mui/icons-material";
 import { useMemo, useState, useEffect } from "react";
 
 export default function CouponModal({
@@ -244,32 +249,33 @@ export default function CouponModal({
 							}}>
 							Close
 						</Button>
-
-						<Button
-							onClick={handleCopy}
-							variant='contained'
-							size='large'
-							fullWidth
-							disabled={!code}
-							startIcon={<ContentCopy />}
-							sx={{
-								background:
-									"linear-gradient(45deg, #b88f34 30%, rgba(184, 143, 52, 0.9) 90%)",
-								color: "white",
-								fontWeight: 600,
-								py: 1.5,
-								borderRadius: 2,
-								textTransform: "none",
-								fontSize: "1rem",
-								"&:hover": {
+						{code && (
+							<Button
+								onClick={handleCopy}
+								variant='contained'
+								size='large'
+								fullWidth
+								disabled={!code}
+								startIcon={<ContentCopy />}
+								sx={{
 									background:
-										"linear-gradient(45deg, rgba(184, 143, 52, 0.9) 30%, #b88f34 90%)",
-									boxShadow:
-										"0 8px 25px rgba(184, 143, 52, 0.3)"
-								}
-							}}>
-							{copied ? "Copied!" : "Copy Code"}
-						</Button>
+										"linear-gradient(45deg, #b88f34 30%, rgba(184, 143, 52, 0.9) 90%)",
+									color: "white",
+									fontWeight: 600,
+									py: 1.5,
+									borderRadius: 2,
+									textTransform: "none",
+									fontSize: "1rem",
+									"&:hover": {
+										background:
+											"linear-gradient(45deg, rgba(184, 143, 52, 0.9) 30%, #b88f34 90%)",
+										boxShadow:
+											"0 8px 25px rgba(184, 143, 52, 0.3)"
+									}
+								}}>
+								{copied ? "Copied!" : "Copy Code"}
+							</Button>
+						)}
 					</Box>
 
 					<style>
