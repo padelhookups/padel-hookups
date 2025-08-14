@@ -1,4 +1,4 @@
-html, body, #root, .app-container {
+.app-container {
   max-height: Calc(100vh - 60px);
   height: Calc(100vh - 60px);
   display: flex;
