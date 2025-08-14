@@ -64,8 +64,8 @@ const Home = () => {
       <Box
         sx={{
           px: 0,
-          /* Remove huge extra space; container already pads for bottom nav */
-          py: 3,
+          pt: 3,
+          pb: "60px", // match BottomBar height, no extra safe-area padding
         }}
       >
         {/* Work in Progress Section */}
