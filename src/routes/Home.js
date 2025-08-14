@@ -65,7 +65,8 @@
 			sx={{
 			px: 0,
 			pt: 3,
-			pb: "60px", // match BottomBar height, no extra safe-area padding
+			pb: "60px",
+			flex: 1 // match BottomBar height, no extra safe-area padding
 			}}
 		>
 			{/* Work in Progress Section */}
