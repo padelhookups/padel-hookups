@@ -46,7 +46,8 @@ const BottomBar = () => {
 				left: 0,
 				right: 0,
 				zIndex: 1000,
-				/* Remove duplicate safe area padding - already handled by global CSS */
+				/* Add safe area padding for iOS home indicator */
+				pb: 'env(safe-area-inset-bottom)'
 			}}
 			elevation={8}>
 			<BottomNavigation
