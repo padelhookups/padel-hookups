@@ -14,9 +14,10 @@ html, body, #root, .app-container {
 .app-container {
   flex-grow: 1; /* take all available vertical space */
   overflow-y: auto; /* allow scrolling if needed */
-  padding-top: env(safe-area-inset-top);
-  /* Remove bottom padding - let BottomBar handle its own positioning */
-  padding-bottom: 60px; /* Just reserve space for nav height, no safe-area */
+  /* Remove safe-area padding - let pages handle their own */
+  padding-top: 0;
+  /* Just reserve space for nav height, no safe-area */
+  padding-bottom: 60px;
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
 }
