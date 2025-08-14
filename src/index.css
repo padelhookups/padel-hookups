@@ -1,6 +1,6 @@
 .app-container {
-  max-height: Calc(100vh - 60px);
-  height: Calc(100vh - 60px);
+  max-height: Calc(100vh);
+  height: Calc(100vh);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
