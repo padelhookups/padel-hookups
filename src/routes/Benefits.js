@@ -31,6 +31,7 @@ import { styled } from "@mui/material/styles";
 import { grey } from "@mui/material/colors";
 
 import SuccessModal from "../components/SuccessModal";
+import CouponModal from "../components/CouponModal"; // add
 
 const Puller = styled(Box)(({ theme }) => ({
 	width: 30,
@@ -56,6 +57,8 @@ const Benefits = () => {
 	const [benefits, setBenefits] = useState([]);
 	const [open, setOpen] = useState(false);
 	const [showSuccess, setShowSuccess] = useState(false);
+	const [couponOpen, setCouponOpen] = useState(false);           // add
+	const [selectedBenefit, setSelectedBenefit] = useState(null);  // add
 
 	const [name, setName] = useState("");
 	const [description, setDescription] = useState("");
@@ -110,6 +113,12 @@ const Benefits = () => {
 			console.error("Error adding benefit:", error);
 		}
 	};
+
+	const openCoupon = (benefit) => {            // add
+		setSelectedBenefit(benefit);
+		setCouponOpen(true);
+	};
+	const closeCoupon = () => setCouponOpen(false); // add
 
 	return (
 		<>
@@ -233,7 +242,9 @@ const Benefits = () => {
 											variant='outlined'
 											fullWidth
 											color='primary'
-											sx={{ mt: 2 }}>
+											sx={{ mt: 2 }}
+											onClick={() => openCoupon(benefit)} // add
+										>
 											<Typography
 												variant='button'
 												sx={{ fontWeight: "bold" }}>
@@ -262,6 +273,14 @@ const Benefits = () => {
 					_description='Your benefit has been created and is now available.'
 					_buttonText='Continue'
 					_navigate={false}
+				/>
+				<CouponModal
+					open={couponOpen}
+					onClose={closeCoupon}
+					title={selectedBenefit ? `${selectedBenefit.Name} Coupon` : "Your Coupon"}
+					code={selectedBenefit?.CouponCode}
+					description={selectedBenefit?.Description}
+					website={selectedBenefit?.Website}
 				/>
 			</Box>
 			<SwipeableDrawer

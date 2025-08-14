@@ -1,27 +1,31 @@
 import { Modal, Box, Typography, Button, Fade, Backdrop } from "@mui/material";
-import { Edit } from "@mui/icons-material";
+import { LocalOffer, ContentCopy, OpenInNew, SportsBaseballOutlined } from "@mui/icons-material";
+import { useMemo, useState, useEffect } from "react";
 
-export default function ConfirmEditModal({
+export default function CouponModal({
 	open,
 	onClose,
-	onConfirm,
-	_title,
-	_description,
-	_confirmText,
-	_cancelText
+	title,
+	code,
+	description,
+	website
 }) {
-	const title = _title || "Confirm Edit";
-	const description = _description || "Are you sure you want to save these changes?";
-	const confirmText = _confirmText || "Save Changes";
-	const cancelText = _cancelText || "Cancel";
+	const modalTitle = useMemo(() => title || "Your Coupon", [title]);
+	const [copied, setCopied] = useState(false);
 
-	const handleConfirmClick = () => {
-		onConfirm();
-		onClose();
-	};
+	useEffect(() => {
+		if (!open) setCopied(false);
+	}, [open]);
 
-	const handleCancelClick = () => {
-		onClose();
+	const handleCopy = async () => {
+		if (!code) return;
+		try {
+			await navigator.clipboard.writeText(code);
+			setCopied(true);
+			setTimeout(() => setCopied(false), 1200);
+		} catch (e) {
+			console.error("Copy failed:", e);
+		}
 	};
 
 	return (
@@ -52,7 +56,7 @@ export default function ConfirmEditModal({
 						outline: "none",
 						textAlign: "center"
 					}}>
-					{/* Animated Edit Scene */}
+					{/* Animated Scene (same look & feel) */}
 					<Box
 						sx={{
 							mb: 3,
@@ -69,7 +73,6 @@ export default function ConfirmEditModal({
 								height: "100px",
 								animation: "fadeInScale 0.8s ease-out"
 							}}>
-							{/* Animated Edit Icon */}
 							<Box
 								sx={{
 									position: "absolute",
@@ -78,9 +81,9 @@ export default function ConfirmEditModal({
 									left: "50%",
 									top: "50%",
 									transform: "translate(-50%, -50%)",
-									animation: "editPulse 2s ease-in-out infinite"
+									animation:
+										"editPulse 2s ease-in-out infinite"
 								}}>
-								{/* Edit Circle */}
 								<Box
 									sx={{
 										position: "relative",
@@ -88,7 +91,6 @@ export default function ConfirmEditModal({
 										height: "70px",
 										margin: "0 auto"
 									}}>
-									{/* SVG Edit Circle */}
 									<svg
 										width='64'
 										height='64'
@@ -108,8 +110,6 @@ export default function ConfirmEditModal({
 											strokeWidth='3'
 										/>
 									</svg>
-
-									{/* Edit Icon */}
 									<Box
 										sx={{
 											position: "absolute",
@@ -120,12 +120,12 @@ export default function ConfirmEditModal({
 											left: "50%",
 											transform: "translate(-50%, -50%)"
 										}}>
-										<Edit sx={{ fontSize: "24px" }} />
+										<LocalOffer sx={{ fontSize: "24px" }} />
 									</Box>
 								</Box>
 							</Box>
 
-							{/* Animated Settings Icon */}
+							{/* Rotating accent element replaced with padel ball */}
 							<Box
 								sx={{
 									position: "absolute",
@@ -134,54 +134,23 @@ export default function ConfirmEditModal({
 									left: "100%",
 									top: "0%",
 									transform: "translate(-50%, -50%)",
-									animation: "settingsRotate 4s linear infinite",
+									animation:
+										"settingsRotate 4s linear infinite",
 									color: "#b88f34"
 								}}>
-								{/* Small Padel Ball */}
-								<Box
+								<SportsBaseballOutlined
 									sx={{
 										position: "absolute",
-										width: "18px",
-										height: "18px",
-										borderRadius: "50%",
-										bgcolor: "#facc15",
-										border: "1px solid #eab308",
-										left: "50%",
-										top: "50%",
-										transform: "translate(-50%, -50%)",
-										boxShadow: "inset 2px -2px 4px rgba(234, 179, 8, 0.3)"
+										top: -10,
+										left: 10,
+										fontSize: 16,
+										color: "#facc15",
+										opacity: 0.7,
+										animation: "bounce 2s infinite 0.5s"
 									}}
-								>
-									<Box
-										sx={{
-											position: "absolute",
-											width: "12px",
-											height: "1px",
-											bgcolor: "white",
-											borderRadius: "50px",
-											top: "4px",
-											left: "3px",
-											transform: "rotate(-20deg)",
-											opacity: 0.9
-										}}
-									/>
-									<Box
-										sx={{
-											position: "absolute",
-											width: "12px",
-											height: "1px",
-											bgcolor: "white",
-											borderRadius: "50px",
-											top: "9px",
-											left: "3px",
-											transform: "rotate(20deg)",
-											opacity: 0.9
-										}}
-									/>
-								</Box>
+								/>
 							</Box>
 
-							{/* Pulsing Golden Ring */}
 							<Box
 								sx={{
 									position: "absolute",
@@ -192,39 +161,71 @@ export default function ConfirmEditModal({
 									left: "50%",
 									top: "43%",
 									transform: "translate(-50%, -50%)",
-									animation: "goldenPulse 2s ease-in-out infinite",
+									animation:
+										"goldenPulse 2s ease-in-out infinite",
 									opacity: 0.4
 								}}
 							/>
 						</Box>
 					</Box>
 
-					{/* Edit Text */}
 					<Typography
 						variant='h4'
 						component='h2'
-						sx={{
-							fontWeight: "bold",
-							color: "#b88f34",
-							mb: 2
-						}}>
-						{title}
+						sx={{ fontWeight: "bold", color: "#b88f34", mb: 2 }}>
+						{modalTitle}
 					</Typography>
 
-					<Typography
-						variant='body1'
-						sx={{
-							color: "text.secondary",
-							mb: 4,
-							lineHeight: 1.6
-						}}>
-						{description}
-					</Typography>
+					{description && (
+						<Typography
+							variant='body1'
+							sx={{
+								color: "text.secondary",
+								mb: 2,
+								lineHeight: 1.6
+							}}>
+							{description}
+						</Typography>
+					)}
 
-					{/* Action Buttons */}
-					<Box sx={{ display: "flex", gap: 2, flexDirection: { xs: "column", sm: "row" } }}>
+					<Box
+						sx={{
+							px: 2,
+							py: 1.5,
+							border: "2px dashed",
+							borderColor: "grey.400",
+							borderRadius: 2,
+							fontWeight: 800,
+							letterSpacing: 2,
+							fontSize: "1.1rem",
+							mb: 2,
+							bgcolor: "grey.50"
+						}}>
+						{code || "No code required"}
+					</Box>
+
+					{website && (
 						<Button
-							onClick={handleCancelClick}
+							variant='outlined'
+							fullWidth
+							component='a'
+							href={website}
+							target='_blank'
+							rel='noopener noreferrer'
+							startIcon={<OpenInNew />}
+							sx={{ mb: 2 }}>
+							Visit Website
+						</Button>
+					)}
+
+					<Box
+						sx={{
+							display: "flex",
+							gap: 2,
+							flexDirection: { xs: "column", sm: "row" }
+						}}>
+						<Button
+							onClick={onClose}
 							variant='outlined'
 							size='large'
 							fullWidth
@@ -241,16 +242,19 @@ export default function ConfirmEditModal({
 									bgcolor: "grey.50"
 								}
 							}}>
-							{cancelText}
+							Close
 						</Button>
-						
+
 						<Button
-							onClick={handleConfirmClick}
+							onClick={handleCopy}
 							variant='contained'
 							size='large'
 							fullWidth
+							disabled={!code}
+							startIcon={<ContentCopy />}
 							sx={{
-								background: "linear-gradient(45deg, #b88f34 30%, rgba(184, 143, 52, 0.9) 90%)",
+								background:
+									"linear-gradient(45deg, #b88f34 30%, rgba(184, 143, 52, 0.9) 90%)",
 								color: "white",
 								fontWeight: 600,
 								py: 1.5,
@@ -258,52 +262,35 @@ export default function ConfirmEditModal({
 								textTransform: "none",
 								fontSize: "1rem",
 								"&:hover": {
-									background: "linear-gradient(45deg, rgba(184, 143, 52, 0.9) 30%, #b88f34 90%)",
-									boxShadow: "0 8px 25px rgba(184, 143, 52, 0.3)"
+									background:
+										"linear-gradient(45deg, rgba(184, 143, 52, 0.9) 30%, #b88f34 90%)",
+									boxShadow:
+										"0 8px 25px rgba(184, 143, 52, 0.3)"
 								}
 							}}>
-							{confirmText}
+							{copied ? "Copied!" : "Copy Code"}
 						</Button>
 					</Box>
 
-					{/* CSS Animation Styles */}
 					<style>
 						{`
               @keyframes fadeInScale {
-                0% {
-                  opacity: 0;
-                  transform: scale(0.5);
-                }
-                100% {
-                  opacity: 1;
-                  transform: scale(1);
-                }
+                0% { opacity: 0; transform: scale(0.5); }
+                100% { opacity: 1; transform: scale(1); }
               }
-
               @keyframes editPulse {
                 0% { transform: translate(-50%, -50%) scale(1); }
                 50% { transform: translate(-50%, -50%) scale(1.05); }
                 100% { transform: translate(-50%, -50%) scale(1); }
               }
-
               @keyframes settingsRotate {
                 0% { transform: translate(-50%, -50%) rotate(0deg); }
                 100% { transform: translate(-50%, -50%) rotate(360deg); }
               }
-
               @keyframes goldenPulse {
-                0% { 
-                  opacity: 0.4; 
-                  transform: translate(-50%, -50%) scale(1); 
-                }
-                50% { 
-                  opacity: 0.7; 
-                  transform: translate(-50%, -50%) scale(1.1); 
-                }
-                100% { 
-                  opacity: 0.4; 
-                  transform: translate(-50%, -50%) scale(1); 
-                }
+                0% { opacity: 0.4; transform: translate(-50%, -50%) scale(1); }
+                50% { opacity: 0.7; transform: translate(-50%, -50%) scale(1.1); }
+                100% { opacity: 0.4; transform: translate(-50%, -50%) scale(1); }
               }
             `}
 					</style>
