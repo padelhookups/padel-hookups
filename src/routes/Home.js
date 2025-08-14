@@ -53,7 +53,7 @@ const Home = () => {
               : "?"}
           </Avatar>
           <Typography variant="h4" component="h1" gutterBottom>
-            Welcome back,{" "}
+            Welcome backk,{" "}
             {user?.displayName || user?.email?.split("@")[0] || "Player"}!
           </Typography>
           <Typography variant="body1" sx={{ opacity: 0.9 }}>
@@ -73,13 +73,12 @@ const Home = () => {
           sx={{
             py: 4,
             px: 4,
+            pb: "40px",
             position: "relative",
-            marginTop: "-32px",
             textAlign: "center",
             background:
               "linear-gradient(135deg, rgba(184, 143, 52, 0.1) 0%, rgba(212, 175, 55, 0.1) 100%)",
             overflow: "hidden",
-            flex: 1,
             display: "flex",
             flexDirection: "column",
             justifyContent: "center",

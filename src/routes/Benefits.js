@@ -178,15 +178,6 @@ const Benefits = () => {
 					pb: 3
 				}}>
 				<Box sx={{ px: 4, pt: 4, pb: "40px" }}>
-					{/* Partners Grid */}
-					{/* <Typography
-					variant='h5'
-					component='h2'
-					gutterBottom
-					sx={{ fontWeight: "bold", mb: 3 }}>
-					Our Partners
-				</Typography> */}
-
 					<Grid container spacing={3}>
 						{benefits.map((benefit, index) => (
 							<Grid
