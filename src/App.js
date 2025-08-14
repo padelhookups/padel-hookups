@@ -33,10 +33,10 @@ function App() {
 	const { user, loading } = useAuth();
 	const [showInstallModal, setShowInstallModal] = useState(false);
 	const [hasShownAutoModal, setHasShownAutoModal] = useState(false);
-	
+
 	useEffect(() => {
 		if (isChecking) return;
-		 if (isRunningInApp) return;
+		if (isRunningInApp) return;
 
 		if (isInstalled) {
 			if (window.confirm("Open the installed app?")) {
@@ -47,7 +47,15 @@ function App() {
 			setShowInstallModal(true);
 			setHasShownAutoModal(true);
 		}
-	}, [isInstalled, isRunningInApp, isChecking, canInstall, promptInstall, openApp, hasShownAutoModal]);
+	}, [
+		isInstalled,
+		isRunningInApp,
+		isChecking,
+		canInstall,
+		promptInstall,
+		openApp,
+		hasShownAutoModal
+	]);
 
 	const handleInstallClick = async () => {
 		const result = await promptInstall();
@@ -70,16 +78,15 @@ function App() {
 		return <div>Loading...</div>;
 	}
 
-	firebase.onMessageListener()
-		.then((payload) => {
-			console.log("Message received. ", payload);
-			// ...
-		});
+	firebase.onMessageListener().then((payload) => {
+		console.log("Message received. ", payload);
+		// ...
+	});
 
 	return (
 		<BrowserRouter>
-			<Layout>
-				<div className='app-container'>
+			<div className='app-container'>
+				<Layout>
 					<Routes>
 						<Route path='/' element={<Login />} />
 						<Route
@@ -156,8 +163,8 @@ function App() {
 						onClose={handleCloseInstallModal}
 						onConfirm={handleInstallClick}
 					/>
-				</div>
-			</Layout>
+				</Layout>
+			</div>
 		</BrowserRouter>
 	);
 }
