@@ -281,7 +281,7 @@ const Benefits = () => {
 													Get Coupon
 												</Typography>
 											</Button>
-											{user.IsAdmin && (
+											{user?.IsAdmin && (
 												<Button
 													onClick={() => {
 														setPageMode("edit");
