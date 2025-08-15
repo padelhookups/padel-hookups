@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import firebase from "../firebase-config";
 import useAuth from "../utils/useAuth";
-import { collection, getDocs, addDoc } from "firebase/firestore";
+import { collection, getDocs, addDoc, doc, updateDoc } from "firebase/firestore";
 
 import {
 	Box,
@@ -22,6 +22,7 @@ import {
 } from "@mui/material";
 import {
 	Add,
+	Edit,
 	Link,
 	LocalOffer,
 	Percent,
@@ -57,14 +58,15 @@ const Benefits = () => {
 	const [benefits, setBenefits] = useState([]);
 	const [open, setOpen] = useState(false);
 	const [showSuccess, setShowSuccess] = useState(false);
-	const [couponOpen, setCouponOpen] = useState(false);           // add
-	const [selectedBenefit, setSelectedBenefit] = useState(null);  // add
+	const [couponOpen, setCouponOpen] = useState(false);
+	const [selectedBenefit, setSelectedBenefit] = useState(null);
 
 	const [name, setName] = useState("");
 	const [description, setDescription] = useState("");
 	const [discount, setDiscount] = useState("");
 	const [website, setWebsite] = useState("");
 	const [couponCode, setCouponCode] = useState("");
+	const [pageMode, setPageMode] = useState("");
 
 	useEffect(() => {
 		const fetchBenefits = async () => {
@@ -74,9 +76,10 @@ const Benefits = () => {
 				if (benefitsSnapshot.empty) {
 					console.log("No benefits found");
 				} else {
-					const benefitsData = benefitsSnapshot.docs.map((doc) =>
-						doc.data()
-					);
+					const benefitsData = benefitsSnapshot.docs.map((doc) => ({
+						...doc.data(),
+						id: doc.id
+					}));
 					setBenefits(benefitsData);
 				}
 			} catch (error) {
@@ -99,7 +102,13 @@ const Benefits = () => {
 		};
 		// Insert in Firestore using v9+ syntax
 		try {
-			await addDoc(collection(db, "Benefits"), newBenefit);
+			if (pageMode === "create") {
+				await addDoc(collection(db, "Benefits"), newBenefit);
+			} else {
+				// Update existing benefit
+				const benefitRef = doc(db, "Benefits", selectedBenefit.id);
+				await updateDoc(benefitRef, newBenefit);
+			}
 			console.log("New benefit added:", newBenefit);
 			// Clear form fields
 			setName("");
@@ -114,7 +123,8 @@ const Benefits = () => {
 		}
 	};
 
-	const openCoupon = (benefit) => {            // add
+	const openCoupon = (benefit) => {
+		// add
 		setSelectedBenefit(benefit);
 		setCouponOpen(true);
 	};
@@ -128,11 +138,11 @@ const Benefits = () => {
 					bgcolor: "#b88f34",
 					color: "white",
 					/* Push header below iOS notch */
-					pt: 'env(safe-area-inset-top)'
-				}}
-			>
+					pt: "env(safe-area-inset-top)"
+				}}>
 				<Box sx={{ py: 3, px: 4 }}>
-					<CardContent sx={{ textAlign: "left", pt: 0, px: 0 }}>
+					<CardContent
+						sx={{ textAlign: "left", pt: 0, px: 0, pb: 0 }}>
 						<Box
 							sx={{
 								display: "flex",
@@ -221,7 +231,15 @@ const Benefits = () => {
 										sx={{
 											flexGrow: 1,
 											borderLeft: "5px solid #b88f34",
-											pt: 3
+											pt: 3,
+											/* minHeight: {
+												xs: "150px",  // mobile
+												sm: "120px",  // tablet
+												md: "120px",  // desktop
+												lg: "150px"   // large desktop
+											}, */
+											minHeight: "150px",
+											position: "relative"
 										}}>
 										{/* Partner Header */}
 										<Typography
@@ -238,19 +256,57 @@ const Benefits = () => {
 											sx={{ opacity: 0.8 }}>
 											{benefit.Description}
 										</Typography>
-										<Button
-											variant='outlined'
-											fullWidth
-											color='primary'
-											sx={{ mt: 2 }}
-											onClick={() => openCoupon(benefit)} // add
-										>
-											<Typography
-												variant='button'
-												sx={{ fontWeight: "bold" }}>
-												Get Coupon
-											</Typography>
-										</Button>
+										<Box
+											sx={{
+												py: 0,
+												px: 2,
+												position: "absolute",
+												bottom: 20,
+												left: 0,
+												right: 0,
+												display: "flex"
+											}}>
+											<Button
+												variant='outlined'
+												fullWidth
+												color='primary'
+												sx={{ mr: 1 }}
+												onClick={() =>
+													openCoupon(benefit)
+												} // add
+											>
+												<Typography
+													variant='button'
+													sx={{ fontWeight: "bold" }}>
+													Get Coupon
+												</Typography>
+											</Button>
+											{user.IsAdmin && (
+												<Button
+													onClick={() => {
+														setPageMode("edit");
+														setSelectedBenefit(benefit);
+														setName(benefit.Name);
+														setDescription(
+															benefit.Description
+														);
+														setCouponCode(
+															benefit.CouponCode
+														);
+														setDiscount(
+															benefit.Discount
+														);
+														setWebsite(
+															benefit.Website
+														);
+														setOpen(true);
+													}}
+													variant='outlined'
+													sx={{ ml: 1 }}>
+													<Edit></Edit>
+												</Button>
+											)}
+										</Box>
 									</CardContent>
 								</Card>
 							</Grid>
@@ -262,22 +318,29 @@ const Benefits = () => {
 						color='primary'
 						aria-label='add'
 						sx={{ position: "fixed", bottom: 76, right: 16 }}
-						onClick={() => setOpen(true)}>
+						onClick={() => {
+							setPageMode("create");
+							setOpen(true);
+						}}>
 						<Add sx={{ color: "white" }} />
 					</Fab>
 				)}
 				<SuccessModal
 					open={showSuccess}
-					_title='Benefit created!'
+					_title={`Benefit ${pageMode === 'create' ? 'created' : 'updated'}!`}
 					onClose={() => setShowSuccess(false)}
-					_description='Your benefit has been created and is now available.'
+					_description={`Your benefit has been ${pageMode === 'create' ? 'created' : 'updated'} successfully.`}
 					_buttonText='Continue'
 					_navigate={false}
 				/>
 				<CouponModal
 					open={couponOpen}
 					onClose={closeCoupon}
-					title={selectedBenefit ? `${selectedBenefit.Name} Coupon` : "Your Coupon"}
+					title={
+						selectedBenefit
+							? `${selectedBenefit.Name} Coupon`
+							: "Your Coupon"
+					}
 					code={selectedBenefit?.CouponCode}
 					description={selectedBenefit?.Description}
 					website={selectedBenefit?.Website}
@@ -537,7 +600,7 @@ const Benefits = () => {
 							<Typography
 								variant='button'
 								sx={{ fontWeight: "bold" }}>
-								New Benefit
+								{pageMode === "edit" ? "Edit" : "New"} Benefit
 							</Typography>
 						</Button>
 					</Box>
