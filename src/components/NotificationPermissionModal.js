@@ -10,10 +10,11 @@ export default function NotificationPermissionModal({
 	_confirmText = "Allow Notifications",
 	_cancelText = "Not Now",
 	_primaryColor = "#b88f34",
-	_showAnimation = true
+	_showAnimation = true,
+	notificationsChecked
 }) {
-	const isGranted = typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted";
-	const isDenied = typeof window !== "undefined" && "Notification" in window && Notification.permission === "denied";
+	const isGranted = notificationsChecked
+	const isDenied = !notificationsChecked
 
 	const handleConfirmClick = async () => {
 		// Call Firebase requestPermission and close

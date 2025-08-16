@@ -1,7 +1,8 @@
-import React, { useState } from "react";
-import { getAuth, updateProfile } from "firebase/auth";
+import { useEffect, useState } from "react";
+import { updateProfile } from "firebase/auth";
 import { doc, updateDoc, Timestamp } from "firebase/firestore";
 import firebase from "../firebase-config";
+import useAuth from "../utils/useAuth";
 import {
 	Box,
 	Typography,
@@ -23,6 +24,7 @@ import {
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import dayjs from "dayjs";
 import {
 	Email,
 	Person,
@@ -55,19 +57,26 @@ const StyledBox = styled("div")(({ theme }) => ({
 }));
 
 const Profile = () => {
-	const auth = getAuth();
 	const db = firebase.db;
-	const user = auth.currentUser;
+	const { user } = useAuth();
 
 	const [open, setOpen] = useState(false);
 	const [showSuccess, setShowSuccess] = useState(false);
 	const [editModalOpen, setEditModalOpen] = useState(false);
-	const [displayName, setDisplayName] = useState(user?.displayName || "");
-	const [dateOfBirth, setDateOfBirth] = useState(user?.DateOfBirth || null);
+	const [displayName, setDisplayName] = useState(null);
+	const [dateOfBirth, setDateOfBirth] = useState(null);
 
 	const handleUpdateProfile = () => {
 		setEditModalOpen(true);
 	};
+
+	useEffect(() => {
+		if (user) {
+			console.log("User data:", user);
+			setDisplayName(user?.displayName || "");
+			setDateOfBirth(dayjs(user?.DateOfBirth?.toDate() || null));
+		}
+	}, [user]);
 
 	const handleConfirmUpdate = async () => {
 		try {
@@ -75,10 +84,14 @@ const Profile = () => {
 				displayName: displayName
 			});
 
-			// Update date of birth in Firestore or another database			
+			// Update date of birth in Firestore or another database
 			const userRef = doc(db, "Users", user.uid);
 			await updateDoc(userRef, {
-				DateOfBirth: dateOfBirth ? Timestamp.fromDate(dateOfBirth.toDate()) : null
+				DateOfBirth: dateOfBirth
+					? Timestamp.fromDate(dateOfBirth.toDate())
+					: null,
+				BirthdayMonth: dateOfBirth ? dateOfBirth.month() + 1 : null,
+				BirthdayDay: dateOfBirth ? dateOfBirth.date() : null
 			});
 			// Note: Firebase Auth doesn't store custom fields like dateOfBirth
 			// You would need to store this in Firestore or another database
@@ -149,7 +162,7 @@ const Profile = () => {
 					p: 3,
 					/* Remove huge extra space; container already pads for bottom nav */
 					pb: 3,
-					height: "100%",
+					height: "100%"
 				}}>
 				{/* User Information */}
 				<Typography
@@ -187,7 +200,11 @@ const Profile = () => {
 							</ListItemIcon>
 							<ListItemText
 								primary='Date of Birth'
-								secondary={dateOfBirth ? dateOfBirth.format('MM/DD/YYYY') : "Not set"}
+								secondary={
+									dateOfBirth
+										? dateOfBirth?.format("MM/DD/YYYY")
+										: "Not set"
+								}
 							/>
 						</ListItem>
 						<Divider />
@@ -288,7 +305,9 @@ const Profile = () => {
 													endAdornment: (
 														<InputAdornment position='end'>
 															<Box
-																sx={{ width: 30 }}
+																sx={{
+																	width: 30
+																}}
 															/>
 														</InputAdornment>
 													)
@@ -299,9 +318,11 @@ const Profile = () => {
 								</Box>
 								<Box sx={{ width: "100%" }}>
 									<DatePicker
-										label="Date of Birth"
+										label='Date of Birth'
 										value={dateOfBirth}
-										onChange={(newValue) => setDateOfBirth(newValue)}
+										onChange={(newValue) =>
+											setDateOfBirth(newValue)
+										}
 										slotProps={{
 											textField: {
 												fullWidth: true,

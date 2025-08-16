@@ -5,7 +5,6 @@ import {
 	getFirestore,
 	doc,
 	setDoc,
-	updateDoc,
 	serverTimestamp
 } from "firebase/firestore";
 import { getMessaging, getToken, onMessage } from "firebase/messaging";
@@ -29,7 +28,7 @@ const messaging = getMessaging(app);
 // Dedup guards for token writes
 let lastSavedToken = null;
 let isSavingToken = false;
-let messagingToken;
+let messagingToken = localStorage.getItem("messagingToken") || null;
 
 // Helper to wait for the auth state to resolve to a user (or null)
 function getCurrentUser() {
@@ -49,7 +48,7 @@ async function saveFcmToken(currentToken) {
 	try {
 		const user = await getCurrentUser();
 		if (!user) {
-			console.warn("No authenticated user; skipping token save.");
+			alert("No authenticated user; skipping token save.");
 			return;
 		}
 		const userRef = doc(db, `Users/${user.uid}`);
@@ -58,9 +57,10 @@ async function saveFcmToken(currentToken) {
 		try {
 			await setDoc(
 				userRef,
-				{					
+				{
 					Devices: {
 						[currentToken]: {
+							SendNotifications: true,
 							Token: currentToken,
 							UserAgent: navigator.userAgent,
 							UpdatedAt: serverTimestamp()
@@ -69,13 +69,17 @@ async function saveFcmToken(currentToken) {
 				},
 				{ merge: true }
 			);
+			localStorage.setItem("messagingTokenPending", false);
+			localStorage.setItem("messagingToken", currentToken);
+			messagingToken = currentToken;
+			lastSavedToken = currentToken;
 		} catch (e) {
 			console.error("Error saving FCM token:", e);
 			alert("Error saving FCM token:");
 			return;
 		}
 
-		lastSavedToken = currentToken;
+		
 		console.log("FCM token saved to Firestore.");
 	} catch (e) {
 		console.error("Failed to save FCM token to Firestore:", e);
@@ -119,22 +123,8 @@ function openNotificationSettings() {
 	);
 }
 
-// When user clicks a "Try again" button in your UI, call this.
-// If denied, we guide them to settings; otherwise we prompt.
-function reRequestNotifications() {
-	if (typeof window === "undefined" || !("Notification" in window)) return;
-	if (Notification.permission === "denied") {
-		alert(
-			"Notifications are blocked. Enable them in your browser/site settings, then return to this page."
-		);
-		openNotificationSettings();
-	} else {
-		requestPermission();
-	}
-}
-
 // Keep an eye on permission changes and auto-fetch token when granted
-function listenPermissionChanges() {
+/* function listenPermissionChanges() {
 	alert(navigator.platform);
 	if (typeof navigator === "undefined" || !navigator.permissions?.query)
 		return;
@@ -155,7 +145,7 @@ function listenPermissionChanges() {
 		// no-op
 	}
 }
-listenPermissionChanges();
+listenPermissionChanges(); */
 
 function requestPermission() {
 	console.log("Requesting permission...");
@@ -171,23 +161,26 @@ function requestPermission() {
 	});
 }
 
-const FCM_PERMISSION_FLAG = "fcmPermissionRequested";
-if (typeof window !== "undefined" && "Notification" in window) {
-	if (Notification.permission === "granted") {
-		alert("Notification permission already granted.");
-		_getToken();
-	} else if (
-		Notification.permission === "default" &&
-		!localStorage.getItem(FCM_PERMISSION_FLAG)
-	) {
-		alert("Requesting notification permission for the first time.");
-		localStorage.setItem(FCM_PERMISSION_FLAG, "1");
-		requestPermission();
-	} else if (Notification.permission === "denied") {
-		alert(
-			"Notifications are blocked. Enable them in your browser/site settings."
-		);
-		openNotificationSettings();
+async function startNotificationsFlow() {
+	const FCM_PERMISSION_FLAG = "fcmPermissionRequested";
+	if (typeof window !== "undefined" && "Notification" in window) {
+		const user = await getCurrentUser();
+		if (Notification.permission === "granted" && user) {
+			alert("Notification permission already granted.");
+			_getToken();
+		} else if (
+			Notification.permission === "default" &&
+			!localStorage.getItem(FCM_PERMISSION_FLAG)
+		) {
+			alert("Requesting notification permission for the first time.");
+			localStorage.setItem(FCM_PERMISSION_FLAG, "1");
+			requestPermission();
+		} else if (Notification.permission === "denied") {
+			alert(
+				"Notifications are blocked. Enable them in your browser/site settings."
+			);
+			openNotificationSettings();
+		}
 	}
 }
 
@@ -198,8 +191,7 @@ function _getToken() {
 	})
 		.then(async (currentToken) => {
 			if (currentToken) {
-				alert("Current token for client: " + currentToken);
-				localStorage.setItem("messagingToken", currentToken);
+				alert("Current token for client: " + currentToken);				
 				await saveFcmToken(currentToken);
 			} else {
 				console.log(
@@ -230,7 +222,7 @@ const firebaseConfigExport = {
 	messagingToken: messagingToken,
 	onMessageListener: onMessageListener,
 	requestPermission: requestPermission,
-	reRequestNotifications: reRequestNotifications,
-	openNotificationSettings: openNotificationSettings
+	openNotificationSettings: openNotificationSettings,
+	startNotificationsFlow: startNotificationsFlow
 };
 export default firebaseConfigExport;

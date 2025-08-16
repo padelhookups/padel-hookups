@@ -1,7 +1,14 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { getAuth, signOut } from "firebase/auth";
-import { getFirestore, doc, getDoc, setDoc, Timestamp } from "firebase/firestore";
+import {
+	getFirestore,
+	doc,
+	getDoc,
+	setDoc,
+	Timestamp
+} from "firebase/firestore";
+import firebase from "../firebase-config";
 import useAuth from "../utils/useAuth";
 
 import {
@@ -29,17 +36,28 @@ const Settings = () => {
 
 	const [notificationsChecked, setNotificationsChecked] = useState(false);
 	const [openNotifications, setOpenNotifications] = useState(false);
+	const [messagingToken, setMessagingToken] = useState(() =>
+		firebase.messagingToken
+	);
 
 	useEffect(() => {
+		console.log("Messaging Token:", messagingToken);
+
 		if (!user) return;
+		if (!messagingToken) {
+			return;
+		}
 		const ref = doc(db, "Users", user.uid);
 		getDoc(ref)
 			.then((snap) => {
-				const messagingToken = localStorage.getItem("messagingToken");
 				if (snap.exists()) {
-					Object.values(snap.data()?.Devices).forEach((device) => {
+					debugger;
+					const devices = snap.data().Devices || [];
+					Object.values(devices).forEach((device) => {
 						if (device.Token === messagingToken) {
-							setNotificationsChecked(device.SendNotifications);
+							setNotificationsChecked(
+								Boolean(device.SendNotifications)
+							);
 						}
 					});
 				}
@@ -160,9 +178,12 @@ const Settings = () => {
 												userRef,
 												{
 													Devices: {
-														[localStorage.getItem("messagingToken")]: {
+														[localStorage.getItem(
+															"messagingToken"
+														)]: {
 															SendNotifications: false,
-															UpdatedAt: Timestamp.now()
+															UpdatedAt:
+																Timestamp.now()
 														}
 													}
 												},
@@ -226,9 +247,10 @@ const Settings = () => {
 			</Box>
 			<NotificationPermissionModal
 				open={openNotifications}
+				notificationsChecked={notificationsChecked}
 				onClose={(accepted) => {
 					setOpenNotifications(false);
-					setNotificationsChecked(false);
+					setNotificationsChecked(accepted);
 				}}></NotificationPermissionModal>
 		</>
 	);

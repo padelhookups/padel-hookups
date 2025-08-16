@@ -4,12 +4,13 @@ const client = new SecretManagerServiceClient();
 const { logger } = require("firebase-functions");
 const { getAuth } = require("firebase-admin/auth");
 
-const { onRequest } = require('firebase-functions/v2/https');
+const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { onDocumentCreated } = require("firebase-functions/v2/firestore");
+const { getFirestore } = require("firebase-admin/firestore");
+const { getMessaging } = require("firebase-admin/messaging");
 
 // The Firebase Admin SDK to access Firestore.
 const { initializeApp } = require("firebase-admin/app");
-const { getFirestore } = require("firebase-admin/firestore");
 
 initializeApp();
 
@@ -105,5 +106,63 @@ exports.sendInviteOnCreateUser = onDocumentCreated(
 		} catch (error) {
 			console.error(`Error sending email to ${email}:`, error);
 		}
+	}
+);
+
+exports.sendBirthdayNotifications = onSchedule(
+	"every day 10:00",
+	async (event) => {
+		const db = getFirestore();
+
+		const today = new Date();
+		const month = today.getMonth() + 1; // JS months are 0-based
+		const day = today.getDate();
+		console.log(`Today's date is: ${day}/${month}`);
+
+		const messages = [];
+
+		const userRef = db.collection("Users");
+		const snapshot = await userRef
+			.where("BirthdayMonth", "==", month)
+			.where("BirthdayDay", "==", day)
+			.get();
+
+		if (snapshot.empty) {
+			console.log("No Users have a birthday today.");
+			return;
+		}
+
+		console.log(snapshot.size);
+
+		snapshot.forEach(async (userDoc) => {
+			const devices = userDoc.data()?.Devices;
+			Object.values(devices || {}).forEach(async (device) => {
+				console.log(`Checking device: ${JSON.stringify(device)}`);
+
+				const token = device.Token;				
+				if (token && device.SendNotifications) {
+					messages.push({
+						notification: {
+							title: "Happy Birthday!",
+							body: ""
+						},
+						token: token
+					});
+				}
+			});
+		});
+		console.log(`Messages to be sent: ${JSON.stringify(messages)}`);
+		if (messages.length === 0) {
+			console.log("No messages to send.");
+			return;			
+		}
+		
+		getMessaging()
+			.sendEach(messages)
+			.then((response) => {
+				console.log(
+					response.successCount + " messages were sent successfully"
+				);
+			});
 	}
 );
