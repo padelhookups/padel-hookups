@@ -1,7 +1,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-import { getFirestore, doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { getFirestore, doc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { getMessaging, getToken, onMessage } from "firebase/messaging";
 
 const firebaseConfig = {
@@ -20,6 +20,10 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const messaging = getMessaging(app);
 
+// Dedup guards for token writes
+let lastSavedToken = null;
+let isSavingToken = false;
+
 // Helper to wait for the auth state to resolve to a user (or null)
 function getCurrentUser() {
 	return new Promise((resolve) => {
@@ -28,6 +32,61 @@ function getCurrentUser() {
 			resolve(u);
 		});
 	});
+}
+
+// Save token to Firestore without overwriting other devices
+async function saveFcmToken(currentToken) {
+	if (!currentToken) return;
+	if (isSavingToken || lastSavedToken === currentToken) return;
+	isSavingToken = true;
+	try {
+		const user = await getCurrentUser();
+		if (!user) {
+			console.warn("No authenticated user; skipping token save.");
+			return;
+		}
+		const userRef = doc(db, `Users/${user.uid}`);
+
+		// Try to update the specific device entry
+		try {
+			await updateDoc(userRef, {
+				[`Devices.${currentToken}`]: {
+					Token: currentToken,
+					UserAgent: navigator.userAgent,
+					UpdatedAt: serverTimestamp(),
+					SendNotifications: true
+				}
+			});
+		} catch (e) {
+			// If doc doesn't exist yet, create it and include the device
+			if (e.code === "not-found" || e.message?.includes("No document to update")) {
+				await setDoc(
+					userRef,
+					{
+						uid: user.uid,
+						Devices: {
+							[currentToken]: {
+								Token: currentToken,
+								UserAgent: navigator.userAgent,
+								UpdatedAt: serverTimestamp(),
+								SendNotifications: true
+							}
+						}
+					},
+					{ merge: true }
+				);
+			} else {
+				throw e;
+			}
+		}
+
+		lastSavedToken = currentToken;
+		console.log("FCM token saved to Firestore.");
+	} catch (e) {
+		console.error("Failed to save FCM token to Firestore:", e);
+	} finally {
+		isSavingToken = false;
+	}
 }
 
 // Try to open browser/site notification settings where possible
@@ -81,6 +140,7 @@ function reRequestNotifications() {
 
 // Keep an eye on permission changes and auto-fetch token when granted
 function listenPermissionChanges() {
+	alert(navigator.platform);
 	if (typeof navigator === "undefined" || !navigator.permissions?.query)
 		return;
 	try {
@@ -141,41 +201,16 @@ function _getToken() {
 		.then(async (currentToken) => {
 			if (currentToken) {
 				alert("Current token for client: " + currentToken);
-				// Send the token to firebase document or server
-				try {
-					const user = await getCurrentUser();
-					if (!user) {
-						console.warn("No authenticated user; skipping token save.");
-						return;
-					}
-					await setDoc(
-						doc(db, `Users/${user.uid}`),
-						{
-							Devices: {
-								[currentToken]: {
-									Token: currentToken,
-									UserAgent: navigator.userAgent,
-									UpdatedAt: serverTimestamp()
-								}
-							}
-						},
-						{ merge: true }
-					);
-					console.log("FCM token saved to Firestore.");
-				} catch (e) {
-					console.error("Failed to save FCM token to Firestore:", e);
-				}
+				// replaced setDoc block with a deduped deep-merge write
+				await saveFcmToken(currentToken);
 			} else {
-				// Show permission request UI
 				console.log(
 					"No registration token available. Request permission to generate one."
 				);
-				// ...
 			}
 		})
 		.catch((err) => {
 			console.log("An error occurred while retrieving token. ", err);
-			// ...
 		});
 }
 
