@@ -16,7 +16,7 @@ import {
 	Typography,
 	Paper
 } from "@mui/material";
-import { Lock, Email, Logout, Security, Devices } from "@mui/icons-material";
+import { Lock, Logout, Security, Devices } from "@mui/icons-material";
 
 import NotificationPermissionModal from "../components/NotificationPermissionModal";
 

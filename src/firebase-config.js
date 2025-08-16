@@ -147,8 +147,11 @@ function listenPermissionChanges() {
 		navigator.permissions
 			.query({ name: "notifications" })
 			.then((status) => {
-				status.onchange = () => {
-					if (status.state === "granted") {
+				status.onchange = async () => {
+					const user = await getCurrentUser();
+					alert('user:', user);
+					if (status.state === "granted" && user) {
+						alert('Asking for token...');
 						_getToken();
 					}
 				};
