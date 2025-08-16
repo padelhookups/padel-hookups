@@ -110,8 +110,11 @@ exports.sendInviteOnCreateUser = onDocumentCreated(
 );
 
 exports.sendBirthdayNotifications = onSchedule(
-	"every day 10:00",
-	{ region: "europe-west1" },
+	{
+		schedule: "every day 10:00",
+		timeZone: "Europe/Lisbon", // pick the right timezone for europe-west1
+		region: "europe-west1"
+	},
 	async (event) => {
 		const db = getFirestore();
 
@@ -140,7 +143,7 @@ exports.sendBirthdayNotifications = onSchedule(
 			Object.values(devices || {}).forEach(async (device) => {
 				console.log(`Checking device: ${JSON.stringify(device)}`);
 
-				const token = device.Token;				
+				const token = device.Token;
 				if (token && device.SendNotifications) {
 					messages.push({
 						notification: {
@@ -155,9 +158,9 @@ exports.sendBirthdayNotifications = onSchedule(
 		console.log(`Messages to be sent: ${JSON.stringify(messages)}`);
 		if (messages.length === 0) {
 			console.log("No messages to send.");
-			return;			
+			return;
 		}
-		
+
 		getMessaging()
 			.sendEach(messages)
 			.then((response) => {
