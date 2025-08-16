@@ -1,7 +1,13 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-import { getFirestore, doc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore";
+import {
+	getFirestore,
+	doc,
+	setDoc,
+	updateDoc,
+	serverTimestamp
+} from "firebase/firestore";
 import { getMessaging, getToken, onMessage } from "firebase/messaging";
 
 const firebaseConfig = {
@@ -23,6 +29,7 @@ const messaging = getMessaging(app);
 // Dedup guards for token writes
 let lastSavedToken = null;
 let isSavingToken = false;
+let messagingToken;
 
 // Helper to wait for the auth state to resolve to a user (or null)
 function getCurrentUser() {
@@ -49,35 +56,23 @@ async function saveFcmToken(currentToken) {
 
 		// Try to update the specific device entry
 		try {
-			await updateDoc(userRef, {
-				[`Devices.${currentToken}`]: {
-					Token: currentToken,
-					UserAgent: navigator.userAgent,
-					UpdatedAt: serverTimestamp(),
-					SendNotifications: true
-				}
-			});
-		} catch (e) {
-			// If doc doesn't exist yet, create it and include the device
-			if (e.code === "not-found" || e.message?.includes("No document to update")) {
-				await setDoc(
-					userRef,
-					{
-						uid: user.uid,
-						Devices: {
-							[currentToken]: {
-								Token: currentToken,
-								UserAgent: navigator.userAgent,
-								UpdatedAt: serverTimestamp(),
-								SendNotifications: true
-							}
+			await setDoc(
+				userRef,
+				{					
+					Devices: {
+						[currentToken]: {
+							Token: currentToken,
+							UserAgent: navigator.userAgent,
+							UpdatedAt: serverTimestamp()
 						}
-					},
-					{ merge: true }
-				);
-			} else {
-				throw e;
-			}
+					}
+				},
+				{ merge: true }
+			);
+		} catch (e) {
+			console.error("Error saving FCM token:", e);
+			alert("Error saving FCM token:");
+			return;
 		}
 
 		lastSavedToken = currentToken;
@@ -149,9 +144,9 @@ function listenPermissionChanges() {
 			.then((status) => {
 				status.onchange = async () => {
 					const user = await getCurrentUser();
-					alert('user:', user.uid);
+					alert("user:", user.uid);
 					if (status.state === "granted" && user) {
-						alert('Asking for token...');
+						alert("Asking for token...");
 						_getToken();
 					}
 				};
@@ -204,7 +199,7 @@ function _getToken() {
 		.then(async (currentToken) => {
 			if (currentToken) {
 				alert("Current token for client: " + currentToken);
-				// replaced setDoc block with a deduped deep-merge write
+				localStorage.setItem("messagingToken", currentToken);
 				await saveFcmToken(currentToken);
 			} else {
 				console.log(
@@ -232,6 +227,7 @@ const firebaseConfigExport = {
 	auth: auth,
 	db: db,
 	messaging: messaging,
+	messagingToken: messagingToken,
 	onMessageListener: onMessageListener,
 	requestPermission: requestPermission,
 	reRequestNotifications: reRequestNotifications,

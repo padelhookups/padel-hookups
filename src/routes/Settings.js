@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { getAuth, signOut } from "firebase/auth";
+import { getFirestore, doc, getDoc, setDoc, Timestamp } from "firebase/firestore";
 import useAuth from "../utils/useAuth";
 
 import {
@@ -24,9 +25,29 @@ const Settings = () => {
 	const { user } = useAuth();
 	const auth = getAuth();
 	const navigate = useNavigate();
+	const db = getFirestore();
 
 	const [notificationsChecked, setNotificationsChecked] = useState(false);
 	const [openNotifications, setOpenNotifications] = useState(false);
+
+	useEffect(() => {
+		if (!user) return;
+		const ref = doc(db, "Users", user.uid);
+		getDoc(ref)
+			.then((snap) => {
+				const messagingToken = localStorage.getItem("messagingToken");
+				if (snap.exists()) {
+					Object.values(snap.data()?.Devices).forEach((device) => {
+						if (device.Token === messagingToken) {
+							setNotificationsChecked(device.SendNotifications);
+						}
+					});
+				}
+			})
+			.catch((err) =>
+				console.error("Error loading notification setting:", err)
+			);
+	}, [db, user]);
 
 	const handleSignOut = async () => {
 		try {
@@ -120,15 +141,34 @@ const Settings = () => {
 								primary='Push Notifications'
 								secondary='Receive push notifications on your device'
 							/>
-
 							<Switch
 								sx={{ ml: "auto" }}
 								checked={notificationsChecked}
-								onChange={(e) => {									
-									if (e.target.checked) {
+								onChange={(e) => {
+									const isOn = e.target.checked;
+									if (isOn) {
 										setOpenNotifications(true);
-									}else {
-										// import firebase from "../firebase-config"; and set to false
+									} else {
+										setNotificationsChecked(false);
+										if (user) {
+											const userRef = doc(
+												db,
+												"Users",
+												user.uid
+											);
+											setDoc(
+												userRef,
+												{
+													Devices: {
+														[localStorage.getItem("messagingToken")]: {
+															SendNotifications: false,
+															UpdatedAt: Timestamp.now()
+														}
+													}
+												},
+												{ merge: true }
+											);
+										}
 									}
 								}}
 							/>
@@ -188,11 +228,7 @@ const Settings = () => {
 				open={openNotifications}
 				onClose={(accepted) => {
 					setOpenNotifications(false);
-					if (accepted) {
-						setNotificationsChecked(true);
-					} else {
-						setNotificationsChecked(false);
-					}
+					setNotificationsChecked(false);
 				}}></NotificationPermissionModal>
 		</>
 	);
