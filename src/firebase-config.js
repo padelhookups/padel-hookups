@@ -1,13 +1,9 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { getFirestore, doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { getMessaging, getToken, onMessage } from "firebase/messaging";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
 
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
 	apiKey: "AIzaSyBOW8pVZPA8nlU9xcwjnNTxe7dbqCBxub8",
 	authDomain: "padel-hookups.firebaseapp.com",
@@ -24,7 +20,15 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const messaging = getMessaging(app);
 
-console.log("Firebase initialized with config:", firebaseConfig);
+// Helper to wait for the auth state to resolve to a user (or null)
+function getCurrentUser() {
+	return new Promise((resolve) => {
+		const unsub = onAuthStateChanged(auth, (u) => {
+			unsub();
+			resolve(u);
+		});
+	});
+}
 
 // Try to open browser/site notification settings where possible
 function openNotificationSettings() {
@@ -134,17 +138,26 @@ function _getToken() {
 		vapidKey:
 			"BHYKZ38EX_HHlSbVXMlG74Kob1miCVrD4tl5UdPWTTOwCYfZIAFiKcxKqzkc8a_KVjHusQaEsqhi__pEOI3LD24"
 	})
-		.then((currentToken) => {
+		.then(async (currentToken) => {
 			if (currentToken) {
 				alert("Current token for client: " + currentToken);
 				// Send the token to firebase document or server
 				try {
-					setDoc(
-						doc(db, "fcmTokens", currentToken),
+					const user = await getCurrentUser();
+					if (!user) {
+						console.warn("No authenticated user; skipping token save.");
+						return;
+					}
+					await setDoc(
+						doc(db, `Users/${user.uid}`),
 						{
-							token: currentToken,
-							userAgent: navigator.userAgent,
-							updatedAt: serverTimestamp()
+							Devices: {
+								[currentToken]: {
+									Token: currentToken,
+									UserAgent: navigator.userAgent,
+									UpdatedAt: serverTimestamp()
+								}
+							}
 						},
 						{ merge: true }
 					);
