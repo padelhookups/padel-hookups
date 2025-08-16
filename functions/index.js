@@ -111,6 +111,7 @@ exports.sendInviteOnCreateUser = onDocumentCreated(
 
 exports.sendBirthdayNotifications = onSchedule(
 	"every day 10:00",
+	{ region: "europe-west1" },
 	async (event) => {
 		const db = getFirestore();
 
