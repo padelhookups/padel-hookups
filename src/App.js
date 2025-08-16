@@ -20,6 +20,8 @@ import Benefits from "./routes/Benefits";
 import Admin from "./routes/Admin";
 import ManageUsers from "./routes/Admin/ManageUsers";
 import ChangePassword from "./routes/ChangePassword";
+import MyDevices from "./routes/MyDevices";
+import NotificationPermissionModal from "./components/NotificationPermissionModal";
 
 function App() {
 	const {
@@ -154,6 +156,14 @@ function App() {
 								</ProtectedRoute>
 							}
 						/>
+						<Route
+							path='/MyDevices'
+							element={
+								<ProtectedRoute user={user}>
+									<MyDevices />
+								</ProtectedRoute>
+							}
+						/>
 						{/* Catch-all route for non-existent paths */}
 						<Route path='*' element={<NotFound />} />
 					</Routes>
@@ -163,6 +173,7 @@ function App() {
 						onClose={handleCloseInstallModal}
 						onConfirm={handleInstallClick}
 					/>
+					<NotificationPermissionModal />
 				</Layout>
 			</div>
 		</BrowserRouter>

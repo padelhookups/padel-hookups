@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { useNavigate } from "react-router";
 import { getAuth, signOut } from "firebase/auth";
 import useAuth from "../utils/useAuth";
+
 import {
 	Alert,
 	Box,
@@ -10,17 +12,21 @@ import {
 	List,
 	ListItem,
 	ListItemText,
-	ListItemSecondaryAction,
 	Divider,
 	Typography,
 	Paper
 } from "@mui/material";
-import { Lock, Email, Logout, Security, Settings as SettingsIcon } from "@mui/icons-material";
+import { Lock, Email, Logout, Security, Devices } from "@mui/icons-material";
+
+import NotificationPermissionModal from "../components/NotificationPermissionModal";
 
 const Settings = () => {
 	const { user } = useAuth();
 	const auth = getAuth();
 	const navigate = useNavigate();
+
+	const [notificationsChecked, setNotificationsChecked] = useState(false);
+	const [openNotifications, setOpenNotifications] = useState(false);
 
 	const handleSignOut = async () => {
 		try {
@@ -38,6 +44,10 @@ const Settings = () => {
 		navigate("/ChangePassword");
 	};
 
+	const handleMyDevices = () => {
+		navigate("/MyDevices");
+	};
+
 	return (
 		<>
 			<Paper
@@ -46,10 +56,9 @@ const Settings = () => {
 					bgcolor: "#b88f34",
 					color: "white",
 					/* Push header below iOS notch */
-					pt: 'env(safe-area-inset-top)'
-				}}
-			>
-				<Box sx={{ py: 3, px:2 }}>
+					pt: "env(safe-area-inset-top)"
+				}}>
+				<Box sx={{ py: 3, px: 2 }}>
 					<Typography
 						variant='h4'
 						component='h1'
@@ -67,8 +76,7 @@ const Settings = () => {
 					p: 3,
 					/* Remove huge extra space; container already pads for bottom nav */
 					pb: 3
-				}}
-			>
+				}}>
 				{/* Account Settings */}
 				<Typography
 					variant='h6'
@@ -85,14 +93,13 @@ const Settings = () => {
 								primary='Change Password'
 								secondary='Update your account password'
 							/>
-							<ListItemSecondaryAction>
-								<Button
-									variant='outlined'
-									startIcon={<Lock />}
-									onClick={handleChangePassword}>
-									Change
-								</Button>
-							</ListItemSecondaryAction>
+							<Button
+								sx={{ ml: "auto" }}
+								variant='outlined'
+								startIcon={<Lock />}
+								onClick={handleChangePassword}>
+								Change
+							</Button>
 						</ListItem>
 					</List>
 				</Card>
@@ -113,40 +120,39 @@ const Settings = () => {
 								primary='Push Notifications'
 								secondary='Receive push notifications on your device'
 							/>
-							<ListItemSecondaryAction>
-								<Switch defaultChecked />
-							</ListItemSecondaryAction>
+
+							<Switch
+								sx={{ ml: "auto" }}
+								checked={notificationsChecked}
+								onChange={(e) => {									
+									if (e.target.checked) {
+										setOpenNotifications(true);
+									}else {
+										// import firebase from "../firebase-config"; and set to false
+									}
+								}}
+							/>
+						</ListItem>
+
+						<Divider />
+
+						<ListItem>
+							<ListItemText
+								sx={{ width: "95%", flex: "unset !important" }}
+								primary='My Devices'
+								secondary='View and manage logged-in devices'
+							/>
+							<Button
+								sx={{ ml: "auto" }}
+								variant='outlined'
+								startIcon={<Devices />}
+								onClick={handleMyDevices}>
+								Open
+							</Button>
 						</ListItem>
 					</List>
 				</Card>
 
-				{/* Privacy Settings */}
-				{/* <Typography variant="h6" component="h2" gutterBottom sx={{ fontWeight: 'bold' }}>
-        Privacy
-      </Typography>
-      <Card sx={{ mb: 3 }}>
-        <List>
-          <ListItem>
-            <ListItemText 
-              primary="Profile Visibility" 
-              secondary="Show your profile to other players"
-            />
-            <ListItemSecondaryAction>
-              <Switch defaultChecked />
-            </ListItemSecondaryAction>
-          </ListItem>
-          <Divider />
-          <ListItem>
-            <ListItemText 
-              primary="Match Invitations" 
-              secondary="Allow other players to invite you to matches"
-            />
-            <ListItemSecondaryAction>
-              <Switch defaultChecked />
-            </ListItemSecondaryAction>
-          </ListItem>
-        </List>
-      </Card> */}
 				{user?.IsAdmin && (
 					<Button
 						variant='outlined'
@@ -178,6 +184,16 @@ const Settings = () => {
 					Sign Out
 				</Button>
 			</Box>
+			<NotificationPermissionModal
+				open={openNotifications}
+				onClose={(accepted) => {
+					setOpenNotifications(false);
+					if (accepted) {
+						setNotificationsChecked(true);
+					} else {
+						setNotificationsChecked(false);
+					}
+				}}></NotificationPermissionModal>
 		</>
 	);
 };

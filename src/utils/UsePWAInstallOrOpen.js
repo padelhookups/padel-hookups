@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 export function usePWAInstallOrOpen(appProtocolUrl) {
 	const [isInstalled, setIsInstalled] = useState(false);
-  const [isRunningInApp, setIsRunningInApp] = useState(false);
+	const [isRunningInApp, setIsRunningInApp] = useState(false);
 	const [isChecking, setIsChecking] = useState(true);
 	const [deferredPrompt, setDeferredPrompt] = useState(null);
 
@@ -10,12 +10,17 @@ export function usePWAInstallOrOpen(appProtocolUrl) {
 	useEffect(() => {
 		async function checkInstalled() {
 			console.log("Checking if PWA is installed...");
-      console.log(window.matchMedia("(display-mode: standalone)").matches);
-      console.log(window.navigator.standalone);
+			console.log(
+				window.matchMedia("(display-mode: standalone)").matches
+			);
+			console.log(window.navigator.standalone);
 
-			if (window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true) {
+			if (
+				window.matchMedia("(display-mode: standalone)").matches ||
+				window.navigator.standalone === true
+			) {
 				setIsInstalled(true);
-        setIsRunningInApp(true);
+				setIsRunningInApp(true);
 				setIsChecking(false);
 				return;
 			}
@@ -68,7 +73,7 @@ export function usePWAInstallOrOpen(appProtocolUrl) {
 
 	return {
 		isInstalled,
-    isRunningInApp,
+		isRunningInApp,
 		isChecking,
 		promptInstall,
 		openApp,

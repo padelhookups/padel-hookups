@@ -1,7 +1,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { getMessaging, getToken, onMessage } from "firebase/messaging";
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -26,27 +26,132 @@ const messaging = getMessaging(app);
 
 console.log("Firebase initialized with config:", firebaseConfig);
 
+// Try to open browser/site notification settings where possible
+function openNotificationSettings() {
+	if (typeof window === "undefined") return;
+	const ua = navigator.userAgent;
+	const origin = window.location.origin;
+
+	// Chrome/Edge (may be blocked by the browser, but worth attempting)
+	if (/Chrome|Chromium|Edg\//.test(ua)) {
+		window.open(
+			`chrome://settings/content/siteDetails?site=${encodeURIComponent(origin)}`,
+			"_blank"
+		);
+		return;
+	}
+
+	// Firefox
+	if (/Firefox\//.test(ua)) {
+		window.open("about:preferences#privacy", "_blank");
+		return;
+	}
+
+	// Safari (no direct deep link)
+	if (/Safari\//.test(ua) && !/Chrome/.test(ua)) {
+		alert(
+			"In Safari, go to Settings > Websites > Notifications and allow this site."
+		);
+		return;
+	}
+
+	// Fallback
+	alert(
+		"Please enable notifications for this site in your browser/site settings."
+	);
+}
+
+// When user clicks a "Try again" button in your UI, call this.
+// If denied, we guide them to settings; otherwise we prompt.
+function reRequestNotifications() {
+	if (typeof window === "undefined" || !("Notification" in window)) return;
+	if (Notification.permission === "denied") {
+		alert(
+			"Notifications are blocked. Enable them in your browser/site settings, then return to this page."
+		);
+		openNotificationSettings();
+	} else {
+		requestPermission();
+	}
+}
+
+// Keep an eye on permission changes and auto-fetch token when granted
+function listenPermissionChanges() {
+	if (typeof navigator === "undefined" || !navigator.permissions?.query)
+		return;
+	try {
+		navigator.permissions
+			.query({ name: "notifications" })
+			.then((status) => {
+				status.onchange = () => {
+					if (status.state === "granted") {
+						_getToken();
+					}
+				};
+			});
+	} catch {
+		// no-op
+	}
+}
+listenPermissionChanges();
+
 function requestPermission() {
 	console.log("Requesting permission...");
-	Notification.requestPermission().then((permission) => {
+	return Notification.requestPermission().then((permission) => {
 		if (permission === "granted") {
-			console.log("Notification permission granted.");
+			alert("Notification permission granted.");
 			_getToken();
+			return true;
+		} else {
+			alert("Notification permission denied.");
+			return false;
 		}
 	});
 }
-requestPermission();
+
+const FCM_PERMISSION_FLAG = "fcmPermissionRequested";
+if (typeof window !== "undefined" && "Notification" in window) {
+	if (Notification.permission === "granted") {
+		alert("Notification permission already granted.");
+		_getToken();
+	} else if (
+		Notification.permission === "default" &&
+		!localStorage.getItem(FCM_PERMISSION_FLAG)
+	) {
+		alert("Requesting notification permission for the first time.");
+		localStorage.setItem(FCM_PERMISSION_FLAG, "1");
+		requestPermission();
+	} else if (Notification.permission === "denied") {
+		alert(
+			"Notifications are blocked. Enable them in your browser/site settings."
+		);
+		openNotificationSettings();
+	}
+}
 
 function _getToken() {
 	getToken(messaging, {
-		vapidKey: "BHYKZ38EX_HHlSbVXMlG74Kob1miCVrD4tl5UdPWTTOwCYfZIAFiKcxKqzkc8a_KVjHusQaEsqhi__pEOI3LD24"
+		vapidKey:
+			"BHYKZ38EX_HHlSbVXMlG74Kob1miCVrD4tl5UdPWTTOwCYfZIAFiKcxKqzkc8a_KVjHusQaEsqhi__pEOI3LD24"
 	})
 		.then((currentToken) => {
 			if (currentToken) {
-				console.log("Current token for client: ", currentToken);
-
-				// Send the token to your server and update the UI if necessary
-				// ...
+				alert("Current token for client: " + currentToken);
+				// Send the token to firebase document or server
+				try {
+					setDoc(
+						doc(db, "fcmTokens", currentToken),
+						{
+							token: currentToken,
+							userAgent: navigator.userAgent,
+							updatedAt: serverTimestamp()
+						},
+						{ merge: true }
+					);
+					console.log("FCM token saved to Firestore.");
+				} catch (e) {
+					console.error("Failed to save FCM token to Firestore:", e);
+				}
 			} else {
 				// Show permission request UI
 				console.log(
@@ -75,6 +180,9 @@ const firebaseConfigExport = {
 	auth: auth,
 	db: db,
 	messaging: messaging,
-	onMessageListener: onMessageListener
+	onMessageListener: onMessageListener,
+	requestPermission: requestPermission,
+	reRequestNotifications: reRequestNotifications,
+	openNotificationSettings: openNotificationSettings
 };
 export default firebaseConfigExport;
