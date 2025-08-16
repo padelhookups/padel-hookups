@@ -149,7 +149,7 @@ function listenPermissionChanges() {
 			.then((status) => {
 				status.onchange = async () => {
 					const user = await getCurrentUser();
-					alert('user:', user);
+					alert('user:', user.uid);
 					if (status.state === "granted" && user) {
 						alert('Asking for token...');
 						_getToken();
