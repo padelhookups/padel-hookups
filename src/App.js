@@ -81,8 +81,7 @@ function App() {
 	}
 
 	firebase.onMessageListener().then((payload) => {
-		console.log("Message received. ", payload);
-		// ...
+		console.log("Message received. ", payload);		
 	});
 
 	return (

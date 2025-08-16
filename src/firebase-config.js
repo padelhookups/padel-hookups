@@ -220,6 +220,7 @@ function _getToken() {
 const onMessageListener = () =>
 	new Promise((resolve) => {
 		onMessage(messaging, (payload) => {
+			alert("Message received. ", payload.notification.body);
 			resolve(payload);
 		});
 	});
