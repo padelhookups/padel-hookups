@@ -194,7 +194,7 @@ const Benefits = () => {
 				sx={{
 					px: 0,
 					/* Remove huge extra space; container already pads for bottom nav */
-					pb: 3
+					pb: 6
 				}}>
 				<Box sx={{ px: 4, pt: 4, pb: "40px" }}>
 					<Grid container spacing={3}>

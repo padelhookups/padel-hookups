@@ -114,7 +114,7 @@ const Settings = () => {
 				sx={{
 					p: 3,
 					/* Remove huge extra space; container already pads for bottom nav */
-					pb: 3
+					pb: 12
 				}}>
 				{/* Account Settings */}
 				<Typography

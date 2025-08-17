@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { updateProfile } from "firebase/auth";
 import { doc, updateDoc, Timestamp } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 import firebase from "../firebase-config";
 import useAuth from "../utils/useAuth";
 import {
@@ -58,6 +59,8 @@ const StyledBox = styled("div")(({ theme }) => ({
 
 const Profile = () => {
 	const db = firebase.db;
+	const auth = getAuth();
+	const currentUser = auth.currentUser;
 	const { user } = useAuth();
 
 	const [open, setOpen] = useState(false);
@@ -80,7 +83,7 @@ const Profile = () => {
 
 	const handleConfirmUpdate = async () => {
 		try {
-			await updateProfile(user, {
+			await updateProfile(currentUser, {
 				displayName: displayName
 			});
 
@@ -161,7 +164,7 @@ const Profile = () => {
 				sx={{
 					p: 3,
 					/* Remove huge extra space; container already pads for bottom nav */
-					pb: 3,
+					pb: 12,
 					height: "100%"
 				}}>
 				{/* User Information */}
