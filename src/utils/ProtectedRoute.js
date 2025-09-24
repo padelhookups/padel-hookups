@@ -4,8 +4,6 @@ import { Navigate, useLocation } from 'react-router';
 export default function ProtectedRoute({ user, children }) {
   
   const location = useLocation();
-  
-  console.log("ProtectedRoute location:", location, user);
 
   if (!user && location.pathname !== '/SignUp') {
     // Redirect to login and remember the route
