@@ -1,7 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import firebase from "../firebase-config";
 import useAuth from "../utils/useAuth";
-import { collection, getDocs, addDoc, doc, updateDoc } from "firebase/firestore";
+import { collection, addDoc, doc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { 
+  fetchBenefits, 
+  selectBenefits, 
+  selectBenefitsLoading, 
+  selectBenefitsError,
+  invalidateCache 
+} from "../redux/slices/benefitsSlice";
 
 import {
 	Box,
@@ -18,7 +26,8 @@ import {
 	TextField,
 	Typography,
 	Paper,
-	SwipeableDrawer
+	SwipeableDrawer,
+	CircularProgress
 } from "@mui/material";
 import {
 	Add,
@@ -54,8 +63,15 @@ const StyledBox = styled("div")(({ theme }) => ({
 const Benefits = () => {
 	const db = firebase.db;
 	const { user } = useAuth();
+	const dispatch = useDispatch();
+	const initialFetchDone = useRef(false);
 
-	const [benefits, setBenefits] = useState([]);
+	// Redux state
+	const benefits = useSelector(selectBenefits);
+	const loading = useSelector(selectBenefitsLoading);
+	const error = useSelector(selectBenefitsError);
+
+	// Local component state
 	const [open, setOpen] = useState(false);
 	const [showSuccess, setShowSuccess] = useState(false);
 	const [couponOpen, setCouponOpen] = useState(false);
@@ -69,38 +85,37 @@ const Benefits = () => {
 	const [pageMode, setPageMode] = useState("");
 
 	useEffect(() => {
-		const fetchBenefits = async () => {
-			try {
-				const benefitsCollection = collection(db, "Benefits");
-				const benefitsSnapshot = await getDocs(benefitsCollection);
-				if (benefitsSnapshot.empty) {
-					console.log("No benefits found");
-				} else {
-					const benefitsData = benefitsSnapshot.docs.map((doc) => ({
-						...doc.data(),
-						id: doc.id
-					}));
-					setBenefits(benefitsData);
-				}
-			} catch (error) {
-				console.error("Error fetching benefits:", error);
-			}
-		};
-		console.log("Fetching benefits...");
-		fetchBenefits();
-	}, [db, showSuccess]); // Add showSuccess as dependency to refetch when a new benefit is added
+		// Only fetch if we haven't done initial fetch and don't have benefits
+		if (!initialFetchDone.current && benefits.length === 0) {
+			console.log("Fetch benefits using Redux with caching");
+			initialFetchDone.current = true;
+			dispatch(fetchBenefits({ db, forceRefresh: false }));
+		}
+	}, [db, benefits.length]);
+
+	// Refetch when a new benefit is added/updated
+	useEffect(() => {
+		if (showSuccess) {
+			// Invalidate cache and fetch fresh data
+			console.log("Invalidate cache and fetch fresh benefits data");
+			
+			dispatch(invalidateCache());
+			dispatch(fetchBenefits({ db, forceRefresh: true }));
+		}
+	}, [showSuccess, db, dispatch]);
 
 	const handleSubmit = async (e) => {
 		e.preventDefault();
-		//Insert in Firestore
+		
 		const newBenefit = {
 			Name: name,
 			Description: description,
 			Discount: discount,
 			Website: website,
-			CouponCode: couponCode
+			CouponCode: couponCode,
+			ModifiedAt: serverTimestamp() // Add timestamp for cache invalidation
 		};
-		// Insert in Firestore using v9+ syntax
+
 		try {
 			if (pageMode === "create") {
 				await addDoc(collection(db, "Benefits"), newBenefit);
@@ -109,7 +124,8 @@ const Benefits = () => {
 				const benefitRef = doc(db, "Benefits", selectedBenefit.id);
 				await updateDoc(benefitRef, newBenefit);
 			}
-			console.log("New benefit added:", newBenefit);
+			console.log("Benefit operation completed:", newBenefit);
+			
 			// Clear form fields
 			setName("");
 			setDescription("");
@@ -119,16 +135,23 @@ const Benefits = () => {
 			setOpen(false);
 			setShowSuccess(true);
 		} catch (error) {
-			console.error("Error adding benefit:", error);
+			console.error("Error with benefit operation:", error);
 		}
 	};
 
 	const openCoupon = (benefit) => {
-		// add
 		setSelectedBenefit(benefit);
 		setCouponOpen(true);
 	};
-	const closeCoupon = () => setCouponOpen(false); // add
+	const closeCoupon = () => setCouponOpen(false);
+
+	if (loading && benefits.length === 0) {
+		return (
+			<Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
+				<CircularProgress />
+			</Box>
+		);
+	}
 
 	return (
 		<>
@@ -197,12 +220,20 @@ const Benefits = () => {
 					pb: 6
 				}}>
 				<Box sx={{ px: 4, pt: 4, pb: "40px" }}>
+					{error && (
+						<Box sx={{ mb: 2, p: 2, bgcolor: 'error.light', borderRadius: 1 }}>
+							<Typography color="error">
+								Error loading benefits: {error}
+							</Typography>
+						</Box>
+					)}
+					
 					<Grid container spacing={3}>
 						{benefits.map((benefit, index) => (
 							<Grid
 								item
 								size={{ xs: 12, md: 6, lg: 3 }}
-								key={index}>
+								key={benefit.id || index}>
 								<Card
 									sx={{
 										height: "100%",

@@ -10,10 +10,10 @@ export function usePWAInstallOrOpen(appProtocolUrl) {
 	useEffect(() => {
 		async function checkInstalled() {
 			console.log("Checking if PWA is installed...");
-			console.log(
+			/* console.log(
 				window.matchMedia("(display-mode: standalone)").matches
 			);
-			console.log(window.navigator.standalone);
+			console.log(window.navigator.standalone); */
 
 			if (
 				window.matchMedia("(display-mode: standalone)").matches ||
@@ -26,7 +26,7 @@ export function usePWAInstallOrOpen(appProtocolUrl) {
 			}
 			if (navigator.getInstalledRelatedApps()) {
 				const relatedApps = await navigator.getInstalledRelatedApps();
-				console.log("relatedApps:", relatedApps);
+				//console.log("relatedApps:", relatedApps);
 
 				if (relatedApps.length > 0) {
 					setIsInstalled(true);
