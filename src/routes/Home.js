@@ -1,7 +1,9 @@
 import React from "react";
-import { getAuth } from "firebase/auth";
-import { Box, Button, Chip, Typography, Paper } from "@mui/material";
+import { useLocation, useNavigate } from "react-router";
 
+import { getAuth } from "firebase/auth";
+
+import { Box, Button, Chip, Typography, Paper } from "@mui/material";
 import {
   Timeline,
   TimelineSeparator,
@@ -9,10 +11,10 @@ import {
   TimelineContent,
   TimelineDot,
 } from "@mui/lab";
-
 import TimelineItem, { timelineItemClasses } from "@mui/lab/TimelineItem";
 
 const Home = () => {
+  const navigate = useNavigate();
   const auth = getAuth();
   const user = auth.currentUser;
 
@@ -198,12 +200,15 @@ const Home = () => {
                   borderRadius: 2,
                   p: 1,
                   position: "relative",
+                  cursor: "pointer",
+                }}
+                onClick={() => {
+                  console.log("Box 1 clicked - going to event details");
+                  navigate("/Event");
                 }}
               >
                 <Typography variant="h6">🏆 Masters V</Typography>
-                <Typography variant="body2">
-                  ⌚ 18:00
-                </Typography>
+                <Typography variant="body2">⌚ 18:00</Typography>
                 <Chip
                   sx={{
                     position: "absolute",
@@ -212,10 +217,19 @@ const Home = () => {
                   }}
                   variant="solid"
                   color="error"
-				  size="small"
+                  size="small"
                   label="Tournament"
                 />
-                <Button size="small" sx={{ mt: 1 }} variant="outlined">
+                <Button
+                  size="small"
+                  sx={{ mt: 1 }}
+                  variant="outlined"
+                  onClick={(e) => {
+                    console.log("Button 1 clicked - going to join page");
+                    e.stopPropagation();
+                    //navigate("/Join");
+                  }}
+                >
                   Join
                 </Button>
               </Box>
@@ -254,13 +268,16 @@ const Home = () => {
                   borderRadius: 2,
                   p: 1,
                   position: "relative",
+                  cursor: "pointer",
+                }}
+                onClick={() => {
+                  console.log("Box 2 clicked - going to event details");
+                  navigate("/Event");
                 }}
               >
                 <Typography variant="h6">🏆 Mix November</Typography>
                 <Typography variant="body2" component="span"></Typography>
-                <Typography variant="body2">
-                  ⌚ 12:00
-                </Typography>
+                <Typography variant="body2">⌚ 12:00</Typography>
                 <Chip
                   sx={{
                     position: "absolute",
@@ -269,10 +286,19 @@ const Home = () => {
                   }}
                   variant="solid"
                   color="success"
-				  size="small"
+                  size="small"
                   label="Social"
                 />
-                <Button size="small" sx={{ mt: 1 }} variant="outlined">
+                <Button
+                  size="small"
+                  sx={{ mt: 1 }}
+                  variant="outlined"
+                  onClick={(e) => {
+                    console.log("Button 2 clicked - going to join page");
+                    e.stopPropagation();
+                    navigate("/Join");
+                  }}
+                >
                   Join
                 </Button>
               </Box>
@@ -311,12 +337,15 @@ const Home = () => {
                   borderRadius: 2,
                   p: 1,
                   position: "relative",
+                  cursor: "pointer",
+                }}
+                onClick={() => {
+                  console.log("Box 3 clicked - going to event details");
+                  navigate("/Event");
                 }}
               >
                 <Typography variant="h6">🎯 Training Class</Typography>
-                <Typography variant="body2">
-                  ⌚ 20:00
-                </Typography>
+                <Typography variant="body2">⌚ 20:00</Typography>
                 <Chip
                   sx={{
                     position: "absolute",
@@ -325,10 +354,19 @@ const Home = () => {
                   }}
                   variant="solid"
                   color="info"
-				  size="small"
+                  size="small"
                   label="Training"
                 />
-                <Button size="small" sx={{ mt: 1 }} variant="outlined">
+                <Button
+                  size="small"
+                  sx={{ mt: 1 }}
+                  variant="outlined"
+                  onClick={(e) => {
+                    console.log("Button 3 clicked - going to join page");
+                    e.stopPropagation();
+                    navigate("/Join");
+                  }}
+                >
                   Join
                 </Button>
               </Box>
