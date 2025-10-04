@@ -1,5 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 
-const Event = () => {}
+const Event = () => {
+    return (<></>)
+}
 
 export default Event
