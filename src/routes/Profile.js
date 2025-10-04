@@ -40,6 +40,8 @@ import { grey } from "@mui/material/colors";
 import SuccessModal from "../components/SuccessModal";
 import ConfirmEditModal from "../components/ConfirmEditModal";
 
+const iOS = typeof navigator !== "undefined" && /iPad|iPhone|iPod/.test(navigator.userAgent);
+
 const Puller = styled(Box)(({ theme }) => ({
 	width: 30,
 	height: 6,
@@ -77,7 +79,7 @@ const Profile = () => {
 		if (user) {
 			console.log("User data:", user);
 			setDisplayName(user?.displayName || "");
-			setDateOfBirth(dayjs(user?.DateOfBirth?.toDate() || null));
+			setDateOfBirth(user?.DateOfBirth ? dayjs(user.DateOfBirth.toDate()) : null);
 		}
 	}, [user]);
 
@@ -117,7 +119,7 @@ const Profile = () => {
 					color: "b88f34",
 					textAlign: "center",
 					/* Push header below iOS notch */
-					pt: "env(safe-area-inset-top)"
+					pt: "env(safe-area-inset-top, 0px)",
 				}}>
 				{/* Profile Header */}
 				<Box sx={{ py: 3, px: 2 }}>
@@ -246,7 +248,9 @@ const Profile = () => {
 					anchor='bottom'
 					open={open}
 					onClose={() => setOpen(false)}
+					disableDiscovery
 					disableSwipeToOpen={true}
+					disableBackdropTransition={!iOS}
 					keepMounted>
 					<Puller />
 					<StyledBox
