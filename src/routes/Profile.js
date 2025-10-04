@@ -241,153 +241,153 @@ const Profile = () => {
 				</Button>
 
 				{/* Edit Profile Drawer */}
-				<SwipeableDrawer
-					sx={{ zIndex: 1300 }}
-					anchor='bottom'
-					open={open}
-					onClose={() => setOpen(false)}
-					disableDiscovery
-					disableSwipeToOpen={true}
-					disableBackdropTransition={!iOS}
-					keepMounted>
-					<Puller />
-					<StyledBox
-						sx={{ px: 2, pb: 2, height: "100%", overflow: "auto" }}>
+			</Box>
+			<SwipeableDrawer
+				sx={{ zIndex: 1300 }}
+				anchor='bottom'
+				open={open}
+				onClose={() => setOpen(false)}
+				disableDiscovery
+				disableSwipeToOpen={true}
+				disableBackdropTransition={!iOS}
+				keepMounted>
+				<Puller />
+				<StyledBox
+					sx={{ px: 2, pb: 2, height: "100%", overflow: "auto" }}>
 
-						<Box
-							component='form'
-							sx={{
-								"& > :not(style)": { mt: 4 },
-								pt: 4,
-								pb: 2,
-								px: 2
-							}}
-							onSubmit={(e) => {
-								// Let browser handle HTML5 validation first
-								if (!e.target.checkValidity()) {
-									return; // Let browser show validation messages
-								}
-								e.preventDefault();
-								handleUpdateProfile();
-							}}>
-							<Box sx={{ width: "100%" }}>
-								<FormControl
-									sx={{
-										width: "100%",
-										"&:focus-within": {
-											borderColor: "primary.main",
-											borderWidth: "2px"
-										}
-									}}>
-									<TextField
-										fullWidth
-										id='displayName'
-										type='text'
-										required
-										autoComplete='off'
-										value={displayName}
-										label='Display Name'
-										onChange={(e) =>
-											setDisplayName(e.target.value)
-										}
-										slotProps={{
-											input: {
-												startAdornment: (
-													<InputAdornment position='start'>
-														<Person
-															sx={{
-																".Mui-focused &":
-																{
-																	color: "primary.main"
-																},
-																mr: 1,
-																my: 0.5,
-																cursor: "pointer"
-															}}
-														/>
-													</InputAdornment>
-												),
-												endAdornment: (
-													<InputAdornment position='end'>
-														<Box
-															sx={{
-																width: 30
-															}}
-														/>
-													</InputAdornment>
-												)
-											}
-										}}
-									/>
-								</FormControl>
-							</Box>
-							<Box sx={{ width: "100%" }}>
-								<DatePicker
-									label='Date of Birth'
-									value={dateOfBirth}
-									onChange={(newValue) =>
-										setDateOfBirth(newValue)
+					<Box
+						component='form'
+						sx={{
+							"& > :not(style)": { mt: 4 },
+							pt: 4,
+							pb: 2,
+							px: 2
+						}}
+						onSubmit={(e) => {
+							// Let browser handle HTML5 validation first
+							if (!e.target.checkValidity()) {
+								return; // Let browser show validation messages
+							}
+							e.preventDefault();
+							handleUpdateProfile();
+						}}>
+						<Box sx={{ width: "100%" }}>
+							<FormControl
+								sx={{
+									width: "100%",
+									"&:focus-within": {
+										borderColor: "primary.main",
+										borderWidth: "2px"
+									}
+								}}>
+								<TextField
+									fullWidth
+									id='displayName'
+									type='text'
+									required
+									autoComplete='off'
+									value={displayName}
+									label='Display Name'
+									onChange={(e) =>
+										setDisplayName(e.target.value)
 									}
 									slotProps={{
-										textField: {
-											fullWidth: true,
-											InputProps: {
-												startAdornment: (
-													<InputAdornment position='start'>
-														<Cake
-															sx={{
-																".Mui-focused &":
-																{
-																	color: "primary.main"
-																},
-																mr: 1,
-																my: 0.5,
-																cursor: "pointer"
-															}}
-														/>
-													</InputAdornment>
-												)
-											}
+										input: {
+											startAdornment: (
+												<InputAdornment position='start'>
+													<Person
+														sx={{
+															".Mui-focused &":
+															{
+																color: "primary.main"
+															},
+															mr: 1,
+															my: 0.5,
+															cursor: "pointer"
+														}}
+													/>
+												</InputAdornment>
+											),
+											endAdornment: (
+												<InputAdornment position='end'>
+													<Box
+														sx={{
+															width: 30
+														}}
+													/>
+												</InputAdornment>
+											)
 										}
 									}}
 								/>
-							</Box>
-							<Button
-								variant='contained'
-								fullWidth
-								type='submit'
-								disabled={!displayName}>
-								<Typography
-									variant='button'
-									color='white'
-									sx={{ fontWeight: "bold" }}>
-									Update Profile
-								</Typography>
-							</Button>
+							</FormControl>
 						</Box>
-					</StyledBox>
-				</SwipeableDrawer>
+						<Box sx={{ width: "100%" }}>
+							<DatePicker
+								label='Date of Birth'
+								value={dateOfBirth}
+								onChange={(newValue) =>
+									setDateOfBirth(newValue)
+								}
+								slotProps={{
+									textField: {
+										fullWidth: true,
+										InputProps: {
+											startAdornment: (
+												<InputAdornment position='start'>
+													<Cake
+														sx={{
+															".Mui-focused &":
+															{
+																color: "primary.main"
+															},
+															mr: 1,
+															my: 0.5,
+															cursor: "pointer"
+														}}
+													/>
+												</InputAdornment>
+											)
+										}
+									}
+								}}
+							/>
+						</Box>
+						<Button
+							variant='contained'
+							fullWidth
+							type='submit'
+							disabled={!displayName}>
+							<Typography
+								variant='button'
+								color='white'
+								sx={{ fontWeight: "bold" }}>
+								Update Profile
+							</Typography>
+						</Button>
+					</Box>
+				</StyledBox>
+			</SwipeableDrawer>
 
-				<SuccessModal
-					open={showSuccess}
-					_title='Profile Updated!'
-					onClose={() => setShowSuccess(false)}
-					_description='Your profile has been updated successfully.'
-					_buttonText='Continue'
-					_navigate={false}
-				/>
+			<SuccessModal
+				open={showSuccess}
+				_title='Profile Updated!'
+				onClose={() => setShowSuccess(false)}
+				_description='Your profile has been updated successfully.'
+				_buttonText='Continue'
+				_navigate={false}
+			/>
 
-				{/* Confirm Edit Modal */}
-				<ConfirmEditModal
-					open={editModalOpen}
-					onClose={() => setEditModalOpen(false)}
-					onConfirm={handleConfirmUpdate}
-					_title='Update Profile'
-					_description={`Are you sure you want to save the changes to your profile?`}
-					_confirmText='Save Changes'
-					_cancelText='Cancel'
-				/>
-			</Box>
+			{/* Confirm Edit Modal */}
+			<ConfirmEditModal
+				open={editModalOpen}
+				onClose={() => setEditModalOpen(false)}
+				onConfirm={handleConfirmUpdate}
+				_title='Update Profile'
+				_description={`Are you sure you want to save the changes to your profile?`}
+				_confirmText='Save Changes'
+				_cancelText='Cancel'
+			/>
 		</>
 	);
 };
