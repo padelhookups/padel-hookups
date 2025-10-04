@@ -111,16 +111,15 @@ const Profile = () => {
 
 	return (
 		<>
-			<Paper
+			{/* <Paper
 				sx={{
 					borderRadius: 0,
 					bgcolor: "white",
 					color: "b88f34",
 					textAlign: "center",
-					/* Push header below iOS notch */
 					pt: "env(safe-area-inset-top, 0px)",
 				}}>
-				{/* Profile Header */}
+				
 				<Box sx={{ py: 3, px: 2 }}>
 					<Avatar
 						sx={{
@@ -160,7 +159,7 @@ const Profile = () => {
 						/>
 					</Box>
 				</Box>
-			</Paper>
+			</Paper> */}
 			<Box
 				sx={{
 					p: 3,
