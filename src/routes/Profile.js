@@ -78,7 +78,7 @@ const Profile = () => {
 		if (user) {
 			console.log("User data:", user);
 			setDisplayName(user?.displayName || "");
-			setDateOfBirth(user?.DateOfBirth ? dayjs(user.DateOfBirth.toDate()) : null);
+			setDateOfBirth(user?.DateOfBirth ? dayjs(user?.DateOfBirth.toDate()) : null);
 		}
 	}, [user]);
 
@@ -111,7 +111,7 @@ const Profile = () => {
 
 	return (
 		<>
-			{/* <Paper
+			<Paper
 				sx={{
 					borderRadius: 0,
 					bgcolor: "white",
@@ -159,8 +159,8 @@ const Profile = () => {
 						/>
 					</Box>
 				</Box>
-			</Paper> */}
-			{/* <Box
+			</Paper>
+			<Box
 				sx={{
 					p: 3,
 					pb: 12,
@@ -382,7 +382,7 @@ const Profile = () => {
 				_description={`Are you sure you want to save the changes to your profile?`}
 				_confirmText='Save Changes'
 				_cancelText='Cancel'
-			/> */}
+			/>
 		</>
 	);
 };
