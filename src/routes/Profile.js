@@ -242,7 +242,7 @@ const Profile = () => {
 
 				{/* Edit Profile Drawer */}
 			</Box>
-			<SwipeableDrawer
+			{/* <SwipeableDrawer
 				sx={{ zIndex: 1300 }}
 				anchor='bottom'
 				open={open}
@@ -367,7 +367,7 @@ const Profile = () => {
 						</Button>
 					</Box>
 				</StyledBox>
-			</SwipeableDrawer>
+			</SwipeableDrawer> */}
 
 			<SuccessModal
 				open={showSuccess}
