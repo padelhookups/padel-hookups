@@ -39,7 +39,7 @@ import { grey } from "@mui/material/colors";
 import SuccessModal from "../components/SuccessModal";
 import ConfirmEditModal from "../components/ConfirmEditModal";
 
-const iOS = typeof navigator !== "undefined" && /iPad|iPhone|iPod/.test(navigator.userAgent);
+/* const iOS = typeof navigator !== "undefined" && /iPad|iPhone|iPod/.test(navigator.userAgent);
 
 const Puller = styled(Box)(({ theme }) => ({
 	width: 30,
@@ -56,10 +56,10 @@ const StyledBox = styled("div")(({ theme }) => ({
 	...theme.applyStyles("dark", {
 		backgroundColor: grey[800]
 	})
-}));
+})); */
 
 const Profile = () => {
-	const db = firebase.db;
+	/* const db = firebase.db;
 	const auth = getAuth();
 	const currentUser = auth.currentUser;
 	const { user } = useAuth();
@@ -107,7 +107,7 @@ const Profile = () => {
 		} catch (error) {
 			console.error("Error updating profile:", error);
 		}
-	};
+	}; */
 
 	return (
 		<>
@@ -160,14 +160,13 @@ const Profile = () => {
 					</Box>
 				</Box>
 			</Paper> */}
-			<Box
+			{/* <Box
 				sx={{
 					p: 3,
-					/* Remove huge extra space; container already pads for bottom nav */
 					pb: 12,
 					height: "100%"
 				}}>
-				{/* User Information */}
+				
 				<Typography
 					variant='h5'
 					component='h2'
@@ -228,8 +227,6 @@ const Profile = () => {
 						</ListItem>
 					</List>
 				</Card>
-
-				{/* Action Button */}
 				<Button
 					variant='contained'
 					size='large'
@@ -240,9 +237,8 @@ const Profile = () => {
 					<Typography variant='button'>Edit Profile</Typography>
 				</Button>
 
-				{/* Edit Profile Drawer */}
 			</Box>
-			{/* <SwipeableDrawer
+			<SwipeableDrawer
 				sx={{ zIndex: 1300 }}
 				anchor='bottom'
 				open={open}
@@ -367,7 +363,7 @@ const Profile = () => {
 						</Button>
 					</Box>
 				</StyledBox>
-			</SwipeableDrawer> */}
+			</SwipeableDrawer>
 
 			<SuccessModal
 				open={showSuccess}
@@ -378,7 +374,6 @@ const Profile = () => {
 				_navigate={false}
 			/>
 
-			{/* Confirm Edit Modal */}
 			<ConfirmEditModal
 				open={editModalOpen}
 				onClose={() => setEditModalOpen(false)}
@@ -387,7 +382,7 @@ const Profile = () => {
 				_description={`Are you sure you want to save the changes to your profile?`}
 				_confirmText='Save Changes'
 				_cancelText='Cancel'
-			/>
+			/> */}
 		</>
 	);
 };
