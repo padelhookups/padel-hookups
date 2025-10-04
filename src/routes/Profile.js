@@ -59,7 +59,7 @@ const StyledBox = styled("div")(({ theme }) => ({
 }));
 
 const Profile = () => {
-	/* const db = firebase.db;
+	const db = firebase.db;
 	const auth = getAuth();
 	const currentUser = auth.currentUser;
 	const { user } = useAuth();
@@ -107,7 +107,7 @@ const Profile = () => {
 		} catch (error) {
 			console.error("Error updating profile:", error);
 		}
-	}; */
+	};
 
 	return (
 		<>
