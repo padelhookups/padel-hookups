@@ -39,7 +39,7 @@ import { grey } from "@mui/material/colors";
 import SuccessModal from "../components/SuccessModal";
 import ConfirmEditModal from "../components/ConfirmEditModal";
 
-/* const iOS = typeof navigator !== "undefined" && /iPad|iPhone|iPod/.test(navigator.userAgent);
+const iOS = typeof navigator !== "undefined" && /iPad|iPhone|iPod/.test(navigator.userAgent);
 
 const Puller = styled(Box)(({ theme }) => ({
 	width: 30,
@@ -56,7 +56,7 @@ const StyledBox = styled("div")(({ theme }) => ({
 	...theme.applyStyles("dark", {
 		backgroundColor: grey[800]
 	})
-})); */
+}));
 
 const Profile = () => {
 	/* const db = firebase.db;
