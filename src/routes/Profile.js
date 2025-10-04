@@ -74,13 +74,13 @@ const Profile = () => {
 		setEditModalOpen(true);
 	};
 
-	useEffect(() => {
+	/* useEffect(() => {
 		if (user) {
 			console.log("User data:", user);
 			setDisplayName(user?.displayName || "");
 			setDateOfBirth(user?.DateOfBirth ? dayjs(user?.DateOfBirth.toDate()) : null);
 		}
-	}, [user]);
+	}, [user]); */
 
 	const handleConfirmUpdate = async () => {
 		try {
