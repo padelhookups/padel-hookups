@@ -44,7 +44,7 @@ const Home = () => {
 							bgcolor: "rgba(255,255,255,0.2)"
 						}}>
 						{user?.displayName
-							? user.displayName
+							? user?.displayName
 									.split(" ")
 									.map((word) => word.charAt(0))
 									.join("")

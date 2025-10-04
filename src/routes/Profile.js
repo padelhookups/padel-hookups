@@ -131,7 +131,7 @@ const Profile = () => {
 							bgcolor: "primary.main"
 						}}>
 						{user?.displayName
-							? user.displayName
+							? user?.displayName
 									.split(" ")
 									.map((word) => word.charAt(0))
 									.join("")
