@@ -74,13 +74,36 @@ const Profile = () => {
 		setEditModalOpen(true);
 	};
 
-	/* useEffect(() => {
+	useEffect(() => {
 		if (user) {
 			console.log("User data:", user);
 			setDisplayName(user?.displayName || "");
-			setDateOfBirth(user?.DateOfBirth ? dayjs(user?.DateOfBirth.toDate()) : null);
+
+			let dob = null;
+			const rawDob = user.DateOfBirth;
+
+			if (rawDob) {
+				try {
+					// If it's a Firestore Timestamp
+					if (typeof rawDob.toDate === "function") {
+						dob = dayjs(rawDob.toDate());
+					}
+					// If it's a Firestore Timestamp-like object
+					else if (rawDob.seconds) {
+						dob = dayjs(new Date(rawDob.seconds * 1000));
+					}
+					// If it's a string (ISO or MM/DD/YYYY)
+					else if (typeof rawDob === "string") {
+						dob = dayjs(rawDob);
+					}
+				} catch (err) {
+					console.error("Invalid DateOfBirth:", err);
+				}
+			}
+
+			setDateOfBirth(dob);
 		}
-	}, [user]); */
+	}, [user]);
 
 	const handleConfirmUpdate = async () => {
 		try {
@@ -119,7 +142,7 @@ const Profile = () => {
 					textAlign: "center",
 					pt: "env(safe-area-inset-top, 0px)",
 				}}>
-				
+
 				<Box sx={{ py: 3, px: 2 }}>
 					<Avatar
 						sx={{
@@ -166,7 +189,7 @@ const Profile = () => {
 					pb: 12,
 					height: "100%"
 				}}>
-				
+
 				<Typography
 					variant='h5'
 					component='h2'
