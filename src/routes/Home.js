@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
 
 import useAuth from "../utils/useAuth";
-import { getFirestore, Timestamp } from "firebase/firestore";
+import { addDoc, arrayUnion, collection, doc, getFirestore, Timestamp, updateDoc } from "firebase/firestore";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchEvents, selectEvents, selectEventsLoading } from "../redux/slices/eventsSlice";
 
@@ -23,6 +23,7 @@ import {
 import TimelineItem, { timelineItemClasses } from "@mui/lab/TimelineItem";
 
 import ConfirmationModal from "../components/ConfirmationModal";
+import SuccessModal from "../components/SuccessModal";
 
 const Puller = styled(Box)(({ theme }) => ({
   width: 30,
@@ -49,6 +50,7 @@ const Home = () => {
   const { user } = useAuth();
 
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showJoinSuccess, setShowJoinSuccess] = useState(false);
   const [open, setOpen] = useState(false);
 
   // Form state for new event
@@ -56,6 +58,7 @@ const Home = () => {
   const [evtType, setEvtType] = useState("🏆 Tournament");
   const [evtDate, setEvtDate] = useState(""); // store as ISO string for now
   const [evtLocation, setEvtLocation] = useState("");
+  const [eventSelectedId, setEventSelectedId] = useState("");
   const [hasPrices, setHasPrices] = useState(false);
   const [hasWelcomeKit, setHasWelcomeKit] = useState(false);
   const [recordGames, setRecordGames] = useState(false);
@@ -74,8 +77,24 @@ const Home = () => {
     }
   }, [dispatch, db, events.length]); // include dispatch
 
-  const registerEvent = () => {
+  const registerEvent = async () => {
+    console.log("Registering user for event", eventSelectedId);
+    setShowSuccess(false);
 
+    const eventRef = doc(db, `Events/${eventSelectedId}`);
+
+    await addDoc(collection(db, `Events/${eventSelectedId}/Players`), {
+      UserId: doc(db, `Users/${user.uid}`),
+      EventId: eventRef,
+      createdAt: Timestamp.fromDate(new Date()),
+    });
+
+    await updateDoc(eventRef, {
+      PlayersIds: arrayUnion(user.uid)
+    });
+
+    // Show success modal after updating the event
+    setShowJoinSuccess(true);
   }
 
   const handleSubmit = (e) => {
@@ -239,7 +258,8 @@ const Home = () => {
                     sx={{ mt: 1 }}
                     variant="outlined"
                     onClick={(e) => {
-                      console.log("Button 1 clicked - going to join page");
+                      console.log("Button 1 clicked - going to join page", event.id);
+                      setEventSelectedId(event.id);
                       setShowSuccess(true);
                       e.stopPropagation();
                     }}
@@ -479,6 +499,13 @@ const Home = () => {
           registerEvent();
         }}
       />
+      <SuccessModal
+        open={showJoinSuccess}
+        onClose={() => setShowJoinSuccess(false)}
+        _title="You're in!"
+        _description="You've successfully joined the event. See you on the court!"
+        _buttonText="Awesome"
+      />
       <SwipeableDrawer
         sx={{ zIndex: 1300 }}
         anchor='bottom'
@@ -520,7 +547,7 @@ const Home = () => {
                 value={evtType}
                 onChange={(e) => setEvtType(e.target.value)}
               >
-                {['🏆 Tournament','🤝 Friendly','📚 Training'].map(t => (
+                {['🏆 Tournament', '🤝 Friendly', '📚 Training'].map(t => (
                   <MenuItem key={t} value={t}>{t}</MenuItem>
                 ))}
               </TextField>
@@ -559,15 +586,15 @@ const Home = () => {
             {/* Toggles */}
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 1 }}>
               <FormControlLabel
-                control={<Switch checked={hasPrices} onChange={(e)=>setHasPrices(e.target.checked)} />}
+                control={<Switch checked={hasPrices} onChange={(e) => setHasPrices(e.target.checked)} />}
                 label='Has Prizes'
               />
               <FormControlLabel
-                control={<Switch checked={hasWelcomeKit} onChange={(e)=>setHasWelcomeKit(e.target.checked)} />}
+                control={<Switch checked={hasWelcomeKit} onChange={(e) => setHasWelcomeKit(e.target.checked)} />}
                 label='Has Welcome Kit'
               />
               <FormControlLabel
-                control={<Switch checked={recordGames} onChange={(e)=>setRecordGames(e.target.checked)} />}
+                control={<Switch checked={recordGames} onChange={(e) => setRecordGames(e.target.checked)} />}
                 label='Record Games'
               />
             </Box>
