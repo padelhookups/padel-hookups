@@ -253,19 +253,23 @@ const Home = () => {
                     />
                     {event.RecordGames && <span>🎥</span>}
                   </Box>
-                  <Button
-                    size="small"
-                    sx={{ mt: 1 }}
-                    variant="outlined"
-                    onClick={(e) => {
-                      console.log("Button 1 clicked - going to join page", event.id);
-                      setEventSelectedId(event.id);
-                      setShowSuccess(true);
-                      e.stopPropagation();
-                    }}
-                  >
-                    Join
-                  </Button>
+                  {/* Hide Join button if user already signed up for this event */}
+                  {user && !event?.PlayersIds?.includes(user?.uid) && (
+                    <Button
+                      size="small"
+                      sx={{ mt: 1 }}
+                      variant="outlined"
+                      onClick={(e) => {
+                        console.log("Button 1 clicked - going to join page", event.id);
+                        setEventSelectedId(event.id);
+                        setShowSuccess(true);
+                        e.stopPropagation();
+                      }}
+                    >
+                      Join
+                    </Button>
+                  )}
+                  {user && event?.PlayersIds?.includes(user?.uid) && <Chip label="💪 You already In!" color="primary" sx={{ color: 'white', mt: 1 }} size="small" />}
                 </Box>
               </TimelineContent>
             </TimelineItem>
