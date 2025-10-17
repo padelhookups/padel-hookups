@@ -90,6 +90,7 @@ const Home = () => {
     });
 
     await updateDoc(eventRef, {
+      ModifiedAt: Timestamp.fromDate(new Date()),
       PlayersIds: arrayUnion(user.uid)
     });
 
