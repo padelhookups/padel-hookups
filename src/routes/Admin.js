@@ -18,6 +18,7 @@ import {
 } from "@mui/material";
 import {
 	People,
+	Mail,
 	Settings,
 	BarChart,
 	Notifications,
@@ -25,6 +26,7 @@ import {
 } from "@mui/icons-material";
 
 import ManageUsers from "./Admin/ManageUsers";
+import Invitations from "./Admin/Invitations";
 
 const Admin = () => {
 	const navigate = useNavigate();
@@ -67,6 +69,7 @@ const Admin = () => {
 					onChange={(event, newValue) => handleTabChange(newValue)}
 					variant='fullWidth'>
 					<Tab icon={<People />} label='Users' />
+					<Tab icon={<Mail />} label='Invitations' />
 					{/* <Tab icon={<Settings />} label='Settings' /> */}
 				</Tabs>
 			</Paper>
@@ -75,60 +78,9 @@ const Admin = () => {
 				<TabPanel value={tabValue} index={0}>
 					<ManageUsers />
 				</TabPanel>
-				{/* <TabPanel value={tabValue} index={1}>
-					<Grid container spacing={3}>
-						<Grid sx={{ width: "100%" }} item xs={12} md={6}>
-							<Card>
-								<CardContent>
-									<Typography
-										variant='h6'
-										component='h2'
-										gutterBottom
-										sx={{
-											fontWeight: "bold",
-											cursor: "pointer",
-											"&:hover": {
-												color: "primary.main"
-											}
-										}}>
-										System Management
-									</Typography>
-									<List>
-										<ListItem>
-											<ListItemIcon>
-												<BarChart />
-											</ListItemIcon>
-											<ListItemText
-												primary='Analytics'
-												secondary='View app usage and statistics'
-											/>
-											<Button
-												variant='outlined'
-												size='small'>
-												View
-											</Button>
-										</ListItem>
-										<Divider />
-										<ListItem>
-											<ListItemIcon>
-												<Notifications />
-											</ListItemIcon>
-											<ListItemText
-												primary='Notifications'
-												secondary='Send system-wide notifications'
-											/>
-											<Button
-												variant='outlined'
-												size='small'>
-												Send
-											</Button>
-										</ListItem>
-									</List>
-								</CardContent>
-							</Card>
-						</Grid>
-					</Grid>
-				</TabPanel> */}
+				<TabPanel value={tabValue} index={1}>
+					<Invitations />
+				</TabPanel>
 			</Box>
 		</Box>
 	);

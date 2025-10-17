@@ -38,6 +38,28 @@ function App() {
 	const [hasShownAutoModal, setHasShownAutoModal] = useState(false);
 
 	useEffect(() => {
+		window.addEventListener("error", (ev) => {
+			console.error("GLOBAL ERROR:", ev.error || ev.message, ev);
+			// show something on screen
+			const el = document.getElementById("__client_err__") || (() => {
+				const d = document.createElement("div");
+				d.id = "__client_err__";
+				d.style.position = "fixed";
+				d.style.left = 0;
+				d.style.right = 0;
+				d.style.top = 0;
+				d.style.background = "rgba(255,0,0,0.9)";
+				d.style.color = "white";
+				d.style.zIndex = 99999;
+				d.style.padding = "8px";
+				document.body.appendChild(d);
+				return d;
+			})();
+			el.innerText = (ev.error && ev.error.stack) || ev.message || JSON.stringify(ev);
+		});
+	}, []);
+
+	useEffect(() => {
 		if (isChecking) return;
 		if (isRunningInApp) return;
 
@@ -82,7 +104,7 @@ function App() {
 	}
 
 	firebase.onMessageListener().then((payload) => {
-		console.log("Message received. ", payload);		
+		console.log("Message received. ", payload);
 	});
 
 	return (

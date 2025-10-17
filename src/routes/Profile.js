@@ -23,8 +23,7 @@ import {
 	Paper
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+
 import dayjs from "dayjs";
 import {
 	Email,
@@ -39,6 +38,8 @@ import { grey } from "@mui/material/colors";
 
 import SuccessModal from "../components/SuccessModal";
 import ConfirmEditModal from "../components/ConfirmEditModal";
+
+const iOS = typeof navigator !== "undefined" && /iPad|iPhone|iPod/.test(navigator.userAgent);
 
 const Puller = styled(Box)(({ theme }) => ({
 	width: 30,
@@ -77,7 +78,30 @@ const Profile = () => {
 		if (user) {
 			console.log("User data:", user);
 			setDisplayName(user?.displayName || "");
-			setDateOfBirth(dayjs(user?.DateOfBirth?.toDate() || null));
+
+			let dob = null;
+			const rawDob = user.DateOfBirth;
+
+			if (rawDob) {
+				try {
+					// If it's a Firestore Timestamp
+					if (typeof rawDob.toDate === "function") {
+						dob = dayjs(rawDob.toDate());
+					}
+					// If it's a Firestore Timestamp-like object
+					else if (rawDob.seconds) {
+						dob = dayjs(new Date(rawDob.seconds * 1000));
+					}
+					// If it's a string (ISO or MM/DD/YYYY)
+					else if (typeof rawDob === "string") {
+						dob = dayjs(rawDob);
+					}
+				} catch (err) {
+					console.error("Invalid DateOfBirth:", err);
+				}
+			}
+
+			setDateOfBirth(dob);
 		}
 	}, [user]);
 
@@ -116,10 +140,9 @@ const Profile = () => {
 					bgcolor: "white",
 					color: "b88f34",
 					textAlign: "center",
-					/* Push header below iOS notch */
-					pt: "env(safe-area-inset-top)"
+					pt: "env(safe-area-inset-top, 0px)",
 				}}>
-				{/* Profile Header */}
+
 				<Box sx={{ py: 3, px: 2 }}>
 					<Avatar
 						sx={{
@@ -131,10 +154,10 @@ const Profile = () => {
 							bgcolor: "primary.main"
 						}}>
 						{user?.displayName
-							? user.displayName
-									.split(" ")
-									.map((word) => word.charAt(0))
-									.join("")
+							? user?.displayName
+								.split(" ")
+								.map((word) => word.charAt(0))
+								.join("")
 							: "?"}
 					</Avatar>
 					<Typography variant='h4' component='h1' gutterBottom>
@@ -163,11 +186,10 @@ const Profile = () => {
 			<Box
 				sx={{
 					p: 3,
-					/* Remove huge extra space; container already pads for bottom nav */
 					pb: 12,
 					height: "100%"
 				}}>
-				{/* User Information */}
+
 				<Typography
 					variant='h5'
 					component='h2'
@@ -220,16 +242,14 @@ const Profile = () => {
 								secondary={
 									user?.metadata?.creationTime
 										? new Date(
-												user.metadata.creationTime
-											).toLocaleDateString()
+											user.metadata.creationTime
+										).toLocaleDateString()
 										: "Unknown"
 								}
 							/>
 						</ListItem>
 					</List>
 				</Card>
-
-				{/* Action Button */}
 				<Button
 					variant='contained'
 					size='large'
@@ -240,153 +260,152 @@ const Profile = () => {
 					<Typography variant='button'>Edit Profile</Typography>
 				</Button>
 
-				{/* Edit Profile Drawer */}
-				<SwipeableDrawer
-					sx={{ zIndex: 1300 }}
-					anchor='bottom'
-					open={open}
-					onClose={() => setOpen(false)}
-					disableSwipeToOpen={true}
-					keepMounted>
-					<Puller />
-					<StyledBox
-						sx={{ px: 2, pb: 2, height: "100%", overflow: "auto" }}>
-						<LocalizationProvider dateAdapter={AdapterDayjs}>
-							<Box
-								component='form'
-								sx={{
-									"& > :not(style)": { mt: 4 },
-									pt: 4,
-									pb: 2,
-									px: 2
-								}}
-								onSubmit={(e) => {
-									// Let browser handle HTML5 validation first
-									if (!e.target.checkValidity()) {
-										return; // Let browser show validation messages
-									}
-									e.preventDefault();
-									handleUpdateProfile();
-								}}>
-								<Box sx={{ width: "100%" }}>
-									<FormControl
-										sx={{
-											width: "100%",
-											"&:focus-within": {
-												borderColor: "primary.main",
-												borderWidth: "2px"
-											}
-										}}>
-										<TextField
-											fullWidth
-											id='displayName'
-											type='text'
-											required
-											autoComplete='off'
-											value={displayName}
-											label='Display Name'
-											onChange={(e) =>
-												setDisplayName(e.target.value)
-											}
-											slotProps={{
-												input: {
-													startAdornment: (
-														<InputAdornment position='start'>
-															<Person
-																sx={{
-																	".Mui-focused &":
-																		{
-																			color: "primary.main"
-																		},
-																	mr: 1,
-																	my: 0.5,
-																	cursor: "pointer"
-																}}
-															/>
-														</InputAdornment>
-													),
-													endAdornment: (
-														<InputAdornment position='end'>
-															<Box
-																sx={{
-																	width: 30
-																}}
-															/>
-														</InputAdornment>
-													)
-												}
-											}}
-										/>
-									</FormControl>
-								</Box>
-								<Box sx={{ width: "100%" }}>
-									<DatePicker
-										label='Date of Birth'
-										value={dateOfBirth}
-										onChange={(newValue) =>
-											setDateOfBirth(newValue)
-										}
-										slotProps={{
-											textField: {
-												fullWidth: true,
-												InputProps: {
-													startAdornment: (
-														<InputAdornment position='start'>
-															<Cake
-																sx={{
-																	".Mui-focused &":
-																		{
-																			color: "primary.main"
-																		},
-																	mr: 1,
-																	my: 0.5,
-																	cursor: "pointer"
-																}}
-															/>
-														</InputAdornment>
-													)
-												}
-											}
-										}}
-									/>
-								</Box>
-								<Button
-									variant='contained'
-									fullWidth
-									type='submit'
-									disabled={!displayName}>
-									<Typography
-										variant='button'
-										color='white'
-										sx={{ fontWeight: "bold" }}>
-										Update Profile
-									</Typography>
-								</Button>
-							</Box>
-						</LocalizationProvider>
-					</StyledBox>
-				</SwipeableDrawer>
-
-				<SuccessModal
-					open={showSuccess}
-					_title='Profile Updated!'
-					onClose={() => setShowSuccess(false)}
-					_description='Your profile has been updated successfully.'
-					_buttonText='Continue'
-					_navigate={false}
-				/>
-
-				{/* Confirm Edit Modal */}
-				<ConfirmEditModal
-					open={editModalOpen}
-					onClose={() => setEditModalOpen(false)}
-					onConfirm={handleConfirmUpdate}
-					_title='Update Profile'
-					_description={`Are you sure you want to save the changes to your profile?`}
-					_confirmText='Save Changes'
-					_cancelText='Cancel'
-				/>
 			</Box>
+			<SwipeableDrawer
+				sx={{ zIndex: 1300 }}
+				anchor='bottom'
+				open={open}
+				onClose={() => setOpen(false)}
+				disableDiscovery
+				disableSwipeToOpen={true}
+				disableBackdropTransition={!iOS}
+				keepMounted>
+				<Puller />
+				<StyledBox
+					sx={{ px: 2, pb: 2, height: "100%", overflow: "auto" }}>
+
+					<Box
+						component='form'
+						sx={{
+							"& > :not(style)": { mt: 4 },
+							pt: 4,
+							pb: 2,
+							px: 2
+						}}
+						onSubmit={(e) => {
+							// Let browser handle HTML5 validation first
+							if (!e.target.checkValidity()) {
+								return; // Let browser show validation messages
+							}
+							e.preventDefault();
+							handleUpdateProfile();
+						}}>
+						<Box sx={{ width: "100%" }}>
+							<FormControl
+								sx={{
+									width: "100%",
+									"&:focus-within": {
+										borderColor: "primary.main",
+										borderWidth: "2px"
+									}
+								}}>
+								<TextField
+									fullWidth
+									id='displayName'
+									type='text'
+									required
+									autoComplete='off'
+									value={displayName}
+									label='Display Name'
+									onChange={(e) =>
+										setDisplayName(e.target.value)
+									}
+									slotProps={{
+										input: {
+											startAdornment: (
+												<InputAdornment position='start'>
+													<Person
+														sx={{
+															".Mui-focused &":
+															{
+																color: "primary.main"
+															},
+															mr: 1,
+															my: 0.5,
+															cursor: "pointer"
+														}}
+													/>
+												</InputAdornment>
+											),
+											endAdornment: (
+												<InputAdornment position='end'>
+													<Box
+														sx={{
+															width: 30
+														}}
+													/>
+												</InputAdornment>
+											)
+										}
+									}}
+								/>
+							</FormControl>
+						</Box>
+						<Box sx={{ width: "100%" }}>
+							<DatePicker
+								label='Date of Birth'
+								value={dateOfBirth}
+								onChange={(newValue) =>
+									setDateOfBirth(newValue)
+								}
+								slotProps={{
+									textField: {
+										fullWidth: true,
+										InputProps: {
+											startAdornment: (
+												<InputAdornment position='start'>
+													<Cake
+														sx={{
+															".Mui-focused &":
+															{
+																color: "primary.main"
+															},
+															mr: 1,
+															my: 0.5,
+															cursor: "pointer"
+														}}
+													/>
+												</InputAdornment>
+											)
+										}
+									}
+								}}
+							/>
+						</Box>
+						<Button
+							variant='contained'
+							fullWidth
+							type='submit'
+							disabled={!displayName}>
+							<Typography
+								variant='button'
+								color='white'
+								sx={{ fontWeight: "bold" }}>
+								Update Profile
+							</Typography>
+						</Button>
+					</Box>
+				</StyledBox>
+			</SwipeableDrawer>
+
+			<SuccessModal
+				open={showSuccess}
+				_title='Profile Updated!'
+				onClose={() => setShowSuccess(false)}
+				_description='Your profile has been updated successfully.'
+				_buttonText='Continue'
+				_navigate={false}
+			/>
+
+			<ConfirmEditModal
+				open={editModalOpen}
+				onClose={() => setEditModalOpen(false)}
+				onConfirm={handleConfirmUpdate}
+				_title='Update Profile'
+				_description={`Are you sure you want to save the changes to your profile?`}
+				_confirmText='Save Changes'
+				_cancelText='Cancel'
+			/>
 		</>
 	);
 };

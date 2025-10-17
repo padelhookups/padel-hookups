@@ -144,6 +144,8 @@ function SignUp() {
 			alert("Invalid or expired invitation link.");
 			navigate("/");
 		} else {
+			// update Invitation as used (optional)
+			await setDoc(docRef, { Status: 'Confirmed' }, { merge: true });
 			handleUserPassword();
 		}
 	};

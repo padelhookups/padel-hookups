@@ -92,6 +92,7 @@ const ManageUsers = () => {
 	const [newUser, setNewUser] = useState({
 		Name: "",
 		Email: "",
+		Status: "Pending",
 		IsAdmin: false // Changed to boolean for admin status
 	});
 	const [editUser, setEditUser] = useState({
@@ -259,36 +260,36 @@ const ManageUsers = () => {
 
 	return (
 		<>
-			<Box
-				sx={{
-					px: 1,
-					pt: 2,
-					display: "flex",
-					flexDirection: "column",
-					alignItems: "center",
-					flex: 1
-				}}>
-				<Typography textAlign='center' variant='body1' sx={{ mb: 3 }}>
-					Total Users: {users.length}
-				</Typography>
+			<Box sx={{ p: 2, pb: 10 }}>
+				<Box
+					sx={{
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "space-between",
+						mb: 2
+					}}>
+					<Typography alignContent="start" variant='h5' sx={{ fontWeight: "bold" }}>
+						Users ({users.length})
+					</Typography>
+				</Box>
 
 				{/* Search Bar */}
-				<Box sx={{ mb: 3 }}>
-					<TextField
-						fullWidth
-						placeholder='Search users by name or email'
-						value={searchQuery}
-						onChange={(e) => setSearchQuery(e.target.value)}
-						variant='outlined'
-						InputProps={{
-							startAdornment: (
-								<InputAdornment position='start'>
-									<Search />
-								</InputAdornment>
-							)
-						}}
-					/>
-				</Box>
+				<TextField
+					fullWidth
+					placeholder='Search invitations by name or email'
+					value={searchQuery}
+					onChange={(e) => setSearchQuery(e.target.value)}
+					variant='outlined'
+					size='small'
+					InputProps={{
+						startAdornment: (
+							<InputAdornment position='start'>
+								<Search />
+							</InputAdornment>
+						)
+					}}
+					sx={{ mb: 3 }}
+				/>
 
 				{/* Users List */}
 				{filteredUsers.length > 0 && (
@@ -347,8 +348,8 @@ const ManageUsers = () => {
 											</ListItem>
 											{index <
 												filteredUsers.length - 1 && (
-												<Divider />
-											)}
+													<Divider />
+												)}
 										</React.Fragment>
 									))}
 								</List>
@@ -462,9 +463,9 @@ const ManageUsers = () => {
 														<Person
 															sx={{
 																".Mui-focused &":
-																	{
-																		color: "primary.main"
-																	},
+																{
+																	color: "primary.main"
+																},
 																mr: 1,
 																my: 0.5,
 																cursor: "pointer"
@@ -634,9 +635,9 @@ const ManageUsers = () => {
 														<Person
 															sx={{
 																".Mui-focused &":
-																	{
-																		color: "primary.main"
-																	},
+																{
+																	color: "primary.main"
+																},
 																mr: 1,
 																my: 0.5,
 																cursor: "pointer"
@@ -810,6 +811,7 @@ const ManageUsers = () => {
 					_description={successModalData.description}
 					_buttonText={successModalData.buttonText}
 				/>
+
 			</Box>
 		</>
 	);

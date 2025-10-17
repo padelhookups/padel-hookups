@@ -47,7 +47,7 @@ const Settings = () => {
 		if (!messagingToken) {
 			return;
 		}
-		const ref = doc(db, "Users", user.uid);
+		const ref = doc(db, "Users", user?.uid);
 		getDoc(ref)
 			.then((snap) => {
 				if (snap.exists()) {
@@ -172,7 +172,7 @@ const Settings = () => {
 											const userRef = doc(
 												db,
 												"Users",
-												user.uid
+												user?.uid
 											);
 											setDoc(
 												userRef,
