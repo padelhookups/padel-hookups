@@ -27,8 +27,7 @@ import {
 	TextField,
 	Typography,
 	Paper,
-	SwipeableDrawer,
-	CircularProgress
+	SwipeableDrawer
 } from "@mui/material";
 import {
 	Add,

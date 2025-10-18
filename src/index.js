@@ -50,16 +50,16 @@ if ("serviceWorker" in navigator) {
 }
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
+{/* <React.StrictMode>
+  </React.StrictMode> */}
 root.render(
-  <React.StrictMode>
-    <ThemeProvider theme={theme}>
-      <Provider store={store}>
-        <LocalizationProvider dateAdapter={AdapterDayjs}>
-          <App />
-        </LocalizationProvider>
-      </Provider>
-    </ThemeProvider>
-  </React.StrictMode>
+  <ThemeProvider theme={theme}>
+    <Provider store={store}>
+      <LocalizationProvider dateAdapter={AdapterDayjs}>
+        <App />
+      </LocalizationProvider>
+    </Provider>
+  </ThemeProvider>
 );
 
 // If you want to start measuring performance in your app, pass a function

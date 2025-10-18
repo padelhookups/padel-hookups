@@ -66,8 +66,8 @@ export const fetchEvents = createAsyncThunk(
           const latestModifiedTimestamp = latestDoc.data().ModifiedAt;
           const latestModified = convertTimestampToMillis(latestModifiedTimestamp);
 
-          console.log(lastModified);
-          console.log(latestModified);
+          console.log('lastModified from cache', new Date(lastModified).toISOString());
+          console.log('latestModified from server', new Date(latestModified).toISOString());
           console.log(latestModified <= lastModified);
           
 
@@ -183,8 +183,8 @@ const eventsSlice = createSlice({
         state.loading = false;
         const { events, lastModified, fromCache } = action.payload;
 
-  // Always update items; ensure new array reference
-  state.items = Array.isArray(events) ? [...events] : [];
+        // Always update items; ensure new array reference
+        state.items = Array.isArray(events) ? [...events] : [];
 
         // Only update timestamps if it's fresh data
         if (!fromCache && lastModified) {
