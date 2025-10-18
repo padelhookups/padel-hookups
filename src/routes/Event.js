@@ -1,12 +1,15 @@
 import { useEffect, useState, useRef } from "react";
 import { useLocation, useParams } from "react-router";
-import { useSelector } from "react-redux";
-import { selectEvents } from "../redux/slices/eventsSlice";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchEvents, selectEvents } from "../redux/slices/eventsSlice";
+
+import { getFirestore, Timestamp } from "firebase/firestore";
 
 import useAuth from "../utils/useAuth";
 import useEventActions from "../utils/EventsUtils";
 
-import { Timestamp } from "firebase/firestore";
+import ConfirmationModal from "../components/ConfirmationModal";
+import SuccessModal from "../components/SuccessModal";
 
 import {
     Box,
@@ -23,27 +26,42 @@ import {
 import {
     CalendarMonth as CalendarIcon,
     AccessTime as TimeIcon,
-    Place as PlaceIcon,
-    Group as GroupIcon,
+    Place as PlaceIcon
 } from "@mui/icons-material";
 
 
 const Event = () => {
     const { user } = useAuth();
     const { state } = useLocation();
+    const db = getFirestore();
+    const dispatch = useDispatch();
     const { registerFromEvent, unregisterFromEvent } = useEventActions();
 
     const { eventId: paramEventId } = useParams();
     const eventId = state?.eventId ?? paramEventId;
     const events = useSelector(selectEvents);
 
+
     const [event, setEvent] = useState(null);
+    const [showSuccess, setShowSuccess] = useState(false);
+    const [showJoinSuccess, setShowJoinSuccess] = useState(false);
     const [tab, setTab] = useState("details");
+
+    const initialFetchDone = useRef(false);
+
+    useEffect(() => {
+        // Only fetch if we haven't done initial fetch and don't have benefits
+        if (!initialFetchDone.current) {
+            console.log("Fetch events using Redux with caching");
+            initialFetchDone.current = true;
+            dispatch(fetchEvents({ db, forceRefresh: false }));
+        }
+    }, [dispatch, db, events.length]); // include dispatch
 
     useEffect(() => {
         const foundEvent = events.find(e => e.id === eventId);
         setEvent(foundEvent);
-        console.log("Events:", foundEvent);
+        console.log("Event Selected:", foundEvent);
     }, [events, eventId]);
 
     const getColor = (type) => {
@@ -58,11 +76,6 @@ const Event = () => {
                 return 'default';
         }
     }
-
-    const unregister = async () => {
-        // Unregister logic here
-        unregisterFromEvent(event.id);
-    };
 
     if (!event) {
         return (
@@ -164,7 +177,9 @@ const Event = () => {
                                     color: "white",
                                     "&:hover": { bgcolor: "white", color: "primary.main" },
                                 }}
-                                onClick={() => registerFromEvent(event.id)}
+                                onClick={async () => {
+                                    setShowSuccess(true);
+                                }}
                             >
                                 Register
                             </Button>}
@@ -191,7 +206,7 @@ const Event = () => {
                                 borderColor: "error.main",
                                 "&:hover": { bgcolor: "error.main", color: "white" },
                             }}
-                                onClick={unregister}>
+                                onClick={() => unregisterFromEvent(event.id)}>
                                 Unregister
                             </Button>
                         </Stack>
@@ -203,8 +218,28 @@ const Event = () => {
                         </Paper> */}
                     </Stack>
                 </Container>
+                <ConfirmationModal
+                    open={showSuccess}
+                    title="You wanna join this event?"
+                    description=""
+                    negativeText="Cancel"
+                    positiveText="Yes"
+                    onClose={() => setShowSuccess(false)}
+                    onConfirm={async () => {
+                        await registerFromEvent(event.id);
+                        setShowJoinSuccess(true);
+                        dispatch(fetchEvents({ db, forceRefresh: false }));
+                    }}
+                />
+                <SuccessModal
+                    open={showJoinSuccess}
+                    onClose={() => setShowJoinSuccess(false)}
+                    _title="You're in!"
+                    _description="You've successfully joined the event. See you on the court!"
+                    _buttonText="Awesome"
+                />
             </Box>
-        </Paper>
+        </Paper >
     </>)
 }
 
