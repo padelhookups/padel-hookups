@@ -1,10 +1,11 @@
 import { Modal, Box, Typography, Button, Fade, Backdrop } from "@mui/material";
-import { Edit } from "@mui/icons-material";
+import AnimatedPadelIcon from "./AnimatedPadelIcon";
 
 export default function ConfirmationModal({
   open,
   onClose,
   onConfirm,
+  type,
   title = "Confirm",
   description = "Are you sure you want to proceed?",
   positiveText = "Yes",
@@ -49,159 +50,29 @@ export default function ConfirmationModal({
             textAlign: "center",
           }}
         >
-          {/* Animated Edit Scene */}
-          <Box
+          {type === 'joinGame' && <Box
             sx={{
               mb: 3,
               position: "relative",
               height: "120px",
               display: "flex",
               alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Box
-              sx={{
-                position: "relative",
-                width: "100px",
-                height: "100px",
-                animation: "fadeInScale 0.8s ease-out",
-              }}
-            >
-              {/* Animated Edit Icon */}
-              <Box
-                sx={{
-                  position: "absolute",
-                  width: "80px",
-                  height: "80px",
-                  left: "50%",
-                  top: "50%",
-                  transform: "translate(-50%, -50%)",
-                  animation: "editPulse 2s ease-in-out infinite",
-                }}
-              >
-                {/* Edit Circle */}
-                <Box
-                  sx={{
-                    position: "relative",
-                    width: "70px",
-                    height: "70px",
-                    margin: "0 auto",
-                  }}
-                >
-                  {/* SVG Edit Circle */}
-                  <svg
-                    width="64"
-                    height="64"
-                    viewBox="0 0 64 64"
-                    style={{
-                      position: "absolute",
-                      top: 0,
-                      left: "50%",
-                      transform: "translateX(-50%)",
-                    }}
-                  >
-                    <circle
-                      cx="32"
-                      cy="32"
-                      r="28"
-                      fill="#b88f34"
-                      stroke="#a67c2a"
-                      strokeWidth="3"
-                    />
-                  </svg>
+              justifyContent: "center"
+            }}>
+            <AnimatedPadelIcon size={100} />
+          </Box>}
 
-                  {/* Edit Icon */}
-                  <Box
-                    sx={{
-                      position: "absolute",
-                      width: "24px",
-                      height: "24px",
-                      color: "white",
-                      top: "45%",
-                      left: "50%",
-                      transform: "translate(-50%, -50%)",
-                    }}
-                  >
-                    <Edit sx={{ fontSize: "24px" }} />
-                  </Box>
-                </Box>
-              </Box>
-
-              {/* Animated Settings Icon */}
-              <Box
-                sx={{
-                  position: "absolute",
-                  width: "20px",
-                  height: "20px",
-                  left: "100%",
-                  top: "0%",
-                  transform: "translate(-50%, -50%)",
-                  animation: "settingsRotate 4s linear infinite",
-                  color: "#b88f34",
-                }}
-              >
-                {/* Small Padel Ball */}
-                <Box
-                  sx={{
-                    position: "absolute",
-                    width: "18px",
-                    height: "18px",
-                    borderRadius: "50%",
-                    bgcolor: "#facc15",
-                    border: "1px solid #eab308",
-                    left: "50%",
-                    top: "50%",
-                    transform: "translate(-50%, -50%)",
-                    boxShadow: "inset 2px -2px 4px rgba(234, 179, 8, 0.3)",
-                  }}
-                >
-                  <Box
-                    sx={{
-                      position: "absolute",
-                      width: "12px",
-                      height: "1px",
-                      bgcolor: "white",
-                      borderRadius: "50px",
-                      top: "4px",
-                      left: "3px",
-                      transform: "rotate(-20deg)",
-                      opacity: 0.9,
-                    }}
-                  />
-                  <Box
-                    sx={{
-                      position: "absolute",
-                      width: "12px",
-                      height: "1px",
-                      bgcolor: "white",
-                      borderRadius: "50px",
-                      top: "9px",
-                      left: "3px",
-                      transform: "rotate(20deg)",
-                      opacity: 0.9,
-                    }}
-                  />
-                </Box>
-              </Box>
-
-              {/* Pulsing Golden Ring */}
-              <Box
-                sx={{
-                  position: "absolute",
-                  width: "80px",
-                  height: "80px",
-                  borderRadius: "50%",
-                  border: "3px solid #b88f34",
-                  left: "50%",
-                  top: "43%",
-                  transform: "translate(-50%, -50%)",
-                  animation: "goldenPulse 2s ease-in-out infinite",
-                  opacity: 0.4,
-                }}
-              />
-            </Box>
-          </Box>
+          {/* {type === 'exitGame' && <Box
+            sx={{
+              mb: 3,
+              position: "relative",
+              height: "120px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center"
+            }}>
+            <AnimatedPadelIcon size={100} />
+          </Box>} */}
 
           {/* Title */}
           <Typography
@@ -209,7 +80,7 @@ export default function ConfirmationModal({
             component="h2"
             sx={{
               fontWeight: "bold",
-              color: "#b88f34",
+              color: type === 'exitGame' ? 'error.main' : 'primary.main',
               mb: 2,
             }}
           >
@@ -259,8 +130,8 @@ export default function ConfirmationModal({
               variant="contained"
               size="large"
               fullWidth
-              sx={{
-                background: "linear-gradient(45deg, #b88f34 30%, rgba(184, 143, 52, 0.9) 90%)",
+              sx={(theme) => ({
+                background: type === 'exitGame' ? theme.palette.error.main : 'linear-gradient(45deg, #b88f34 30%, rgba(184, 143, 52, 0.9) 90%)',
                 color: "white",
                 fontWeight: 600,
                 py: 1.5,
@@ -268,11 +139,11 @@ export default function ConfirmationModal({
                 textTransform: "none",
                 fontSize: "1rem",
                 "&:hover": {
-                  background:
-                    "linear-gradient(45deg, rgba(184, 143, 52, 0.9) 30%, #b88f34 90%)",
-                  boxShadow: "0 8px 25px rgba(184, 143, 52, 0.3)",
+                  background: type === 'exitGame'
+                    ? theme.palette.error.dark
+                    : 'linear-gradient(45deg, rgba(184, 143, 52, 0.9) 30%, #b88f34 90%)',
                 },
-              }}
+              })}
             >
               {positiveText}
             </Button>

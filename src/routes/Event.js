@@ -43,9 +43,10 @@ const Event = () => {
 
 
     const [event, setEvent] = useState(null);
-    const [showSuccess, setShowSuccess] = useState(false);
+    const [showConfirmation, setConfirmation] = useState(false);
     const [showJoinSuccess, setShowJoinSuccess] = useState(false);
     const [tab, setTab] = useState("details");
+    const [type, setType] = useState('joinGame');
 
     const initialFetchDone = useRef(false);
 
@@ -178,37 +179,41 @@ const Event = () => {
                                     "&:hover": { bgcolor: "white", color: "primary.main" },
                                 }}
                                 onClick={async () => {
-                                    setShowSuccess(true);
+                                    setConfirmation(true);
+                                    setType('joinGame');
                                 }}
                             >
                                 Register
                             </Button>}
                             {user && event?.PlayersIds?.includes(user?.uid) &&
-                                <Button
-                                    disableElevation
-                                    disableRipple
-                                    disableFocusRipple
-                                    disableTouchRipple
-                                    fullWidth
-                                    variant="contained"
-                                    sx={{
-                                        bgcolor: "primary.main",
-                                        color: "white",
-                                        "&:hover": { bgcolor: "white", color: "primary.main" },
+                                <>
+                                    <Button
+                                        disableElevation
+                                        disableRipple
+                                        disableFocusRipple
+                                        disableTouchRipple
+                                        fullWidth
+                                        variant="contained"
+                                        sx={{
+                                            bgcolor: "primary.main",
+                                            color: "white",
+                                            "&:hover": { bgcolor: "white", color: "primary.main" },
+                                        }}
+                                    >
+                                        Good Luck 🤞
+                                    </Button>
+                                    <Button fullWidth variant="outlined" sx={{
+                                        bgcolor: "white",
+                                        color: "error.main",
+                                        borderColor: "error.main",
+                                        "&:hover": { bgcolor: "error.main", color: "white" },
                                     }}
-                                >
-                                    Good Luck 🤞
-                                </Button>}
-
-                            <Button fullWidth variant="outlined" sx={{
-                                bgcolor: "white",
-                                color: "error.main",
-                                borderColor: "error.main",
-                                "&:hover": { bgcolor: "error.main", color: "white" },
-                            }}
-                                onClick={() => unregisterFromEvent(event.id)}>
-                                Unregister
-                            </Button>
+                                        onClick={() => {
+                                            setConfirmation(true);
+                                            setType('exitGame');
+                                        }}>
+                                        Unregister
+                                    </Button></>}
                         </Stack>
 
                         {/*  <Paper elevation={1} sx={{ p: 2.5 }}>
@@ -219,14 +224,18 @@ const Event = () => {
                     </Stack>
                 </Container>
                 <ConfirmationModal
-                    open={showSuccess}
-                    title="You wanna join this event?"
+                    open={showConfirmation}
+                    title={type === 'joinGame' ? "You wanna join this event?" : "You wanna leave this event?"}
                     description=""
+                    type={type}
                     negativeText="Cancel"
                     positiveText="Yes"
-                    onClose={() => setShowSuccess(false)}
+                    onClose={() => setConfirmation(false)}
                     onConfirm={async () => {
-                        await registerFromEvent(event.id);
+                        if (type === 'exitGame')
+                            await unregisterFromEvent(event.id);
+                        else
+                            await registerFromEvent(event.id);
                         setShowJoinSuccess(true);
                         dispatch(fetchEvents({ db, forceRefresh: false }));
                     }}
