@@ -44,6 +44,7 @@ const Event = () => {
 
     const [event, setEvent] = useState(null);
     const [showConfirmation, setConfirmation] = useState(false);
+    const [showExitSuccess, setShowExitSuccess] = useState(false);
     const [showJoinSuccess, setShowJoinSuccess] = useState(false);
     const [tab, setTab] = useState("details");
     const [type, setType] = useState('joinGame');
@@ -232,11 +233,13 @@ const Event = () => {
                     positiveText="Yes"
                     onClose={() => setConfirmation(false)}
                     onConfirm={async () => {
-                        if (type === 'exitGame')
+                        if (type === 'exitGame') {
                             await unregisterFromEvent(event.id);
-                        else
+                            setShowExitSuccess(true);
+                        } else {
                             await registerFromEvent(event.id);
-                        setShowJoinSuccess(true);
+                            setShowJoinSuccess(true);
+                        }
                         dispatch(fetchEvents({ db, forceRefresh: false }));
                     }}
                 />
@@ -246,6 +249,13 @@ const Event = () => {
                     _title="You're in!"
                     _description="You've successfully joined the event. See you on the court!"
                     _buttonText="Awesome"
+                />
+                <SuccessModal
+                    open={showExitSuccess}
+                    onClose={() => setShowExitSuccess(false)}
+                    _title="You're out!"
+                    _description="You've successfully left the event."
+                    _buttonText="Got it"
                 />
             </Box>
         </Paper >

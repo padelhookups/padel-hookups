@@ -217,7 +217,8 @@ const Benefits = () => {
 				sx={{
 					px: 0,
 					/* Remove huge extra space; container already pads for bottom nav */
-					pb: 6
+					maxHeight: 'Calc(100vh - 365px)',
+					overflowY: 'auto'
 				}}>
 				<Box sx={{ px: 4, pt: 4, pb: "40px" }}>
 					{error && (

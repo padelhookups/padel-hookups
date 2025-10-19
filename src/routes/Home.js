@@ -62,6 +62,8 @@ const Home = () => {
   const [evtType, setEvtType] = useState("🏆 Tournament");
   const [evtDate, setEvtDate] = useState(""); // store as ISO string for now
   const [evtLocation, setEvtLocation] = useState("");
+  const [evtDescription, setEvtDescription] = useState("");
+  const [evtPrice, setEvtPrice] = useState("");
   const [eventSelectedId, setEventSelectedId] = useState("");
   const [hasPrices, setHasPrices] = useState(false);
   const [hasWelcomeKit, setHasWelcomeKit] = useState(false);
@@ -182,6 +184,8 @@ const Home = () => {
           px: 0,
           pt: 0,
           flex: 1, // match BottomBar height, no extra safe-area padding
+          maxHeight: 'Calc(100vh - 180px)',
+          overflow: 'auto',
         }}
       >
         <Timeline
@@ -279,211 +283,6 @@ const Home = () => {
               </TimelineContent>
             </TimelineItem>
           ))}
-          {/* <TimelineItem>
-            <TimelineSeparator>
-              <TimelineConnector />
-              <TimelineDot
-                sx={{
-                  bgcolor: "error.main",
-                  color: "white",
-                  fontWeight: "bold",
-                  width: 24,
-                  height: 24,
-                }}
-              >
-                <Typography
-                  variant="span"
-                  sx={{
-                    fontWeight: "bold",
-                    width: "100%",
-                    textAlign: "center",
-                    px: 0.2,
-                  }}
-                >
-                  28
-                </Typography>
-              </TimelineDot>
-              <TimelineConnector />
-            </TimelineSeparator>
-            <TimelineContent sx={{ py: "12px", px: 2 }}>
-              <Box
-                sx={{
-                  border: "2px dashed grey",
-                  borderRadius: 2,
-                  p: 1,
-                  position: "relative",
-                  cursor: "pointer",
-                }}
-                onClick={() => {
-                  console.log("Box 1 clicked - going to event details");
-                  navigate("/Event");
-                }}
-              >
-                <Typography variant="h6">🏆 Masters V</Typography>
-                <Typography variant="body2">⌚ 18:00</Typography>
-                <Chip
-                  sx={{
-                    position: "absolute",
-                    top: 8,
-                    right: 8,
-                  }}
-                  variant="solid"
-                  color="error"
-                  size="small"
-                  label="Tournament"
-                />
-                <Button
-                  size="small"
-                  sx={{ mt: 1 }}
-                  variant="outlined"
-                  onClick={(e) => {
-                    console.log("Button 1 clicked - going to join page");
-                    setShowSuccess(true);
-                    e.stopPropagation();
-                  }}
-                >
-                  Join
-                </Button>
-              </Box>
-            </TimelineContent>
-          </TimelineItem>
-          <TimelineItem>
-            <TimelineSeparator>
-              <TimelineConnector />
-              <TimelineDot
-                sx={{
-                  bgcolor: "success.main",
-                  color: "white",
-                  fontWeight: "bold",
-                  width: 24,
-                  height: 24,
-                }}
-              >
-                <Typography
-                  variant="span"
-                  sx={{
-                    fontWeight: "bold",
-                    width: "100%",
-                    textAlign: "center",
-                    px: 0.2,
-                  }}
-                >
-                  17
-                </Typography>
-              </TimelineDot>
-              <TimelineConnector />
-            </TimelineSeparator>
-            <TimelineContent sx={{ py: "12px", px: 2 }}>
-              <Box
-                sx={{
-                  border: "2px dashed grey",
-                  borderRadius: 2,
-                  p: 1,
-                  position: "relative",
-                  cursor: "pointer",
-                }}
-                onClick={() => {
-                  console.log("Box 2 clicked - going to event details");
-                  navigate("/Event");
-                }}
-              >
-                <Typography variant="h6">🏆 Mix November</Typography>
-                <Typography variant="body2" component="span"></Typography>
-                <Typography variant="body2">⌚ 12:00</Typography>
-                <Chip
-                  sx={{
-                    position: "absolute",
-                    top: 8,
-                    right: 8,
-                  }}
-                  variant="solid"
-                  color="success"
-                  size="small"
-                  label="Social"
-                />
-                <Button
-                  size="small"
-                  sx={{ mt: 1 }}
-                  variant="outlined"
-                  onClick={(e) => {
-                    console.log("Button 2 clicked - going to join page");
-                    e.stopPropagation();
-                    navigate("/Join");
-                  }}
-                >
-                  Join
-                </Button>
-              </Box>
-            </TimelineContent>
-          </TimelineItem>
-          <TimelineItem>
-            <TimelineSeparator>
-              <TimelineConnector />
-              <TimelineDot
-                sx={{
-                  bgcolor: "info.main",
-                  color: "white",
-                  fontWeight: "bold",
-                  width: 24,
-                  height: 24,
-                }}
-              >
-                <Typography
-                  variant="span"
-                  sx={{
-                    fontWeight: "bold",
-                    width: "100%",
-                    textAlign: "center",
-                    px: 0.2,
-                  }}
-                >
-                  12
-                </Typography>
-              </TimelineDot>
-              <TimelineConnector />
-            </TimelineSeparator>
-            <TimelineContent sx={{ py: "12px", px: 2 }}>
-              <Box
-                sx={{
-                  border: "2px dashed grey",
-                  borderRadius: 2,
-                  p: 1,
-                  position: "relative",
-                  cursor: "pointer",
-                }}
-                onClick={() => {
-                  console.log("Box 3 clicked - going to event details");
-                  navigate("/Event");
-                }}
-              >
-                <Typography variant="h6">🎯 Training Class</Typography>
-                <Typography variant="body2">⌚ 20:00</Typography>
-                <Chip
-                  sx={{
-                    position: "absolute",
-                    top: 8,
-                    right: 8,
-                  }}
-                  variant="solid"
-                  color="info"
-                  size="small"
-                  label="Training"
-                />
-                <Button
-                  size="small"
-                  sx={{ mt: 1 }}
-                  variant="outlined"
-                  onClick={(e) => {
-                    console.log("Button 3 clicked - going to join page");
-                    e.stopPropagation();
-                    navigate("/Join");
-                  }}
-                >
-                  Join
-                </Button>
-              </Box>
-            </TimelineContent>
-          </TimelineItem> */}
         </Timeline>
         {user?.IsAdmin && (
           <Fab
@@ -558,7 +357,8 @@ const Home = () => {
                 value={evtType}
                 onChange={(e) => setEvtType(e.target.value)}
               >
-                {['🏆 Tournament', '🤝 Friendly', '📚 Training'].map(t => (
+                {/* , '📚 Training' */}
+                {['🏆 Tournament', '🤝 Friendly'].map(t => (
                   <MenuItem key={t} value={t}>{t}</MenuItem>
                 ))}
               </TextField>
@@ -594,6 +394,26 @@ const Home = () => {
                 }}
               />
             </FormControl>
+            <FormControl fullWidth>
+              <TextField
+                fullWidth
+                label='Description'
+                id='Description'
+                value={evtDescription}
+                onChange={(e) => setEvtDescription(e.target.value)}
+                autoComplete='off'
+              />
+            </FormControl>
+            <FormControl fullWidth>
+              <TextField
+                fullWidth
+                label='Price'
+                id='Price'
+                value={evtPrice}
+                onChange={(e) => setEvtPrice(e.target.value)}
+                autoComplete='off'
+              />
+            </FormControl>
             {/* Toggles */}
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 1 }}>
               <FormControlLabel
@@ -612,10 +432,18 @@ const Home = () => {
             <Button
               type='submit'
               variant='contained'
-              sx={{ mt: 2 }}
+              sx={{
+								mt: 2,
+								backgroundColor: "primary.main",
+								color: "white"
+							}}
               fullWidth
             >
-              Save Event
+              <Typography
+                variant='button'
+                sx={{ fontWeight: "bold" }}>
+                Save
+              </Typography>
             </Button>
           </Box>
         </StyledBox>
