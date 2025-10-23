@@ -20,8 +20,7 @@ import {
     CardContent,
     Chip,
     Container,
-    Divider,
-    IconButton,
+    Divider,    
     List,
     ListItem,
     ListItemText,
@@ -36,8 +35,8 @@ import {
     CalendarMonth as CalendarIcon,
     AccessTime as TimeIcon,
     Place as PlaceIcon,
-    Settings,
-    Person
+    Person,
+    Group
 } from "@mui/icons-material";
 
 
@@ -248,14 +247,17 @@ const Event = () => {
                                                 setType('exitGame');
                                             }}>
                                             Unregister
-                                        </Button></>}
+                                        </Button>
+                                    </>}
                             </Stack>
-
-                            {/*  <Paper elevation={1} sx={{ p: 2.5 }}>
-                            <Typography variant="body2" color="text.secondary">
-                                <b>Organizer:</b> Padel Hookups
-                            </Typography>
-                        </Paper> */}
+                            {user?.IsAdmin && <>
+                                <Divider />
+                                 <Stack spacing={2.5}>
+                                    <Button variant="outlined" startIcon={<Group />} fullWidth sx={{ borderColor: 'gray' }}>
+                                        Create Pairs
+                                    </Button>
+                                 </Stack>
+                            </>}
                         </Stack>
                     </Container>
                 </TabPanel>
@@ -283,7 +285,7 @@ const Event = () => {
                                                                 "bold"
                                                         }}>
                                                         {user.Name ||
-                                                            "No Name"}                                                        
+                                                            "No Name"}
                                                     </Typography>
                                                 }
                                             />
