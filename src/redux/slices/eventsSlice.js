@@ -13,18 +13,22 @@ const convertTimestampToMillis = (timestamp) => {
 const isFirestoreTimestamp = (val) =>
   val && (typeof val.toMillis === 'function' || (typeof val.seconds === 'number' && typeof val.nanoseconds === 'number'));
 
-const deepConvertTimestamps = (value) => {
-  if (Array.isArray(value)) return value.map(deepConvertTimestamps);
+const deepConvertTimestamps = (value, seen = new WeakSet()) => {
+  if (Array.isArray(value)) return value.map(v => deepConvertTimestamps(v, seen));
   if (value && typeof value === 'object') {
+    if (seen.has(value)) return value; // avoid infinite recursion
+    seen.add(value);
+
     const out = {};
     for (const [k, v] of Object.entries(value)) {
-      out[k] = isFirestoreTimestamp(v) ? convertTimestampToMillis(v) : deepConvertTimestamps(v);
+      out[k] = isFirestoreTimestamp(v)
+        ? convertTimestampToMillis(v)
+        : deepConvertTimestamps(v, seen);
     }
     return out;
   }
   return value;
 };
-
 // Helper function to serialize event data
 const serializeEvent = (event) => {
   const converted = deepConvertTimestamps(event);
@@ -32,6 +36,7 @@ const serializeEvent = (event) => {
     ...converted,
     // ensure field exists and is millis if present
     ModifiedAt: converted?.ModifiedAt ?? (event?.ModifiedAt ? convertTimestampToMillis(event.ModifiedAt) : null),
+    
   };
 };
 
@@ -69,7 +74,7 @@ export const fetchEvents = createAsyncThunk(
           console.log('lastModified from cache', new Date(lastModified).toISOString());
           console.log('latestModified from server', new Date(latestModified).toISOString());
           console.log(latestModified <= lastModified);
-          
+
 
           // If our cached data is still current, return it
           if (lastModified && latestModified && latestModified <= lastModified) {
@@ -104,17 +109,21 @@ export const fetchEvents = createAsyncThunk(
       if (eventsSnapshot.empty) {
         if (canDeltaFetch) {
           // No new events; reuse cache
-            return { events: items.slice(), lastModified, fromCache: true };
+          return { events: items.slice(), lastModified, fromCache: true };
         }
         return { events: [], fromCache: false };
       }
 
-      const fetchedEvents = eventsSnapshot.docs.map((doc) =>
-        serializeEvent({
-          ...doc.data(),
+      const fetchedEvents = eventsSnapshot.docs.map((doc) => {
+        console.log(doc.data());
+
+        let finalDoc = { ...doc.data(), PlayersIds: doc.data().PlayersIds?.map(r => r?.id ?? null) ?? [] };
+
+        return serializeEvent({
+          ...finalDoc,
           id: doc.id,
-        })
-      );
+        });
+      });
 
       let mergedEvents;
       if (canDeltaFetch) {

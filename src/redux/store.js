@@ -7,18 +7,20 @@ import storage from 'redux-persist/lib/storage'; // uses localStorage
 
 import benefitsReducer from './slices/benefitsSlice';
 import eventsReducer from './slices/eventsSlice';
+import usersReducer from './slices/usersSlice';
 
 // 1️⃣ Combine reducers
 const rootReducer = combineReducers({
   benefits: benefitsReducer,
   events: eventsReducer,
+  users: usersReducer,
 });
 
 // 2️⃣ Persist configuration
 const persistConfig = {
   key: 'root',            // key for localStorage/IndexedDB
   storage,                // which storage engine to use
-  whitelist: ['benefits', 'events'], // persist only benefits (optional)
+  whitelist: ['benefits', 'events', 'users'], // persist only benefits (optional)
   // blacklist: ['events'], // if you ever want to exclude something
 };
 
@@ -41,8 +43,18 @@ export const store = configureStore({
           'persist/REGISTER',
           'benefits/setBenefits',
           'benefits/fetchBenefits/fulfilled',
+          'benefits/fetchBenefits/fulfilled',
+          'events/fetchEvents/fulfilled',
+          'users/fetchUsers/fulfilled',
         ],
-        ignoredPaths: ['benefits.items', 'benefits.items.ModifiedAt'],
+        ignoredPaths: [
+          'benefits.items', 
+          'benefits.items.ModifiedAt', 
+          'events.items',
+          'events.items.ModifiedAt',
+          'users.items',
+          'users.items.ModifiedAt',
+        ],
       },
     }),
 });

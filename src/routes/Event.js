@@ -1,7 +1,8 @@
-import { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useLocation, useParams } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchEvents, selectEvents } from "../redux/slices/eventsSlice";
+import { fetchUsers, selectUsers } from "../redux/slices/usersSlice";
 
 import { getFirestore, Timestamp } from "firebase/firestore";
 
@@ -12,21 +13,31 @@ import ConfirmationModal from "../components/ConfirmationModal";
 import SuccessModal from "../components/SuccessModal";
 
 import {
+    Avatar,
     Box,
-    Container,
-    Paper,
-    Typography,
-    Chip,
     Button,
-    Stack,
+    Card,
+    CardContent,
+    Chip,
+    Container,
     Divider,
+    IconButton,
+    List,
+    ListItem,
+    ListItemText,
+    Stack,
     Tab,
-    Tabs
+    Tabs,
+    Typography,
+    Paper
 } from "@mui/material";
+
 import {
     CalendarMonth as CalendarIcon,
     AccessTime as TimeIcon,
-    Place as PlaceIcon
+    Place as PlaceIcon,
+    Settings,
+    Person
 } from "@mui/icons-material";
 
 
@@ -40,16 +51,36 @@ const Event = () => {
     const { eventId: paramEventId } = useParams();
     const eventId = state?.eventId ?? paramEventId;
     const events = useSelector(selectEvents);
+    const users = useSelector(selectUsers);
 
 
     const [event, setEvent] = useState(null);
+    const [searchQuery, setSearchQuery] = useState("");
     const [showConfirmation, setConfirmation] = useState(false);
     const [showExitSuccess, setShowExitSuccess] = useState(false);
     const [showJoinSuccess, setShowJoinSuccess] = useState(false);
-    const [tab, setTab] = useState("details");
+    const [tab, setTab] = useState(0);
     const [type, setType] = useState('joinGame');
 
     const initialFetchDone = useRef(false);
+
+    const filteredUsers = users
+        .filter(u => event?.PlayersIds?.includes(u.id))
+        .filter((user) => {
+            const searchLower = searchQuery.toLowerCase();
+            return (
+                (user.Name && user.Name.toLowerCase().includes(searchLower)) ||
+                (user.Email && user.Email.toLowerCase().includes(searchLower))
+            );
+        });
+
+    const TabPanel = ({ children, value, index }) => (
+        <div hidden={value !== index} style={{ height: '100%', display: value === index ? 'flex' : 'none', flexDirection: 'column' }}>
+            {value === index && <Box sx={{ flex: 1, overflow: 'auto' }}>{children}</Box>}
+        </div>
+    );
+
+    const alreadyRegistered = event?.PlayersIds.includes(user?.uid);
 
     useEffect(() => {
         // Only fetch if we haven't done initial fetch and don't have benefits
@@ -57,6 +88,7 @@ const Event = () => {
             console.log("Fetch events using Redux with caching");
             initialFetchDone.current = true;
             dispatch(fetchEvents({ db, forceRefresh: false }));
+            dispatch(fetchUsers({ db, forceRefresh: false }));
         }
     }, [dispatch, db, events.length]); // include dispatch
 
@@ -139,91 +171,136 @@ const Event = () => {
             <Box bgcolor="background.default" sx={{ pt: 2 }}>
                 <Tabs
                     value={tab}
-                    onChange={(_, v) => setTab(v)}
+                    onChange={(event, newValue) => setTab(newValue)}
                     variant="fullWidth"
                     textColor="primary"
                     indicatorColor="primary"
                 >
-                    <Tab value="details" label="Details" />
-                    <Tab value="brackets" label="Brackets" />
+                    <Tab label="Details" />
+                    <Tab label="Players" />
+                    <Tab label="Brackets" />
                 </Tabs>
             </Box>
             <Box minHeight="100vh" display="flex" flexDirection="column" bgcolor="background.default">
                 {/* Content */}
-                <Container maxWidth="sm" sx={{ py: 3, flex: 1 }}>
-                    <Stack spacing={2.5}>
-                        <Paper elevation={1} sx={{ p: 2.5 }}>
-                            <Stack spacing={1.5}>
-                                <Stack direction="row" alignItems="center" spacing={1}>
-                                    <PlaceIcon fontSize="small" sx={{ color: "hsl(var(--padel-primary))" }} />
-                                    <Typography color="text.primary">{event.Location}</Typography>
+                <TabPanel value={tab} index={0}>
+                    <Container maxWidth="sm" sx={{ py: 3, flex: 1 }}>
+                        <Stack spacing={2.5}>
+                            <Paper elevation={1} sx={{ p: 2.5 }}>
+                                <Stack spacing={1.5}>
+                                    <Stack direction="row" alignItems="center" spacing={1}>
+                                        <PlaceIcon fontSize="small" sx={{ color: "hsl(var(--padel-primary))" }} />
+                                        <Typography color="text.primary">{event.Location}</Typography>
+                                    </Stack>
+                                    <Stack direction="row" alignItems="center" spacing={1}>
+                                        <TimeIcon fontSize="small" sx={{ color: "hsl(var(--padel-primary))" }} />
+                                        <Typography color="text.primary">{hour}:{minute}</Typography>
+                                    </Stack>
+                                    {event.Price && (
+                                        <Typography color="text.primary">💰 {event.Price}</Typography>
+                                    )}
+                                    <Divider sx={{ my: 0.5 }} />
+                                    <Typography color="text.secondary" lineHeight={1.7}>{event.Description}</Typography>
                                 </Stack>
-                                <Stack direction="row" alignItems="center" spacing={1}>
-                                    <TimeIcon fontSize="small" sx={{ color: "hsl(var(--padel-primary))" }} />
-                                    <Typography color="text.primary">{hour}:{minute}</Typography>
-                                </Stack>
-                                {event.Price && (
-                                    <Typography color="text.primary">💰 {event.Price}</Typography>
-                                )}
-                                <Divider sx={{ my: 0.5 }} />
-                                <Typography color="text.secondary" lineHeight={1.7}>{event.Description}</Typography>
-                            </Stack>
-                        </Paper>
+                            </Paper>
 
-                        <Stack direction="row" spacing={1.5}>
-                            {user && !event?.PlayersIds?.includes(user?.uid) && <Button
-                                fullWidth
-                                variant="contained"
-                                sx={{
-                                    bgcolor: "primary.main",
-                                    color: "white",
-                                    "&:hover": { bgcolor: "white", color: "primary.main" },
-                                }}
-                                onClick={async () => {
-                                    setConfirmation(true);
-                                    setType('joinGame');
-                                }}
-                            >
-                                Register
-                            </Button>}
-                            {user && event?.PlayersIds?.includes(user?.uid) &&
-                                <>
-                                    <Button
-                                        disableElevation
-                                        disableRipple
-                                        disableFocusRipple
-                                        disableTouchRipple
-                                        fullWidth
-                                        variant="contained"
-                                        sx={{
-                                            bgcolor: "primary.main",
-                                            color: "white",
-                                            "&:hover": { bgcolor: "white", color: "primary.main" },
-                                        }}
-                                    >
-                                        Good Luck 🤞
-                                    </Button>
-                                    <Button fullWidth variant="outlined" sx={{
-                                        bgcolor: "white",
-                                        color: "error.main",
-                                        borderColor: "error.main",
-                                        "&:hover": { bgcolor: "error.main", color: "white" },
+                            <Stack direction="row" spacing={1.5}>
+                                {user && !alreadyRegistered && <Button
+                                    fullWidth
+                                    variant="contained"
+                                    sx={{
+                                        bgcolor: "primary.main",
+                                        color: "white",
+                                        "&:hover": { bgcolor: "white", color: "primary.main" },
                                     }}
-                                        onClick={() => {
-                                            setConfirmation(true);
-                                            setType('exitGame');
-                                        }}>
-                                        Unregister
-                                    </Button></>}
-                        </Stack>
+                                    onClick={async () => {
+                                        setConfirmation(true);
+                                        setType('joinGame');
+                                    }}
+                                >
+                                    Register
+                                </Button>}
+                                {user && alreadyRegistered &&
+                                    <>
+                                        <Button
+                                            disableElevation
+                                            disableRipple
+                                            disableFocusRipple
+                                            disableTouchRipple
+                                            fullWidth
+                                            variant="contained"
+                                            sx={{
+                                                bgcolor: "primary.main",
+                                                color: "white",
+                                                "&:hover": { bgcolor: "white", color: "primary.main" },
+                                            }}
+                                        >
+                                            Good Luck 🤞
+                                        </Button>
+                                        <Button fullWidth variant="outlined" sx={{
+                                            bgcolor: "white",
+                                            color: "error.main",
+                                            borderColor: "error.main",
+                                            "&:hover": { bgcolor: "error.main", color: "white" },
+                                        }}
+                                            onClick={() => {
+                                                setConfirmation(true);
+                                                setType('exitGame');
+                                            }}>
+                                            Unregister
+                                        </Button></>}
+                            </Stack>
 
-                        {/*  <Paper elevation={1} sx={{ p: 2.5 }}>
+                            {/*  <Paper elevation={1} sx={{ p: 2.5 }}>
                             <Typography variant="body2" color="text.secondary">
                                 <b>Organizer:</b> Padel Hookups
                             </Typography>
                         </Paper> */}
-                    </Stack>
-                </Container>
+                        </Stack>
+                    </Container>
+                </TabPanel>
+                <TabPanel value={tab} index={1}>
+                    <Card style={{ flex: 1 }}>
+                        <CardContent sx={{ p: "0 !important" }}>
+                            <List>
+                                {filteredUsers.map((user, index) => (
+                                    <React.Fragment key={user.id}>
+                                        <ListItem
+                                            sx={{ py: 2 }}>
+                                            <Avatar
+                                                sx={{
+                                                    mr: 2,
+                                                    bgcolor: "primary.main"
+                                                }}>
+                                                <Person />
+                                            </Avatar>
+                                            <ListItemText
+                                                primary={
+                                                    <Typography
+                                                        variant='h6'
+                                                        sx={{
+                                                            fontWeight:
+                                                                "bold"
+                                                        }}>
+                                                        {user.Name ||
+                                                            "No Name"}                                                        
+                                                    </Typography>
+                                                }
+                                            />
+                                        </ListItem>
+                                        {index <
+                                            filteredUsers.length - 1 && (
+                                                <Divider />
+                                            )}
+                                    </React.Fragment>
+                                ))}
+                            </List>
+                        </CardContent>
+                    </Card>
+                </TabPanel>
+                <TabPanel value={tab} index={2}>
+                    Brackets
+                </TabPanel>
                 <ConfirmationModal
                     open={showConfirmation}
                     title={type === 'joinGame' ? "You wanna join this event?" : "You wanna leave this event?"}

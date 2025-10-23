@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, use } from "react";
 import { useNavigate } from "react-router";
 
 import useAuth from "../utils/useAuth";
@@ -82,6 +82,10 @@ const Home = () => {
       dispatch(fetchEvents({ db, forceRefresh: false }));
     }
   }, [dispatch, db, events.length]); // include dispatch
+
+  useEffect(() => {
+    console.log('user', user);
+  }, [user]);
 
   /* const registerEvent = async () => {
     console.log("Registering user for event", eventSelectedId);
@@ -196,93 +200,96 @@ const Home = () => {
             },
           }}
         >
-          {events.map((event, index) => (
-            <TimelineItem key={index}>
-              <TimelineSeparator>
-                <TimelineConnector />
-                <TimelineDot
-                  sx={{
-                    bgcolor: `${getColor(event.Type)}.main`,
-                    color: "white",
-                    fontWeight: "bold",
-                    width: 24,
-                    height: 24,
-                  }}
-                >
-                  <Typography
-                    variant="span"
+          {events.map((event, index) => {
+            const alreadyRegistered = event?.PlayersIds.includes(user?.uid);
+            return (
+              <TimelineItem key={index}>
+                <TimelineSeparator>
+                  <TimelineConnector />
+                  <TimelineDot
                     sx={{
+                      bgcolor: `${getColor(event.Type)}.main`,
+                      color: "white",
                       fontWeight: "bold",
-                      width: "100%",
-                      textAlign: "center",
-                      px: 0.2,
+                      width: 24,
+                      height: 24,
                     }}
                   >
-                    {new Date(event.Date).getDate()}
-                  </Typography>
-                </TimelineDot>
-                <TimelineConnector />
-              </TimelineSeparator>
-              <TimelineContent sx={{ py: "12px", px: 2 }}>
-                <Box
-                  sx={{
-                    border: "2px dashed grey",
-                    borderRadius: 2,
-                    p: 1,
-                    position: "relative",
-                    cursor: "pointer",
-                  }}
-                  onClick={() => {
-                    console.log("Box 1 clicked - going to event details");
-                    navigate("/Event", { state: { eventId: event.id } });
-                  }}
-                >
-                  <Typography variant="h6">{getIcon(event.Type)}{event.Name}</Typography>
-                  <Typography variant="body2">⌚
-                    {Timestamp.fromMillis(event.Date).toDate().getHours()}
-                    :
-                    {Timestamp.fromMillis(event.Date).toDate().getMinutes().toString().padStart(2, '0')}
-                  </Typography>
-                  <Box sx={{
-                    position: "absolute",
-                    top: 8,
-                    right: 8,
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    flexDirection: 'row',
-                    alignItems: 'end',
-                    justifyContent: 'end',
-                  }}>
-                    <Chip
-                      variant="solid"
-                      color={getColor(event.Type)}
-                      size="small"
-                      label={event.Type}
-                      sx={{ width: '100%' }}
-                    />
-                    {event.RecordGames && <span>🎥</span>}
-                  </Box>
-                  {/* Hide Join button if user already signed up for this event */}
-                  {user && !event?.PlayersIds?.includes(user?.uid) && (
-                    <Button
-                      size="small"
-                      sx={{ mt: 1 }}
-                      variant="outlined"
-                      onClick={(e) => {
-                        console.log("Button 1 clicked - going to join page", event.id);
-                        setEventSelectedId(event.id);
-                        setShowSuccess(true);
-                        e.stopPropagation();
+                    <Typography
+                      variant="span"
+                      sx={{
+                        fontWeight: "bold",
+                        width: "100%",
+                        textAlign: "center",
+                        px: 0.2,
                       }}
                     >
-                      Join
-                    </Button>
-                  )}
-                  {user && event?.PlayersIds?.includes(user?.uid) && <Chip label="💪 You already In!" color="primary" sx={{ color: 'white', mt: 1 }} size="small" />}
-                </Box>
-              </TimelineContent>
-            </TimelineItem>
-          ))}
+                      {new Date(event.Date).getDate()}
+                    </Typography>
+                  </TimelineDot>
+                  <TimelineConnector />
+                </TimelineSeparator>
+                <TimelineContent sx={{ py: "12px", px: 2 }}>
+                  <Box
+                    sx={{
+                      border: "2px dashed grey",
+                      borderRadius: 2,
+                      p: 1,
+                      position: "relative",
+                      cursor: "pointer",
+                    }}
+                    onClick={() => {
+                      console.log("Box 1 clicked - going to event details");
+                      navigate("/Event", { state: { eventId: event.id } });
+                    }}
+                  >
+                    <Typography variant="h6">{getIcon(event.Type)}{event.Name}</Typography>
+                    <Typography variant="body2">⌚
+                      {Timestamp.fromMillis(event.Date).toDate().getHours()}
+                      :
+                      {Timestamp.fromMillis(event.Date).toDate().getMinutes().toString().padStart(2, '0')}
+                    </Typography>
+                    <Box sx={{
+                      position: "absolute",
+                      top: 8,
+                      right: 8,
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      flexDirection: 'row',
+                      alignItems: 'end',
+                      justifyContent: 'end',
+                    }}>
+                      <Chip
+                        variant="solid"
+                        color={getColor(event.Type)}
+                        size="small"
+                        label={event.Type}
+                        sx={{ width: '100%' }}
+                      />
+                      {event.RecordGames && <span>🎥</span>}
+                    </Box>
+                    {/* Hide Join button if user already signed up for this event */}
+                    {user && !alreadyRegistered && (
+                      <Button
+                        size="small"
+                        sx={{ mt: 1 }}
+                        variant="outlined"
+                        onClick={(e) => {
+                          console.log("Button 1 clicked - going to join page", event.id);
+                          setEventSelectedId(event.id);
+                          setShowSuccess(true);
+                          e.stopPropagation();
+                        }}
+                      >
+                        Join
+                      </Button>
+                    )}
+                    {user && alreadyRegistered && <Chip label="💪 You already In!" color="primary" sx={{ color: 'white', mt: 1 }} size="small" />}
+                  </Box>
+                </TimelineContent>
+              </TimelineItem>
+            )
+          })}
         </Timeline>
         {user?.IsAdmin && (
           <Fab
@@ -433,10 +440,10 @@ const Home = () => {
               type='submit'
               variant='contained'
               sx={{
-								mt: 2,
-								backgroundColor: "primary.main",
-								color: "white"
-							}}
+                mt: 2,
+                backgroundColor: "primary.main",
+                color: "white"
+              }}
               fullWidth
             >
               <Typography

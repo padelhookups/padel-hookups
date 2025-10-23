@@ -6,24 +6,30 @@ const useEventActions = () => {
   const db = getFirestore();
 
   const registerFromEvent = async (eventSelectedId) => {
+    const userDocRef = doc(db, `Users/${user.uid}`);
+    const eventDocRef = doc(db, `Events/${eventSelectedId}`);
+
     await setDoc(doc(db, `Events/${eventSelectedId}/Players/`, user.uid), {
-      UserId: doc(db, `Users/${user.uid}`),
-      EventId: doc(db, `Events/${eventSelectedId}`),
+      UserId: userDocRef,
+      EventId: eventDocRef,
       CreatedAt: Timestamp.fromDate(new Date()),
     });
 
     await updateDoc(doc(db, `Events/${eventSelectedId}`), {
       ModifiedAt: Timestamp.fromDate(new Date()),
-      PlayersIds: arrayUnion(user.uid)
+      PlayersIds: arrayUnion(userDocRef)
     });
   }
 
   const unregisterFromEvent = async (eventSelectedId) => {
+    const userDocRef = doc(db, `Users/${user.uid}`);
+    const eventDocRef = doc(db, `Events/${eventSelectedId}`);
+    
     await deleteDoc(doc(db, `Events/${eventSelectedId}/Players/`, user.uid));
 
-    await updateDoc(doc(db, `Events/${eventSelectedId}`), {
+    await updateDoc(eventDocRef, {
       ModifiedAt: Timestamp.fromDate(new Date()),
-      PlayersIds: arrayRemove(user.uid)
+      PlayersIds: arrayRemove(userDocRef)
     });
   }
 
