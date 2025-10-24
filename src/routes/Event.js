@@ -45,7 +45,7 @@ const Event = () => {
     const { state } = useLocation();
     const db = getFirestore();
     const dispatch = useDispatch();
-    const { registerFromEvent, unregisterFromEvent } = useEventActions();
+    const { registerFromEvent, unregisterFromEvent, createPairsForEvent } = useEventActions();
 
     const { eventId: paramEventId } = useParams();
     const eventId = state?.eventId ?? paramEventId;
@@ -253,7 +253,13 @@ const Event = () => {
                             {user?.IsAdmin && <>
                                 <Divider />
                                  <Stack spacing={2.5}>
-                                    <Button variant="outlined" startIcon={<Group />} fullWidth sx={{ borderColor: 'gray' }}>
+                                    <Button 
+                                    variant="outlined" 
+                                    startIcon={<Group />} 
+                                    fullWidth 
+                                    sx={{ borderColor: 'gray' }}
+                                    disabled={filteredUsers.length < 2 || event.PairsCreated}
+                                    onClick={() => createPairsForEvent(filteredUsers, eventId)}>
                                         Create Pairs
                                     </Button>
                                  </Stack>
@@ -289,6 +295,7 @@ const Event = () => {
                                                     </Typography>
                                                 }
                                             />
+                                            {/* FUTURE -- add inscription date */}
                                         </ListItem>
                                         {index <
                                             filteredUsers.length - 1 && (
