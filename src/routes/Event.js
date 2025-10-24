@@ -20,7 +20,8 @@ import {
     CardContent,
     Chip,
     Container,
-    Divider,    
+    Divider,
+    Grid,
     List,
     ListItem,
     ListItemText,
@@ -252,17 +253,20 @@ const Event = () => {
                             </Stack>
                             {user?.IsAdmin && <>
                                 <Divider />
-                                 <Stack spacing={2.5}>
-                                    <Button 
-                                    variant="outlined" 
-                                    startIcon={<Group />} 
-                                    fullWidth 
-                                    sx={{ borderColor: 'gray' }}
-                                    disabled={filteredUsers.length < 2 || event.PairsCreated}
-                                    onClick={() => createPairsForEvent(filteredUsers, eventId)}>
+                                <Stack spacing={2.5}>
+                                    <Button
+                                        variant="outlined"
+                                        startIcon={<Group />}
+                                        fullWidth
+                                        sx={{ borderColor: 'gray' }}
+                                        disabled={filteredUsers.length < 2 || event.PairsCreated}
+                                        onClick={async () => {
+                                            await createPairsForEvent(filteredUsers, eventId);
+                                            dispatch(fetchEvents({ db, forceRefresh: false }));
+                                        }}>
                                         Create Pairs
                                     </Button>
-                                 </Stack>
+                                </Stack>
                             </>}
                         </Stack>
                     </Container>
@@ -270,40 +274,90 @@ const Event = () => {
                 <TabPanel value={tab} index={1}>
                     <Card style={{ flex: 1 }}>
                         <CardContent sx={{ p: "0 !important" }}>
-                            <List>
-                                {filteredUsers.map((user, index) => (
-                                    <React.Fragment key={user.id}>
-                                        <ListItem
-                                            sx={{ py: 2 }}>
-                                            <Avatar
-                                                sx={{
-                                                    mr: 2,
-                                                    bgcolor: "primary.main"
-                                                }}>
-                                                <Person />
-                                            </Avatar>
-                                            <ListItemText
-                                                primary={
-                                                    <Typography
-                                                        variant='h6'
+                            {event.PairsCreated &&
+                                <List>
+                                    {filteredUsers.map((user, index) => (
+                                        <React.Fragment key={user.id}>
+                                            <ListItem
+                                                sx={{ py: 2 }}>
+                                                <Avatar
+                                                    sx={{
+                                                        mr: 2,
+                                                        bgcolor: "primary.main"
+                                                    }}>
+                                                    <Person />
+                                                </Avatar>
+                                                <ListItemText
+                                                    primary={
+                                                        <Typography
+                                                            variant='h6'
+                                                            sx={{
+                                                                fontWeight:
+                                                                    "bold"
+                                                            }}>
+                                                            {user.Name ||
+                                                                "No Name"}
+                                                        </Typography>
+                                                    }
+                                                />
+                                                {/* FUTURE -- add inscription date */}
+                                            </ListItem>
+                                            {index <
+                                                filteredUsers.length - 1 && (
+                                                    <Divider />
+                                                )}
+                                        </React.Fragment>
+                                    ))}
+                                </List>
+                            }
+                            {!event.PairsCreated && event.Pairs && event.Pairs.length > 0 ? (
+                                <Box sx={{ px: 4, py: 4, }}>
+                                    <Grid container spacing={3}>
+                                        {event.Pairs.map((pair, index) => {
+                                            const player1Name = pair.DisplayName.split(' & ')[0];
+                                            const player2Name = pair.DisplayName.split(' & ')[1];
+                                            const initials = (name) => name.split(' ').filter(Boolean).map(w => w[0]).slice(0, 2).join('').toUpperCase();
+                                            return (
+                                                <Grid
+                                                    item
+                                                    size={{ xs: 12, md: 6, lg: 3 }}
+                                                    key={pair.id || index}>
+                                                    <Card
                                                         sx={{
-                                                            fontWeight:
-                                                                "bold"
+                                                            height: "100%",
+                                                            display: "flex",
+                                                            flexDirection: "column",
+                                                            position: "relative"
                                                         }}>
-                                                        {user.Name ||
-                                                            "No Name"}
-                                                    </Typography>
-                                                }
-                                            />
-                                            {/* FUTURE -- add inscription date */}
-                                        </ListItem>
-                                        {index <
-                                            filteredUsers.length - 1 && (
-                                                <Divider />
-                                            )}
-                                    </React.Fragment>
-                                ))}
-                            </List>
+                                                        <CardContent sx={{ height: '100%' }}>
+                                                            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+                                                                <Typography variant="subtitle2" color="text.secondary">Pair</Typography>
+                                                                <Chip size="small" label={`#${index + 1}`} />
+                                                            </Stack>
+                                                            <Divider />
+                                                            <Stack spacing={1} flexGrow={1} sx={{ mt: 2 }}>
+                                                                <Stack key={player1Name + index} direction="row" alignItems="center" spacing={1.25}>
+                                                                    <Avatar sx={{ width: 28, height: 28, bgcolor: 'primary.main', fontSize: 12 }}>{initials(player1Name)}</Avatar>
+                                                                    <Typography variant="body2" fontWeight={600}>{player1Name}</Typography>
+                                                                </Stack>
+                                                                <Stack key={player2Name + index} direction="row" alignItems="center" spacing={1.25}>
+                                                                    <Avatar sx={{ width: 28, height: 28, bgcolor: 'primary.main', fontSize: 12 }}>{initials(player2Name)}</Avatar>
+                                                                    <Typography variant="body2" fontWeight={600}>{player2Name}</Typography>
+                                                                </Stack>
+                                                            </Stack>
+                                                        </CardContent>
+                                                    </Card>
+                                                </Grid>
+                                            );
+                                        })}
+                                    </Grid>
+
+                                </Box>
+                            ) : (
+                                <Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
+                                    No pairs created yet.
+                                </Typography>
+                            )}
                         </CardContent>
                     </Card>
                 </TabPanel>

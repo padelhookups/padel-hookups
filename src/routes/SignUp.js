@@ -192,7 +192,8 @@ function SignUp() {
 				IsAdmin: isAdmin,
 				TotalSavings: 0,
 				RgpdAccepted: isRgpdAccepted,
-				TermsAccepted: isTermsAccepted
+				TermsAccepted: isTermsAccepted,
+				LastModifiedAt: new Date()
 			});
 		}
 		setIsLoading(false);

@@ -34,6 +34,10 @@ const useEventActions = () => {
   }
 
   const createPairsForEvent = async (players, eventId) => {
+    // add 4 for testing
+    players.forEach(player => {
+      players.push({...player});
+    });
     const shuffled = players
       .map(value => ({ value, sort: Math.random() }))
       .sort((a, b) => a.sort - b.sort)
@@ -67,6 +71,7 @@ const useEventActions = () => {
     await updateDoc(eventDocRef, {
       PairsCreated: true,
       ModifiedAt: Timestamp.fromDate(new Date()),
+      Pairs: arrayUnion(...pairs)
     });
   }
 
