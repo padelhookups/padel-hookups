@@ -62,6 +62,12 @@ const useEventActions = () => {
       });
     });
     await Promise.all(writes);
+
+    const eventDocRef = doc(db, `Events/${eventId}`);
+    await updateDoc(eventDocRef, {
+      PairsCreated: true,
+      ModifiedAt: Timestamp.fromDate(new Date()),
+    });
   }
 
   return { registerFromEvent, unregisterFromEvent, createPairsForEvent };
