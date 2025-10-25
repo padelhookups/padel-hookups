@@ -2,6 +2,7 @@
 import {
   collection,
   addDoc,
+  getDoc,
   getDocs,
   query,
   where,
@@ -69,23 +70,47 @@ export class FirestoreAdapter {
   async select(table, filters = {}) {
     const colRef = this.getCollection(table);
     let q = query(colRef);
+    let conditions = [];
 
-    Object.entries(filters || {}).forEach(([key, value]) => {
-      q = query(q, where(key, "==", value));
-    });
+    if (typeof filters === "string") {
+      conditions = [where("id", "==", filters)];
+    } else if (filters && Object.keys(filters).length > 0) {
+      conditions = Object.entries(filters).map(([key, value]) => where(key, "==", value));
+      console.log(colRef.path);
+      console.log(conditions);
+
+      q = query(colRef, ...conditions); // <-- spread conditions into a single query
+    }
 
     const snapshot = await getDocs(q);
+    console.log(snapshot.docs.length);
+
     return snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
   }
 
-  async update(table, data, filters) {
-    const docs = await this.select(table, filters);
-    await Promise.all(
-      docs.map((d) =>
-        updateDoc(doc(this.db, `${this.baseDocPath}/${this.getCollectionName(table)}/${d.id}`), data)
-      )
-    );
+  // Get a document directly by ID
+  async getById(table, id) {
+    const docRef = doc(this.db, `${this.baseDocPath}/${table}/${id}`);
+    const snapshot = await getDoc(docRef);
+    if (!snapshot.exists()) return null;
+    return { id: snapshot.id, ...snapshot.data() };
   }
+
+  async update(table, data, filters) {
+    if (typeof filters === "string") {
+      // treat filters as a document ID
+      const docRef = doc(this.db, `${this.baseDocPath}/${table}/${filters}`);
+      await updateDoc(docRef, data);
+    } else {
+      const docs = await this.select(table, filters);
+      await Promise.all(
+        docs.map(d =>
+          updateDoc(doc(this.db, `${this.baseDocPath}/${table}/${d.id}`), data)
+        )
+      );
+    }
+  }
+
 
   async delete(table, filters) {
     const docs = await this.select(table, filters);
