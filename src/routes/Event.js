@@ -274,7 +274,7 @@ const Event = () => {
                 <TabPanel value={tab} index={1}>
                     <Card style={{ flex: 1 }}>
                         <CardContent sx={{ p: "0 !important" }}>
-                            {event.PairsCreated &&
+                            {!event.PairsCreated &&
                                 <List>
                                     {filteredUsers.map((user, index) => (
                                         <React.Fragment key={user.id}>
@@ -310,7 +310,7 @@ const Event = () => {
                                     ))}
                                 </List>
                             }
-                            {!event.PairsCreated && event.Pairs && event.Pairs.length > 0 ? (
+                            {event.PairsCreated && event.Pairs && event.Pairs.length > 0 &&
                                 <Box sx={{ px: 4, py: 4, }}>
                                     <Grid container spacing={3}>
                                         {event.Pairs.map((pair, index) => {
@@ -353,11 +353,7 @@ const Event = () => {
                                     </Grid>
 
                                 </Box>
-                            ) : (
-                                <Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
-                                    No pairs created yet.
-                                </Typography>
-                            )}
+                            }
                         </CardContent>
                     </Card>
                 </TabPanel>
