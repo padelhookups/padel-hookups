@@ -1,58 +1,21 @@
 import { BracketsManager } from 'brackets-manager';
-import { Database } from 'brackets-model';
 import { FirestoreAdapter } from './FirestoreAdapter';
 
 import { addDoc, doc, arrayUnion, arrayRemove, collection, deleteDoc, getFirestore, Timestamp, updateDoc, setDoc } from "firebase/firestore";
 import useAuth from "../utils/useAuth";
 
-const createMatchs = async (pairs, eventId) => {
+const createMatchs = async (pairs, eventId, tournamentId) => {
   const db = getFirestore();
-
-  // 1️⃣ Create a "TournamentData" document for this event
-  const tournamentCol = collection(db, `Events/${eventId}/TournamentData`);
-  const tournamentRef = await addDoc(tournamentCol, { createdAt: Date.now(), eventId });
-  const tournamentId = tournamentRef.id;
 
   // 2️⃣ Create adapter and manager
   const adapter = new FirestoreAdapter(db, `Events/${eventId}/TournamentData/${tournamentId}`);
   const manager = new BracketsManager(adapter);
 
-  /*   const participantIds = [];
-    for (let i = 0; i < pairs.length; i++) {
-      const pair = pairs[i];
-  
-      const docRef = doc(collection(db, `Events/${eventId}/TournamentData/${tournamentId}/participants`));
-      const id = docRef.id;
-  
-      // Save participant with ID included
-      await setDoc(docRef, {
-        id,                 // internal participant ID
-        firestoreId: pair.id, // original pair ID
-        name: pair.DisplayName,
-        createdAt: Date.now(),
-      });
-  
-      // update the document to include its own id field
-      //await adapter.update("participant", { id }, { firestoreId: pair.id });
-  
-      // ✅ Push the adapter's returned ID, not your pair.id
-      participantIds.push(id);
-    } */
-
-  const participantIds = [];
-
-  for (let i = 0; i < pairs.length; i++) {
-    const pair = pairs[i];
-
-    // Insert participant into Firestore
-    const { id } = await adapter.insert("participants", {
-      name: pair.DisplayName,
-      firestoreId: pair.id,
-      createdAt: Date.now(),
-    });
-
-    participantIds.push(id); // 🔹 important, these are string IDs
-  }
+  const seeding = pairs.map((pair, i) => ({
+    id: i + 1,               // manager-side temporary ID
+    name: pair.DisplayName,   // display name
+    //firestoreId: pair.id      // your Firestore reference
+  }));
 
   // 4) create stage with seeding set to those participant ids
 
@@ -63,33 +26,12 @@ const createMatchs = async (pairs, eventId) => {
     settings: {
       groupCount: 1,
       size: pairs.length,
-      seedOrdering: ['groups.bracket_optimized'],
+      seedOrdering: ['groups.bracket_optimized']
     },
-    seeding: participantIds
-    // IMPORTANT: use 'seeding' to reference inserted participant document ids
-    //seeding: participantIds,
+    seeding: seeding
   });
 
-  // 5) fetch matches for that stage
-  /* const matches = await manager.get.matches({ stageId: stage.id });
-  console.log("Matches created:", matches); */
-
-  /* await manager.create.stage({
-    name: "Padel Event",
-    tournamentId: tournamentId,
-    type: "round_robin",
-    settings: {
-      groupCount: 1,
-      size: pairs.length,
-    },
-    participants: pairs.map((p, i) => ({
-      id: i + 1,
-      name: `Pair ${i + 1}`,
-      firestoreId: p.id,
-    })),
-  });
-  const matches = await manager.get.matches({}); */
-  /* console.log(matches); */
+  console.log('state', stage);
 };
 
 const useEventActions = () => {
@@ -150,31 +92,21 @@ const useEventActions = () => {
     }, []);
     console.log('pairs', pairs);
 
-    const pairRefs = pairs.map(pair => {
-      const newPairRef = doc(collection(db, `Events/${eventId}/Pairs`)); // creates a new ref with ID
-      pair.id = newPairRef.id; // assign the generated ID to the pair object
-      return {
-        id: newPairRef.id, // keep the ID
-        write: setDoc(newPairRef, { ...pair }),
-      };
-    });
-
-    // Wait for all writes to complete
-    await Promise.all(pairRefs.map(p => p.write));
-
-    // Now you already have all the IDs
-    const newPairIds = pairRefs.map(p => p.id);
-    console.log('newPairIds', newPairIds);
+    // 1️⃣ Create a "TournamentData" document for this event
+    const tournamentCol = collection(db, `Events/${eventId}/TournamentData`);
+    const tournamentRef = await addDoc(tournamentCol, { createdAt: Date.now(), eventId });
+    const tournamentId = tournamentRef.id;
 
     const eventDocRef = doc(db, `Events/${eventId}`);
     await updateDoc(eventDocRef, {
-      //PairsCreated: true,
+      PairsCreated: true,
       ModifiedAt: Timestamp.fromDate(new Date()),
-      //Pairs: arrayUnion(...pairs)
+      TournamentId: tournamentId,
+      Pairs: arrayUnion(...pairs)
     });
 
     // Create matchs in brackets-manager
-    await createMatchs(pairs, eventId);
+    await createMatchs(pairs, eventId, tournamentId);
   }
 
   return { registerFromEvent, unregisterFromEvent, createPairsForEvent };

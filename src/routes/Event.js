@@ -8,6 +8,7 @@ import { getFirestore, Timestamp } from "firebase/firestore";
 
 import useAuth from "../utils/useAuth";
 import useEventActions from "../utils/EventsUtils";
+import RobinHoodBracket from "../utils/RobinHoodBracket";
 
 import ConfirmationModal from "../components/ConfirmationModal";
 import SuccessModal from "../components/SuccessModal";
@@ -39,7 +40,6 @@ import {
     Person,
     Group
 } from "@mui/icons-material";
-
 
 const Event = () => {
     const { user } = useAuth();
@@ -358,7 +358,7 @@ const Event = () => {
                     </Card>
                 </TabPanel>
                 <TabPanel value={tab} index={2}>
-                    Brackets
+                   <RobinHoodBracket eventId={event.id} tournamentId={event.TournamentId} /> 
                 </TabPanel>
                 <ConfirmationModal
                     open={showConfirmation}
