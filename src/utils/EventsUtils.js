@@ -8,7 +8,7 @@ const createMatchs = async (pairs, eventId, tournamentId) => {
   const db = getFirestore();
 
   // 2️⃣ Create adapter and manager
-  const adapter = new FirestoreAdapter(db, `Events/${eventId}/TournamentData/${tournamentId}`);
+  const adapter = new FirestoreAdapter(db, `Events/${eventId}/TournamentData/${tournamentId}`, tournamentId);
   const manager = new BracketsManager(adapter);
 
   const seeding = pairs.map((pair, i) => ({

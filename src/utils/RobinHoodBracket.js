@@ -25,44 +25,44 @@ const RobinHoodBracket = ({ eventId, tournamentId }) => {
     const [uploadModalOpen, setUploadModalOpen] = useState(false);
     const [selectedMatch, setSelectedMatch] = useState(null);
 
-    const adapter = new FirestoreAdapter(db, `Events/${eventId}/TournamentData/${tournamentId}`);
+    const adapter = new FirestoreAdapter(db, `Events/${eventId}/TournamentData/${tournamentId}`, tournamentId);
 
     useEffect(() => {
-        const fetchTournamentData = async () => {
-            const stageData = await adapter.select("stage"); // or your equivalent
-            setStage(stageData[0]); // assuming one stage for round-robin
-
-            const participantsData = await adapter.select("participant");
-            setParticipants(participantsData);
-
-            const matchesData = await adapter.select("match");
-            setMatches(matchesData);
-
-            const groupedByRound = matchesData.reduce((acc, match) => {
-                const roundId = match.round_id?.id || `round-${match.id}`; // fallback if missing
-                if (!acc[roundId]) acc[roundId] = [];
-                acc[roundId].push(match);
-                return acc;
-            }, {});
-
-            const roundKeys = Object.keys(groupedByRound);
-
-            const tempRounds = roundKeys.map((roundId, index) => ({
-                header: `Round ${index + 1}`,  // display index
-                matches: groupedByRound[roundId],
-            }));
-
-            setRounds(tempRounds);
-
-            /* console.log(stageData[0]);
-            console.log(participantsData);
-            console.log(matchesData);
-            console.log(tempRounds); */
-
-        };
-
         fetchTournamentData();
     }, []);
+
+    const fetchTournamentData = async () => {
+        const stageData = await adapter.select("stage"); // or your equivalent
+        setStage(stageData[0]); // assuming one stage for round-robin
+
+        const participantsData = await adapter.select("participant");
+        setParticipants(participantsData);
+
+        const matchesData = await adapter.select("match");
+        setMatches(matchesData);
+
+        const groupedByRound = matchesData.reduce((acc, match) => {
+            const roundId = match.round_id?.id || `round-${match.id}`; // fallback if missing
+            if (!acc[roundId]) acc[roundId] = [];
+            acc[roundId].push(match);
+            return acc;
+        }, {});
+
+        const roundKeys = Object.keys(groupedByRound);
+
+        const tempRounds = roundKeys.map((roundId, index) => ({
+            header: `Round ${index + 1}`,  // display index
+            matches: groupedByRound[roundId],
+        }));
+
+        setRounds(tempRounds);
+
+        /* console.log(stageData[0]);
+        console.log(participantsData);
+        console.log(matchesData);
+        console.log(tempRounds); */
+
+    };
 
     return (
         <>
@@ -95,6 +95,8 @@ const RobinHoodBracket = ({ eventId, tournamentId }) => {
                                 const player2 = participants.find((p) => p.id === match.opponent2.id);
 
                                 const status = match.status; // Locked (0) > Waiting (1) > Ready (2) > Running (3) > Completed (4) > Archived (5)
+                                const winnerId = match.opponent1.result === 'win' ? match.opponent1.id :
+                                    match.opponent2.result === 'win' ? match.opponent2.id : null;
 
 
 
@@ -121,18 +123,47 @@ const RobinHoodBracket = ({ eventId, tournamentId }) => {
                                             setUploadModalOpen(true);
                                         }}
                                     >
-                                        <Typography textAlign={'left'}>
+                                        <Typography
+                                            textAlign={'left'}
+                                            sx={{
+                                                display: 'flex',
+                                                px: 1,
+                                                py: 0.5,
+                                                borderRadius: 1,
+                                                backgroundColor: winnerId === match.opponent1.id ? 'primary.main' : 'transparent',
+                                                color: winnerId === match.opponent1.id ? 'white' : 'inherit',
+                                            }}
+                                        >
                                             {player1?.name || "TBD"}
+                                            <Typography
+                                                variant="span"
+                                                color={winnerId === match.opponent1.id ? 'white' : 'inherit'}
+                                                sx={{ ml: 'auto', fontWeight: 'bold' }}
+                                            >
+                                                {match.scoreTeam1}
+                                            </Typography>
                                         </Typography>
                                         <Divider sx={{ my: 2 }} />
-                                        <Typography textAlign={'left'}>
+                                        <Typography
+                                            textAlign={'left'}
+                                            sx={{
+                                                display: 'flex',
+                                                px: 1,
+                                                py: 0.5,
+                                                borderRadius: 1,
+                                                backgroundColor: winnerId === match.opponent2.id ? 'primary.main' : 'transparent',
+                                                color: winnerId === match.opponent2.id ? 'white' : 'inherit',
+                                            }}
+                                        >
                                             {player2?.name || "TBD"}
-                                        </Typography>
-                                        {match.score && (
-                                            <Typography variant="body2" color="text.secondary">
-                                                Score: {match.score[0]} - {match.score[1]}
+                                            <Typography
+                                                variant="span"
+                                                color={winnerId === match.opponent2.id ? 'white' : 'inherit'}
+                                                sx={{ ml: 'auto', fontWeight: 'bold' }}
+                                            >
+                                                {match.scoreTeam2}
                                             </Typography>
-                                        )}
+                                        </Typography>
                                         <Chip
                                             size="small"
                                             icon={<Sports fontSize="small" />}
@@ -154,7 +185,11 @@ const RobinHoodBracket = ({ eventId, tournamentId }) => {
                     adapter={adapter}
                     team1Name={participants.find(p => p.id === selectedMatch?.opponent1?.id)?.name}
                     team2Name={participants.find(p => p.id === selectedMatch?.opponent2?.id)?.name}
-                    onClose={() => setUploadModalOpen(false)}
+                    onClose={() => {
+                        setUploadModalOpen(false);
+                        setSelectedMatch(null);
+                        fetchTournamentData();
+                    }}
                     match={selectedMatch}
                 />
             }

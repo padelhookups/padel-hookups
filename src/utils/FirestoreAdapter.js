@@ -7,15 +7,15 @@ import {
   query,
   where,
   updateDoc,
-  deleteDoc,
   doc,
   deleteDoc as deleteDocument,
 } from "firebase/firestore";
 
 export class FirestoreAdapter {
-  constructor(firestore, baseDocPath) {
+  constructor(firestore, baseDocPath, tournamentId) {
     this.db = firestore;
     this.baseDocPath = baseDocPath; // must be a DOCUMENT path, e.g. Events/{eventId}/TournamentData/{tournamentId}
+    this.tournamentId = tournamentId;
   }
 
   // Map singular table names to plural Firestore collection names
@@ -70,6 +70,10 @@ export class FirestoreAdapter {
   async select(table, filters = {}) {
     const colRef = this.getCollection(table);
 
+    if (this.tournamentId && Object.keys(filters).includes('tournament_id') && filters.tournament_id === undefined) {
+      filters.tournament_id = this.tournamentId;
+    }
+
     // ✅ If filters is a string, treat it as document ID
     if (typeof filters === "string") {
       const docRef = doc(this.db, `${this.baseDocPath}/${this.getCollectionName(table)}/${filters}`);
@@ -82,6 +86,19 @@ export class FirestoreAdapter {
       const docRef = doc(this.db, `${this.baseDocPath}/${this.getCollectionName(table)}/${filters[0]?.id}`);
       const snapshot = await getDoc(docRef);
       return snapshot.exists() ? [{ id: snapshot.id, ...snapshot.data() }] : [];
+    }
+
+    if (filters.stage_id) {
+      let docRef;
+      if (table === 'stage') {
+        const docRef = doc(this.db, `${this.baseDocPath}/${this.getCollectionName(table)}/${filters.stage_id}`);
+        const snapshot = await getDoc(docRef);
+        return snapshot.exists() ? [{ id: snapshot.id, ...snapshot.data() }] : [];
+      } else {
+        const snapshot = await getDocs(colRef, where('stage_id', '==', filters.stage_id));
+        return snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+      }
+
     }
 
     // Normal filters (flat key-value pairs only)
@@ -114,6 +131,8 @@ export class FirestoreAdapter {
       const allowedKeys = [
         "opponent1",
         "opponent2",
+        "scoreTeam1",
+        "scoreTeam2",
         "status",
         "score",
         "number",
@@ -130,28 +149,36 @@ export class FirestoreAdapter {
         }
       }
 
+      data.opponent1 = { ...filters[0].opponent1, ...data.opponent1, id: filters[0].opponent1.id };
+      data.opponent2 = { ...filters[0].opponent2, ...data.opponent2, id: filters[0].opponent2.id };
       filters = { id: filters[0].id }; // Now filters just identifies the doc
     }
 
     // If filters is a simple string treat as id
     if (typeof filters === 'string') {
       const docRef = doc(this.db, `${this.baseDocPath}/${this.getCollectionName(table)}/${filters}`);
-      await updateDoc(docRef, data);
-      return;
+      await updateDoc(docRef, data, { merge: true });
+      return { ...data };
     }
 
     // If filters is an object and contains id, use direct doc update
     if (filters && typeof filters === 'object' && filters.id) {
       const docRef = doc(this.db, `${this.baseDocPath}/${this.getCollectionName(table)}/${filters.id}`);
-      await updateDoc(docRef, data);
-      return;
+      await updateDoc(docRef, data, { merge: true });
+      return { ...data };
     }
 
     // otherwise select and update all matches
     const docs = await this.select(table, filters);
-    await Promise.all(
-      docs.map(d => updateDoc(doc(this.db, `${this.baseDocPath}/${this.getCollectionName(table)}/${d.id}`), data))
+    const updatedDocs = await Promise.all(
+      docs.map(async (d) => {
+        const docRef = doc(this.db, `${this.baseDocPath}/${this.getCollectionName(table)}/${d.id}`);
+        await updateDoc(docRef, data);
+        // return the updated doc object
+        return { id: d.id, ...d, ...data };
+      })
     );
+    return updatedDocs.length === 1 ? updatedDocs[0] : updatedDocs;
   }
 
 

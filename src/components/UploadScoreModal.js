@@ -27,17 +27,25 @@ const UploadScoreModal = ({ open, onClose, match, team1Name, team2Name, adapter 
             console.log(match, team1Score, team2Score);
             console.log({
                 id: match.id,
-                opponent1: { score: team1Score },
-                opponent2: { score: team2Score },
+                opponent1: { ...match.opponent1, score: team1Score },
+                opponent2: { ...match.opponent2, score: team2Score },
             });
 
+            /* const stageData = await manager.get.stageData(match.stage_id.id);
+            console.log('Current Stage:', stageData); */
             // Update in manager
             await manager.update.match({
                 id: match.id,
-                opponent1: { score: team1Score, result: 'win' },
-                opponent2: { score: team2Score },
+                scoreTeam1: team1Score,
+                scoreTeam2: team2Score,
+                opponent1: {
+                    result: team1Score > team2Score ? 'win' : 'lose',
+                },
+                opponent2: {
+                    result: team2Score > team1Score ? 'win' : 'lose',
+                },
             });
-
+            onClose();
             console.log("✅ Match updated");
         } catch (err) {
             console.error("❌ Error updating match", err);
