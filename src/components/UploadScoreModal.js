@@ -34,7 +34,7 @@ const UploadScoreModal = ({ open, onClose, match, team1Name, team2Name, adapter 
             // Update in manager
             await manager.update.match({
                 id: match.id,
-                opponent1: { score: team1Score },
+                opponent1: { score: team1Score, result: 'win' },
                 opponent2: { score: team2Score },
             });
 

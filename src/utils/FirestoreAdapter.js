@@ -69,24 +69,36 @@ export class FirestoreAdapter {
 
   async select(table, filters = {}) {
     const colRef = this.getCollection(table);
-    let q = query(colRef);
-    let conditions = [];
 
+    // ✅ If filters is a string, treat it as document ID
     if (typeof filters === "string") {
-      conditions = [where("id", "==", filters)];
-    } else if (filters && Object.keys(filters).length > 0) {
-      conditions = Object.entries(filters).map(([key, value]) => where(key, "==", value));
-      console.log(colRef.path);
-      console.log(conditions);
+      const docRef = doc(this.db, `${this.baseDocPath}/${this.getCollectionName(table)}/${filters}`);
+      const snapshot = await getDoc(docRef);
+      return snapshot.exists() ? [{ id: snapshot.id, ...snapshot.data() }] : [];
+    }
 
-      q = query(colRef, ...conditions); // <-- spread conditions into a single query
+    // ✅ If filters contains an ID, just fetch that doc
+    if (filters[0]?.id) {
+      const docRef = doc(this.db, `${this.baseDocPath}/${this.getCollectionName(table)}/${filters[0]?.id}`);
+      const snapshot = await getDoc(docRef);
+      return snapshot.exists() ? [{ id: snapshot.id, ...snapshot.data() }] : [];
+    }
+
+    // Normal filters (flat key-value pairs only)
+    let q = query(colRef);
+    if (filters && Object.keys(filters).length > 0) {
+      const safeFilters = Object.fromEntries(
+        Object.entries(filters).filter(([_, value]) => typeof value !== "object")
+      );
+
+      const conditions = Object.entries(safeFilters).map(([key, value]) => where(key, "==", value));
+      if (conditions.length > 0) q = query(colRef, ...conditions);
     }
 
     const snapshot = await getDocs(q);
-    console.log(snapshot.docs.length);
-
     return snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
   }
+
 
   // Get a document directly by ID
   async getById(table, id) {
@@ -97,18 +109,49 @@ export class FirestoreAdapter {
   }
 
   async update(table, data, filters) {
-    if (typeof filters === "string") {
-      // treat filters as a document ID
-      const docRef = doc(this.db, `${this.baseDocPath}/${table}/${filters}`);
-      await updateDoc(docRef, data);
-    } else {
-      const docs = await this.select(table, filters);
-      await Promise.all(
-        docs.map(d =>
-          updateDoc(doc(this.db, `${this.baseDocPath}/${table}/${d.id}`), data)
-        )
-      );
+    if (!data && filters && typeof filters === "object" && filters[0].id) {
+      // Extract only fields that should be saved
+      const allowedKeys = [
+        "opponent1",
+        "opponent2",
+        "status",
+        "score",
+        "number",
+        "group_id",
+        "round_id",
+        "stage_id",
+        "child_count"
+      ];
+
+      data = {};
+      for (const key of allowedKeys) {
+        if (filters[key] !== undefined) {
+          data[key] = filters[key];
+        }
+      }
+
+      filters = { id: filters[0].id }; // Now filters just identifies the doc
     }
+
+    // If filters is a simple string treat as id
+    if (typeof filters === 'string') {
+      const docRef = doc(this.db, `${this.baseDocPath}/${this.getCollectionName(table)}/${filters}`);
+      await updateDoc(docRef, data);
+      return;
+    }
+
+    // If filters is an object and contains id, use direct doc update
+    if (filters && typeof filters === 'object' && filters.id) {
+      const docRef = doc(this.db, `${this.baseDocPath}/${this.getCollectionName(table)}/${filters.id}`);
+      await updateDoc(docRef, data);
+      return;
+    }
+
+    // otherwise select and update all matches
+    const docs = await this.select(table, filters);
+    await Promise.all(
+      docs.map(d => updateDoc(doc(this.db, `${this.baseDocPath}/${this.getCollectionName(table)}/${d.id}`), data))
+    );
   }
 
 
