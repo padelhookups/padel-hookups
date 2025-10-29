@@ -101,6 +101,11 @@ export class FirestoreAdapter {
 
     }
 
+    if (filters.tournament_id) {
+      const snapshot = await getDocs(colRef, where('tournament_id', '==', filters.tournament_id));
+      return snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+    }
+
     // Normal filters (flat key-value pairs only)
     let q = query(colRef);
     if (filters && Object.keys(filters).length > 0) {
@@ -113,7 +118,14 @@ export class FirestoreAdapter {
     }
 
     const snapshot = await getDocs(q);
-    return snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+    if (snapshot.docs.length === 1) {
+      return [{ id: snapshot.docs[0].id, ...snapshot.docs[0].data() }];
+    } else if (snapshot.docs.length > 1) {
+      return snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+
+    } else {
+      return [];
+    }
   }
 
 

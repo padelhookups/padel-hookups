@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import { useLocation, useParams } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchEvents, selectEvents } from "../redux/slices/eventsSlice";
@@ -9,6 +9,7 @@ import { getFirestore, Timestamp } from "firebase/firestore";
 import useAuth from "../utils/useAuth";
 import useEventActions from "../utils/EventsUtils";
 import RobinHoodBracket from "../utils/RobinHoodBracket";
+import EventRankings from "../utils/EventRankings";
 
 import ConfirmationModal from "../components/ConfirmationModal";
 import SuccessModal from "../components/SuccessModal";
@@ -96,7 +97,7 @@ const Event = () => {
         const foundEvent = events.find(e => e.id === eventId);
         setEvent(foundEvent);
         console.log("Event Selected:", foundEvent);
-    }, [events, eventId]);
+    }, [events, eventId]);    
 
     const getColor = (type) => {
         switch (type) {
@@ -179,6 +180,7 @@ const Event = () => {
                     <Tab label="Details" />
                     <Tab label="Players" />
                     <Tab label="Brackets" />
+                    {event.TypeOfTournament === 'SecretMix' && <Tab label="Rankings" />}
                 </Tabs>
             </Box>
             <Box minHeight="100vh" display="flex" flexDirection="column" bgcolor="background.default">
@@ -358,7 +360,10 @@ const Event = () => {
                     </Card>
                 </TabPanel>
                 <TabPanel value={tab} index={2}>
-                   <RobinHoodBracket eventId={event.id} tournamentId={event.TournamentId} /> 
+                    <RobinHoodBracket eventId={event.id} tournamentId={event.TournamentId} />
+                </TabPanel>
+                <TabPanel value={tab} index={3}>
+                    <EventRankings eventId={event.id} tournamentId={event.TournamentId} />
                 </TabPanel>
                 <ConfirmationModal
                     open={showConfirmation}
