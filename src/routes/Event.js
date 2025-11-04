@@ -352,6 +352,11 @@ const Event = () => {
                           filteredUsers.length < 2 || event.PairsCreated
                         }
                         onClick={async () => {
+                          // if filteredUsers is not even, block action
+                          if (filteredUsers.length % 2 !== 0) {
+                            alert("Please ensure an even number of players.");
+                            return;
+                          }
                           await createPairsForEvent(filteredUsers, eventId);
                           dispatch(fetchEvents({ db, forceRefresh: false }));
                         }}
@@ -385,7 +390,10 @@ const Event = () => {
                               <IconButton
                                 edge="end"
                                 aria-label="delete"
-                                onClick={() => unregisterFromEvent()}
+                                onClick={async () => {
+                                    await unregisterFromEvent(event.id, user.id);
+                                    dispatch(fetchEvents({ db, forceRefresh: false }));                                    
+                                }}
                               >
                                 <DeleteIcon color="error" />
                               </IconButton>
