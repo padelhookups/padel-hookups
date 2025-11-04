@@ -38,11 +38,12 @@ const useEventActions = () => {
   const { user } = useAuth();
   const db = getFirestore();
 
-  const registerFromEvent = async (eventSelectedId) => {
-    const userDocRef = doc(db, `Users/${user.uid}`);
+  const registerFromEvent = async (eventSelectedId, selectedUser) => {
+    const finalUser = selectedUser || user.uid;
+    const userDocRef = doc(db, `Users/${finalUser}`);
     const eventDocRef = doc(db, `Events/${eventSelectedId}`);
 
-    await setDoc(doc(db, `Events/${eventSelectedId}/Players/`, user.uid), {
+    await setDoc(doc(db, `Events/${eventSelectedId}/Players/`, finalUser), {
       UserId: userDocRef,
       EventId: eventDocRef,
       CreatedAt: Timestamp.fromDate(new Date()),
@@ -52,13 +53,17 @@ const useEventActions = () => {
       ModifiedAt: Timestamp.fromDate(new Date()),
       PlayersIds: arrayUnion(userDocRef)
     });
+
+    console.log('registerFromEvent FINAL');
+    
   }
 
-  const unregisterFromEvent = async (eventSelectedId) => {
-    const userDocRef = doc(db, `Users/${user.uid}`);
+  const unregisterFromEvent = async (eventSelectedId, selectedUser) => {
+    const finalUser = selectedUser || user.uid;
+    const userDocRef = doc(db, `Users/${finalUser}`);
     const eventDocRef = doc(db, `Events/${eventSelectedId}`);
 
-    await deleteDoc(doc(db, `Events/${eventSelectedId}/Players/`, user.uid));
+    await deleteDoc(doc(db, `Events/${eventSelectedId}/Players/`, finalUser));
 
     await updateDoc(eventDocRef, {
       ModifiedAt: Timestamp.fromDate(new Date()),
@@ -67,7 +72,7 @@ const useEventActions = () => {
   }
 
   const createPairsForEvent = async (players, eventId) => {
-    // add 4 for testing
+    // add 4 for testing - to be removed
     players.forEach(player => {
       players.push({ ...player });
     });

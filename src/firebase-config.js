@@ -8,6 +8,7 @@ import {
 	serverTimestamp
 } from "firebase/firestore";
 import { getMessaging, getToken, onMessage } from "firebase/messaging";
+import { getPerformance } from "firebase/performance";
 
 const firebaseConfig = {
 	apiKey: "AIzaSyBOW8pVZPA8nlU9xcwjnNTxe7dbqCBxub8",
@@ -24,6 +25,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const messaging = getMessaging(app);
+const perf = getPerformance(app);
 
 // Dedup guards for token writes
 let lastSavedToken = null;

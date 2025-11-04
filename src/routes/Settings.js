@@ -51,7 +51,6 @@ const Settings = () => {
 		getDoc(ref)
 			.then((snap) => {
 				if (snap.exists()) {
-					debugger;
 					const devices = snap.data().Devices || [];
 					Object.values(devices).forEach((device) => {
 						if (device.Token === messagingToken) {

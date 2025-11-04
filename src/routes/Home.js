@@ -112,6 +112,7 @@ const Home = () => {
     e.preventDefault();
     // Placeholder: implement Firestore add here later
     console.log('Submit event form', { evtName, evtType, evtDate, evtLocation, hasPrices, hasWelcomeKit, recordGames });
+
     // Reset / close for now
     setEvtName("");
     setEvtType("Tournament");
@@ -201,7 +202,7 @@ const Home = () => {
           }}
         >
           {events.map((event, index) => {
-            const alreadyRegistered = event?.PlayersIds.includes(user?.uid);
+            const alreadyRegistered = event?.PlayersIds?.includes(user?.uid);
             return (
               <TimelineItem key={index}>
                 <TimelineSeparator>
