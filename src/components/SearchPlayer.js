@@ -18,6 +18,7 @@ import {
   Slide,
   TextField,
 } from "@mui/material";
+import { createFilterOptions } from "@mui/material/Autocomplete";
 
 import {} from "@mui/icons-material";
 
@@ -34,6 +35,8 @@ const SearchPlayer = ({ open, onClose, playersIds }) => {
 
   const [players, setPlayers] = useState([]);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
+
+  const filter = createFilterOptions();
 
   useEffect(() => {
     if (open) {
@@ -59,7 +62,7 @@ const SearchPlayer = ({ open, onClose, playersIds }) => {
   return (
     <Dialog
       fullWidth
-      onClose={onClose}
+      onClose={() => onClose()}
       open={open}
       slots={{
         transition: Transition,
@@ -69,7 +72,7 @@ const SearchPlayer = ({ open, onClose, playersIds }) => {
       <DialogTitle>Search Player</DialogTitle>
       <DialogContent>
         <Autocomplete
-          openOnFocus
+          freeSolo
           key={open ? "open" : "closed"}
           options={players.sort((a, b) => {
             // Handle Unknown gender - put it last
@@ -86,11 +89,54 @@ const SearchPlayer = ({ open, onClose, playersIds }) => {
               ? genderCompare
               : a.label.localeCompare(b.label);
           })}
+          filterOptions={(options, params) => {
+            const filtered = filter(options, params);
+
+            const { inputValue } = params;
+            // Suggest the creation of a new value
+            const isExisting = options.some(
+              (option) => inputValue === option.label
+            );
+            if (inputValue !== "" && !isExisting) {
+              filtered.push({
+                inputValue,
+                label: `Add "${inputValue}"`,
+              });
+            }
+
+            return filtered;
+          }}
+          getOptionLabel={(option) => {
+            // Value selected with enter, right from the input
+            if (typeof option === "string") {
+              return option;
+            }
+            // Regular option
+            return option.label;
+          }}
           value={selectedPlayer}
-          onChange={(event, newValue) => setSelectedPlayer(newValue)}
+          onChange={(event, newValue) => {
+            if (typeof newValue === "string") {
+              setSelectedPlayer(newValue);
+            } else if (newValue && newValue.inputValue) {
+              // Create a new value from the user input
+              setSelectedPlayer(newValue.inputValue);
+            } else {
+              setSelectedPlayer(newValue);
+            }
+          }}
           noOptionsText="No labels"
           renderInput={(params) => (
-            <TextField {...params} label="Choose a player" />
+            <TextField
+              {...params}
+              slotProps={{
+                input: {
+                  ...params.InputProps,
+                  type: "search",
+                },
+              }}
+              label="Choose a player"
+            />
           )}
           groupBy={(option) => option.gender || "Unknown"}
           loading={usersLoading}
@@ -98,7 +144,7 @@ const SearchPlayer = ({ open, onClose, playersIds }) => {
         ></Autocomplete>
       </DialogContent>
       <DialogActions>
-        <Button autoFocus onClick={onClose}>
+        <Button autoFocus onClick={() =>onClose()}>
           Cancel
         </Button>
         <Button autoFocus onClick={() => onClose(selectedPlayer)}>

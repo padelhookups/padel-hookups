@@ -1,20 +1,39 @@
-import { BracketsManager } from 'brackets-manager';
-import { FirestoreAdapter } from './FirestoreAdapter';
+import { BracketsManager } from "brackets-manager";
+import { FirestoreAdapter } from "./FirestoreAdapter";
 
-import { addDoc, doc, arrayUnion, arrayRemove, collection, deleteDoc, getFirestore, Timestamp, updateDoc, setDoc } from "firebase/firestore";
+import {
+  addDoc,
+  doc,
+  arrayUnion,
+  arrayRemove,
+  collection,
+  deleteDoc,
+  getFirestore,
+  Timestamp,
+  updateDoc,
+  setDoc,
+  getDoc,
+} from "firebase/firestore";
 import useAuth from "../utils/useAuth";
 
-const createMatchs = async (pairs, eventId, tournamentId) => {
+const createMatchs = async (eventId, tournamentId) => {
   const db = getFirestore();
 
+  // Get Event to get fresh pairs
+  const eventSnap = await getDoc(doc(db, `Events/${eventId}`));
+  const pairs = eventSnap.data().Pairs;
+
   // 2️⃣ Create adapter and manager
-  const adapter = new FirestoreAdapter(db, `Events/${eventId}/TournamentData/${tournamentId}`, tournamentId);
+  const adapter = new FirestoreAdapter(
+    db,
+    `Events/${eventId}/TournamentData/${tournamentId}`,
+    tournamentId
+  );
   const manager = new BracketsManager(adapter);
 
   const seeding = pairs.map((pair, i) => ({
-    id: i + 1,               // manager-side temporary ID
-    name: pair.DisplayName,   // display name
-    //firestoreId: pair.id      // your Firestore reference
+    id: i + 1, // manager-side temporary ID
+    name: pair.DisplayName, // display name
   }));
 
   // 4) create stage with seeding set to those participant ids
@@ -26,80 +45,125 @@ const createMatchs = async (pairs, eventId, tournamentId) => {
     settings: {
       groupCount: 1,
       size: pairs.length,
-      seedOrdering: ['groups.bracket_optimized']
+      seedOrdering: ["groups.bracket_optimized"],
     },
-    seeding: seeding
+    seeding: seeding,
   });
 
-  console.log('state', stage);
+  console.log("state", stage);
 };
 
 const useEventActions = () => {
   const { user } = useAuth();
   const db = getFirestore();
 
-  const registerFromEvent = async (eventSelectedId, selectedUser) => {
-    const finalUser = selectedUser || user.uid;
+  const registerFromEvent = async (eventSelectedId, selectedUser, isGuest) => {
+    let finalUser = selectedUser || user.uid;
     const userDocRef = doc(db, `Users/${finalUser}`);
     const eventDocRef = doc(db, `Events/${eventSelectedId}`);
+
+    if (isGuest) {
+      // create random id for guest user
+      finalUser = `guest_${Math.random().toString(36).substr(2, 9)}`;
+    }
 
     await setDoc(doc(db, `Events/${eventSelectedId}/Players/`, finalUser), {
-      UserId: userDocRef,
+      UserId: !isGuest ? userDocRef : null,
       EventId: eventDocRef,
       CreatedAt: Timestamp.fromDate(new Date()),
+      Name: isGuest ? selectedUser : null,
+      IsGuest: isGuest || false,
     });
-
-    await updateDoc(doc(db, `Events/${eventSelectedId}`), {
-      ModifiedAt: Timestamp.fromDate(new Date()),
-      PlayersIds: arrayUnion(userDocRef)
-    });
-
-    console.log('registerFromEvent FINAL');
-    
-  }
-
-  const unregisterFromEvent = async (eventSelectedId, selectedUser) => {
-    const finalUser = selectedUser || user.uid;
-    const userDocRef = doc(db, `Users/${finalUser}`);
-    const eventDocRef = doc(db, `Events/${eventSelectedId}`);
-
-    await deleteDoc(doc(db, `Events/${eventSelectedId}/Players/`, finalUser));
 
     await updateDoc(eventDocRef, {
       ModifiedAt: Timestamp.fromDate(new Date()),
-      PlayersIds: arrayRemove(userDocRef)
+      PlayersIds: arrayUnion(
+        !isGuest
+          ? userDocRef
+          : doc(db, `Events/${eventSelectedId}/Players/`, finalUser)
+      ),
+      Guests: isGuest
+        ? arrayUnion({
+            Name: selectedUser,
+            IsGuest: true,
+            CreatedAt: Timestamp.fromDate(new Date()),
+            UserId: finalUser,
+          })
+        : arrayRemove(null),
+    });
+
+    console.log("registerFromEvent FINAL");
+  };
+
+  const unregisterFromEvent = async (eventSelectedId, selectedUser, isGuest) => {
+    let finalUser = selectedUser || user.uid;
+    let userDocRef = doc(db, `Users/${finalUser}`);
+    const eventDocRef = doc(db, `Events/${eventSelectedId}`);
+
+    if (isGuest) {
+      // create random id for guest user
+      userDocRef = doc(db, `Events/${eventSelectedId}/Players/${finalUser}`);
+    }
+
+    await deleteDoc(doc(db, `Events/${eventSelectedId}/Players/`, finalUser));
+
+    if (isGuest) {
+      // For guests, fetch current guests array and filter out the matching one
+      const eventSnap = await getDoc(eventDocRef);
+      const currentGuests = eventSnap.data()?.Guests || [];
+      const updatedGuests = currentGuests.filter(guest => guest.UserId !== finalUser);
+      
+      await updateDoc(eventDocRef, {
+        ModifiedAt: Timestamp.fromDate(new Date()),
+        PlayersIds: arrayRemove(userDocRef),
+        Guests: updatedGuests,
+      });
+    } else {
+      await updateDoc(eventDocRef, {
+        ModifiedAt: Timestamp.fromDate(new Date()),
+        PlayersIds: arrayRemove(userDocRef),
+      });
+    }
+  };
+
+  const addSinglePair = async (pair, eventId) => {
+    const eventDocRef = doc(db, `Events/${eventId}`);
+
+    await updateDoc(eventDocRef, {
+      ModifiedAt: Timestamp.fromDate(new Date()),
+      PlayersWithPairsIds: arrayUnion(pair.Player1Id, pair.Player2Id),
+      Pairs: arrayUnion(pair),
     });
   }
 
   const createPairsForEvent = async (players, eventId) => {
-    // add 4 for testing - to be removed
-    players.forEach(player => {
-      players.push({ ...player });
-    });
+    
     const shuffled = players
-      .map(value => ({ value, sort: Math.random() }))
+      .map((value) => ({ value, sort: Math.random() }))
       .sort((a, b) => a.sort - b.sort)
       .map(({ value }) => value);
 
-    console.log('shuffled', shuffled);
-
+    console.log("shuffled", shuffled);
 
     const pairs = shuffled.reduce((acc, player, index, arr) => {
       if (index % 2 === 0) {
         acc.push({
-          DisplayName: player?.Name + ' & ' + (arr[index + 1]?.Name),
-          Player1Id: player.id,
-          Player2Id: arr[index + 1]?.id,
+          DisplayName: player?.Name + " & " + arr[index + 1]?.Name,
+          Player1Id: player.id || player.UserId,
+          Player2Id: arr[index + 1]?.id || arr[index + 1]?.UserId,
           CreatedAt: new Date().toISOString(),
         });
       }
       return acc;
     }, []);
-    console.log('pairs', pairs);
+    console.log("pairs", pairs);
 
     // 1️⃣ Create a "TournamentData" document for this event
     const tournamentCol = collection(db, `Events/${eventId}/TournamentData`);
-    const tournamentRef = await addDoc(tournamentCol, { createdAt: Date.now(), eventId });
+    const tournamentRef = await addDoc(tournamentCol, {
+      createdAt: Date.now(),
+      eventId,
+    });
     const tournamentId = tournamentRef.id;
 
     const eventDocRef = doc(db, `Events/${eventId}`);
@@ -107,14 +171,14 @@ const useEventActions = () => {
       PairsCreated: true,
       ModifiedAt: Timestamp.fromDate(new Date()),
       TournamentId: tournamentId,
-      Pairs: arrayUnion(...pairs)
+      Pairs: arrayUnion(...pairs),
     });
 
     // Create matchs in brackets-manager
-    await createMatchs(pairs, eventId, tournamentId);
-  }
+    await createMatchs(eventId, tournamentId);
+  };
 
-  return { registerFromEvent, unregisterFromEvent, createPairsForEvent };
-}
+  return { addSinglePair, registerFromEvent, unregisterFromEvent, createPairsForEvent };
+};
 
 export default useEventActions;

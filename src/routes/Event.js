@@ -52,7 +52,7 @@ const Event = () => {
   const { state } = useLocation();
   const db = getFirestore();
   const dispatch = useDispatch();
-  const { registerFromEvent, unregisterFromEvent, createPairsForEvent } =
+  const { registerFromEvent, unregisterFromEvent, createPairsForEvent, addSinglePair } =
     useEventActions();
 
   const { eventId: paramEventId } = useParams();
@@ -61,7 +61,6 @@ const Event = () => {
   const users = useSelector(selectUsers);
 
   const [event, setEvent] = useState(null);
-  const [searchQuery, setSearchQuery] = useState("");
   const [showConfirmation, setConfirmation] = useState(false);
   const [showExitSuccess, setShowExitSuccess] = useState(false);
   const [showJoinSuccess, setShowJoinSuccess] = useState(false);
@@ -71,19 +70,18 @@ const Event = () => {
   const [pairSlots, setPairSlots] = useState({ player1: null, player2: null });
   const [tab, setTab] = useState(0);
   const [type, setType] = useState("joinGame");
+  const [draggedPlayerId, setDraggedPlayerId] = useState(null);
 
   const initialFetchDone = useRef(false);
 
-  const filteredUsers = users
-    .filter((u) => event?.PlayersIds?.includes(u.id))
-    .filter((user) => !usersBeingPairedIds.includes(user.id))
-    .filter((user) => {
-      const searchLower = searchQuery.toLowerCase();
-      return (
-        (user.Name && user.Name.toLowerCase().includes(searchLower)) ||
-        (user.Email && user.Email.toLowerCase().includes(searchLower))
-      );
-    });
+  const filteredUsers = [...users, ...(event?.Guests || [])]
+    .filter((user) => !event?.PlayersWithPairsIds?.includes(user.id) && !event?.PlayersWithPairsIds?.includes(user.UserId))
+    .filter((user) => event?.PlayersIds?.includes(user.id) || (user.IsGuest && event?.PlayersIds?.includes(user.UserId)))
+    .filter(
+      (user) =>
+        !usersBeingPairedIds.includes(user.id) &&
+        !usersBeingPairedIds.includes(user.Name)
+    );
 
   const TabPanel = ({ children, value, index }) => (
     <div
@@ -103,10 +101,9 @@ const Event = () => {
   const alreadyRegistered = event?.PlayersIds.includes(user?.uid);
 
   const dragstartHandler = (ev) => {
-    ev.dataTransfer.setData(
-      "dropInfo",
-      ev.target.childNodes[1].childNodes[0].id
-    );
+    const playerId = ev.target.childNodes[1].childNodes[0].id;
+    ev.dataTransfer.setData("dropInfo", playerId);
+    setDraggedPlayerId(playerId);
   };
 
   const dragoverHandler = (ev) => {
@@ -115,14 +112,34 @@ const Event = () => {
 
   const dropHandler = (ev, slot) => {
     ev.preventDefault();
-    const playerId = ev.dataTransfer.getData("dropInfo");
-    const player = users.find((u) => u.id === playerId);
+    const playerId = ev.dataTransfer.getData("dropInfo") || draggedPlayerId;
+    const player =
+      users.find((u) => u.id === playerId) ||
+      event.Guests.find((g) => g.Name === playerId);
 
     if (player) {
       setPairSlots((prev) => ({ ...prev, [slot]: player }));
-      console.log(pairSlots);
-      
       setUsersBeingPairedIds((prev) => [...prev, playerId]);
+      setDraggedPlayerId(null);
+    }
+  };
+
+  const touchStartHandler = (ev, playerId) => {
+    setDraggedPlayerId(playerId);
+  };
+
+  const touchMoveHandler = (ev) => {
+    ev.preventDefault();
+  };
+
+  const touchEndHandler = (ev, slot) => {
+    if (draggedPlayerId) {
+      const player = users.find((u) => u.id === draggedPlayerId);
+      if (player) {
+        setPairSlots((prev) => ({ ...prev, [slot]: player }));
+        setUsersBeingPairedIds((prev) => [...prev, draggedPlayerId]);
+      }
+      setDraggedPlayerId(null);
     }
   };
 
@@ -130,7 +147,9 @@ const Event = () => {
     const player = pairSlots[slot];
     if (player) {
       setPairSlots((prev) => ({ ...prev, [slot]: null }));
-      setUsersBeingPairedIds((prev) => prev.filter((id) => id !== player.id));
+      setUsersBeingPairedIds((prev) =>
+        prev.filter((id) => id !== player.id && !player.IsGuest)
+      );
     }
   };
 
@@ -153,7 +172,7 @@ const Event = () => {
   useEffect(() => {
     // Log pairSlots whenever it changes
     console.log("pairSlots updated:", pairSlots);
-    
+
     // Enable "Create Pair" button only when both slots are filled
     setCreatePairDisabled(!pairSlots.player1 || !pairSlots.player2);
   }, [pairSlots]);
@@ -405,7 +424,7 @@ const Event = () => {
                           dispatch(fetchEvents({ db, forceRefresh: false }));
                         }}
                       >
-                        Create Pairs
+                        Create Random Pairs
                       </Button>
                     </Stack>
                   </>
@@ -445,6 +464,7 @@ const Event = () => {
                         }}
                         onDrop={(e) => dropHandler(e, "player1")}
                         onDragOver={(e) => dragoverHandler(e)}
+                        onTouchEnd={(e) => touchEndHandler(e, "player1")}
                         onClick={() => removeFromPair("player1")}
                       >
                         {pairSlots.player1 ? (
@@ -494,6 +514,7 @@ const Event = () => {
                         }}
                         onDrop={(e) => dropHandler(e, "player2")}
                         onDragOver={(e) => dragoverHandler(e)}
+                        onTouchEnd={(e) => touchEndHandler(e, "player2")}
                         onClick={() => removeFromPair("player2")}
                       >
                         {pairSlots.player2 ? (
@@ -520,16 +541,27 @@ const Event = () => {
                             Player 2
                           </Typography>
                         )}
-                      </Box>                      
+                      </Box>
                     </Box>
                     <Button
-                        disabled={createPairDisabled}
-                        variant="contained"
-                        sx={{ color: "white" }}
-                        onClick={() => {}}
-                      >
-                        Create Pair
-                      </Button>
+                      disabled={createPairDisabled}
+                      variant="contained"
+                      sx={{ color: "white" }}
+                      onClick={async () => {
+                        const newPairName = `${pairSlots.player1.Name} & ${pairSlots.player2.Name}`;
+                        const newPair = {
+                          DisplayName: newPairName,
+                          Player1Id: pairSlots.player1.id || pairSlots.player1.UserId,
+                          Player2Id: pairSlots.player2.id || pairSlots.player2.UserId,
+                          CreatedAt: new Date().toISOString(),
+                        };
+                        await addSinglePair(newPair, event.id);
+                        setPairSlots({ player1: null, player2: null });
+                        dispatch(fetchEvents({ db, forceRefresh: false }));
+                      }}
+                    >
+                      Create Pair
+                    </Button>
 
                     <Typography variant="title1" fontWeight="bold">
                       Single players registered
@@ -539,17 +571,25 @@ const Event = () => {
                       sx={{ margin: "0 !important", padding: "0 !important" }}
                     >
                       {filteredUsers.map((player, index) => (
-                        <React.Fragment key={player.id}>
+                        <React.Fragment key={player.id || player.Name}>
                           <ListItem
                             draggable="true"
                             onDragStart={(e) => dragstartHandler(e)}
+                            onTouchStart={(e) =>
+                              touchStartHandler(e, player.id || player.Name)
+                            }
+                            onTouchMove={(e) => touchMoveHandler(e)}
                             sx={{ py: 2, cursor: "grab" }}
                             secondaryAction={
                               <IconButton
                                 edge="end"
                                 aria-label="delete"
                                 onClick={async () => {
-                                  await unregisterFromEvent(event.id, user.id);
+                                  await unregisterFromEvent(
+                                    event.id,
+                                    player.id || player.UserId,
+                                    player.IsGuest
+                                  );
                                   dispatch(
                                     fetchEvents({ db, forceRefresh: false })
                                   );
@@ -570,7 +610,7 @@ const Event = () => {
                             <ListItemText
                               primary={
                                 <Typography
-                                  id={player.id}
+                                  id={player.id || player.Name}
                                   variant="h6"
                                   sx={{
                                     fontWeight: "bold",
@@ -591,7 +631,7 @@ const Event = () => {
               )}
             </Stack>
             <Stack>
-              {event.PairsCreated && event.Pairs && event.Pairs.length > 0 && (
+              {event.Pairs && event.Pairs.length > 0 && (
                 <Box sx={{ px: 4, py: 4 }}>
                   <Grid container spacing={3}>
                     {event.Pairs.map((pair, index) => {
@@ -755,13 +795,12 @@ const Event = () => {
             playersIds={event.PlayersIds}
             onClose={async (selectedPlayer) => {
               setOpenSearchPlayer(false);
-              if (selectedPlayer) {
-                await registerFromEvent(event.id, selectedPlayer.id);
-                console.log("last final");
-
-                dispatch(fetchEvents({ db, forceRefresh: false }));
-                console.log("Selected Player to add:", selectedPlayer);
+              if (selectedPlayer && typeof selectedPlayer === "object") {
+                await registerFromEvent(event.id, selectedPlayer.id, false);
+              } else if (selectedPlayer && typeof selectedPlayer === "string") {
+                await registerFromEvent(event.id, selectedPlayer, true);
               }
+              dispatch(fetchEvents({ db, forceRefresh: false }));
             }}
           />
         </Box>
