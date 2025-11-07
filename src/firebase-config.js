@@ -25,7 +25,11 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const messaging = getMessaging(app);
-const perf = getPerformance(app);
+console.log(process.env.NODE_ENV);
+
+if (process.env.NODE_ENV === "production") {
+  getPerformance(app);
+}
 
 // Dedup guards for token writes
 let lastSavedToken = null;

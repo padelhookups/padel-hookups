@@ -66,7 +66,7 @@ const RobinHoodBracket = ({ eventId, tournamentId }) => {
 
     return (
         <>
-            <Box sx={{ overflowX: "auto", width: "100%", mt: 4 }}>
+            <Box sx={{ overflow: "auto", width: "100%", mt: 4, height: 'calc(100vh - 64px)' }}>
                 <Box
                     display="flex"
                     flexDirection="row"

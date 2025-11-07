@@ -193,7 +193,8 @@ const Event = () => {
   if (!event) {
     return (
       <Box
-        minHeight="100vh"
+        height="100vh"
+        maxHeight="100vh"
         display="flex"
         flexDirection="column"
         bgcolor="background.default"
@@ -304,7 +305,8 @@ const Event = () => {
           </Tabs>
         </Box>
         <Box
-          minHeight="100vh"
+          height="100vh"
+          maxHeight="calc(100vh - 230px)"
           display="flex"
           flexDirection="column"
           bgcolor="background.default"

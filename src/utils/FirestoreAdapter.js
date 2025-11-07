@@ -163,6 +163,9 @@ export class FirestoreAdapter {
 
       data.opponent1 = { ...filters[0].opponent1, ...data.opponent1, id: filters[0].opponent1.id };
       data.opponent2 = { ...filters[0].opponent2, ...data.opponent2, id: filters[0].opponent2.id };
+      if(filters.customStatus){
+        data.status = filters.customStatus;
+      }
       filters = { id: filters[0].id }; // Now filters just identifies the doc
     }
 
@@ -178,6 +181,10 @@ export class FirestoreAdapter {
       const docRef = doc(this.db, `${this.baseDocPath}/${this.getCollectionName(table)}/${filters.id}`);
       await updateDoc(docRef, data, { merge: true });
       return { ...data };
+    }
+
+    if(table === 'match_game' && !data.parent_id){
+      return [];
     }
 
     // otherwise select and update all matches
