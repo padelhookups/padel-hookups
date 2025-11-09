@@ -8,8 +8,8 @@ import { getFirestore, Timestamp } from "firebase/firestore";
 
 import useAuth from "../utils/useAuth";
 import useEventActions from "../utils/EventsUtils";
-import RobinHoodBracket from "../utils/RobinHoodBracket";
-import EventRankings from "../utils/EventRankings";
+import RobinHoodBracket from "../components/RobinHoodBracket";
+import EventRankings from "../components/EventRankings";
 
 import ConfirmationModal from "../components/ConfirmationModal";
 import SuccessModal from "../components/SuccessModal";
@@ -90,10 +90,18 @@ const Event = () => {
         height: "100%",
         display: value === index ? "flex" : "none",
         flexDirection: "column",
+        scrollBehavior: "smooth",
+        overflowY: value === index && index === 2 ? "auto" : "auto",
+        WebkitOverflowScrolling: "touch",
       }}
     >
       {value === index && (
-        <Box sx={{ flex: 1, overflow: "auto" }}>{children}</Box>
+        <Box sx={{
+          flex: 1,
+          overflow: "auto",
+          scrollBehavior: "smooth",
+          WebkitOverflowScrolling: "touch"
+        }}>{children}</Box>
       )}
     </div>
   );
@@ -743,10 +751,16 @@ const Event = () => {
           </TabPanel>
           {/* Brackets */}
           <TabPanel value={tab} index={2}>
-            <RobinHoodBracket
+            {
+            event.TypeOfTournament === "SecretMix" ? 
+            (<RobinHoodBracket
               eventId={event.id}
               tournamentId={event.TournamentId}
-            />
+            />) 
+            : event.TypeOfTournament === "RobinHood" ? 
+            (<></>) 
+            : null}
+
           </TabPanel>
           {/* Rankings */}
           <TabPanel value={tab} index={3}>

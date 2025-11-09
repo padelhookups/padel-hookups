@@ -5,7 +5,7 @@ import useAuth from "../utils/useAuth";
 import useEventActions from "../utils/EventsUtils";
 
 
-import { getFirestore, Timestamp } from "firebase/firestore";
+import { addDoc, collection, getFirestore, Timestamp } from "firebase/firestore";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchEvents, selectEvents, selectEventsLoading } from "../redux/slices/eventsSlice";
 
@@ -108,10 +108,25 @@ const Home = () => {
     setShowJoinSuccess(true);
   } */
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     // Placeholder: implement Firestore add here later
     console.log('Submit event form', { evtName, evtType, evtDate, evtLocation, hasPrices, hasWelcomeKit, recordGames });
+
+    // add event to Firestore
+    const eventsCollection = collection(db, 'Events');
+    await addDoc(eventsCollection, {
+      Name: evtName,
+      Type: evtType.replace('🏆 ', '').replace('🤝 ', '').replace('📚 ', ''),
+      TypeOfTournament: "Masters",
+      Date: Timestamp.fromDate(new Date(evtDate)).toMillis(),
+      Location: evtLocation,
+      Description: evtDescription,
+      Price: evtPrice,
+      HasPrices: hasPrices,
+      HasWelcomeKit: hasWelcomeKit,
+      RecordGames: recordGames,
+    });
 
     // Reset / close for now
     setEvtName("");

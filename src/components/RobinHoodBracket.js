@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { getFirestore } from "firebase/firestore";
-import { FirestoreAdapter } from './FirestoreAdapter';
+import { FirestoreAdapter } from '../utils/FirestoreAdapter';
 
-import UploadScoreModal from "../components/UploadScoreModal";
+import UploadScoreModal from "./UploadScoreModal";
 
 import {
     Box,
@@ -66,12 +66,18 @@ const RobinHoodBracket = ({ eventId, tournamentId }) => {
 
     return (
         <>
-            <Box sx={{ overflow: "auto", width: "100%", mt: 4, height: 'calc(100vh - 64px)' }}>
+            <Box sx={{ 
+                overflow: "auto", 
+                width: "100%", 
+                height: '100%',
+                WebkitOverflowScrolling: "touch",
+                scrollBehavior: "smooth"
+            }}>
                 <Box
                     display="flex"
                     flexDirection="row"
-                    gap={6} // space between rounds 292
-                    sx={{ width: 'max-content', pl: 2, pr: 6 }} // ensure enough width
+                    gap={6}
+                    sx={{ width: 'max-content', pl: 2, pr: 6, py: 4 }}
                 >
                     {rounds.map((round) => (
                         <Box

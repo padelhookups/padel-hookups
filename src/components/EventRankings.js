@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef, useMemo } from "react";
 import { BracketsManager } from "brackets-manager";
 
 import { getFirestore } from "firebase/firestore";
-import { FirestoreAdapter } from "./FirestoreAdapter";
+import { FirestoreAdapter } from "../utils/FirestoreAdapter";
 
 import { Avatar, Chip, Stack, Typography, Paper } from "@mui/material";
 
