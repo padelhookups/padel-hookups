@@ -36,7 +36,7 @@ const UploadScoreModal = ({
 
       const opponent1Result = team1Score > team2Score ? "win" : team1Score < team2Score ? "lose" : "";
       const opponent2Result = team2Score > team1Score ? "win" : team2Score < team1Score ? "lose" : "";
-      
+
       // Update in manager
       await manager.update.match({
         id: match.id,
@@ -44,10 +44,12 @@ const UploadScoreModal = ({
         scoreTeam2: team2Score,
         customStatus: 4,
         opponent1: {
-          result: opponent1Result
+          result: opponent1Result,
+          score: team1Score
         },
         opponent2: {
-          result: opponent2Result
+          result: opponent2Result,
+          score: team2Score
         },
       });
       onClose();

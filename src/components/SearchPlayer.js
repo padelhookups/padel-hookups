@@ -5,29 +5,35 @@ import {
   selectUsers,
   selectUsersLoading,
 } from "../redux/slices/usersSlice";
+import useAuth from "../utils/useAuth";
 
 import { getFirestore } from "firebase/firestore";
 
 import {
   Autocomplete,
+  Avatar,
   Button,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  Divider,
   Slide,
+  Stack,
   TextField,
+  Typography,
 } from "@mui/material";
 import { createFilterOptions } from "@mui/material/Autocomplete";
 
-import {} from "@mui/icons-material";
+import { Person } from "@mui/icons-material";
 
 const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;
 });
 
-const SearchPlayer = ({ open, onClose, playersIds }) => {
+const SearchPlayer = ({ open, onClose, playersIds, mode }) => {
   const db = getFirestore();
+  const { user } = useAuth();
   const dispatch = useDispatch();
 
   const users = useSelector(selectUsers);
@@ -35,6 +41,7 @@ const SearchPlayer = ({ open, onClose, playersIds }) => {
 
   const [players, setPlayers] = useState([]);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
+  const [showError, setShowError] = useState(false);
 
   const filter = createFilterOptions();
 
@@ -59,6 +66,14 @@ const SearchPlayer = ({ open, onClose, playersIds }) => {
     setPlayers(tempPlayers);
   }, [users]);
 
+  const validate = () => {
+    setShowError(false);
+    if (!selectedPlayer) {
+      setShowError(true);
+      return true;
+    }
+  };
+
   return (
     <Dialog
       fullWidth
@@ -69,7 +84,9 @@ const SearchPlayer = ({ open, onClose, playersIds }) => {
       }}
       keepMounted
     >
-      <DialogTitle>Search Player</DialogTitle>
+      <DialogTitle>
+        {mode === "pairs" ? "Search your Partner" : "Search a player"}
+      </DialogTitle>
       <DialogContent>
         <Autocomplete
           freeSolo
@@ -128,6 +145,7 @@ const SearchPlayer = ({ open, onClose, playersIds }) => {
           noOptionsText="No labels"
           renderInput={(params) => (
             <TextField
+              error={showError}
               {...params}
               slotProps={{
                 input: {
@@ -135,19 +153,52 @@ const SearchPlayer = ({ open, onClose, playersIds }) => {
                   type: "search",
                 },
               }}
-              label="Choose a player"
+              label={
+                mode === "pairs" ? "Search your Partner" : "Search a player"
+              }
             />
           )}
           groupBy={(option) => option.gender || "Unknown"}
           loading={usersLoading}
           sx={{ mt: 1 }}
         ></Autocomplete>
+        <Divider sx={{ my: 2 }} />
+        {mode === "pairs" && (
+          <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 2 }}>
+            <Avatar
+              sx={{
+                width: 32,
+                height: 32,
+                bgcolor: "primary.main",
+              }}
+            >
+              <Person fontSize="small" />
+            </Avatar>
+            <Typography variant="h6" fontWeight="bold">
+              {user.Name}
+            </Typography>
+          </Stack>
+        )}
       </DialogContent>
       <DialogActions>
-        <Button autoFocus onClick={() =>onClose()}>
+        <Button
+          autoFocus
+          onClick={() => {
+            setSelectedPlayer(null);
+            onClose();
+          }}
+        >
           Cancel
         </Button>
-        <Button autoFocus onClick={() => onClose(selectedPlayer)}>
+        <Button
+          autoFocus
+          onClick={() => {
+            const hasError = validate();
+            if (hasError) return;
+            onClose(selectedPlayer, mode === "pairs" ? true : false);
+            setSelectedPlayer(null);
+          }}
+        >
           Add
         </Button>
       </DialogActions>

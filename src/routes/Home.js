@@ -119,13 +119,14 @@ const Home = () => {
       Name: evtName,
       Type: evtType.replace('🏆 ', '').replace('🤝 ', '').replace('📚 ', ''),
       TypeOfTournament: "Masters",
-      Date: Timestamp.fromDate(new Date(evtDate)).toMillis(),
+      Date: Timestamp.fromDate(new Date(evtDate)),
       Location: evtLocation,
       Description: evtDescription,
       Price: evtPrice,
       HasPrices: hasPrices,
       HasWelcomeKit: hasWelcomeKit,
       RecordGames: recordGames,
+      ModifiedAt: Timestamp.fromDate(new Date()),
     });
 
     // Reset / close for now
@@ -285,7 +286,7 @@ const Home = () => {
                       {event.RecordGames && <span>🎥</span>}
                     </Box>
                     {/* Hide Join button if user already signed up for this event */}
-                    {user && !alreadyRegistered && (
+                    {/* {user && !alreadyRegistered && (
                       <Button
                         size="small"
                         sx={{ mt: 1 }}
@@ -299,7 +300,7 @@ const Home = () => {
                       >
                         Join
                       </Button>
-                    )}
+                    )} */}
                     {user && alreadyRegistered && <Chip label="💪 You already In!" color="primary" sx={{ color: 'white', mt: 1 }} size="small" />}
                   </Box>
                 </TimelineContent>

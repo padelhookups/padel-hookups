@@ -9,6 +9,7 @@ import { getFirestore, Timestamp } from "firebase/firestore";
 import useAuth from "../utils/useAuth";
 import useEventActions from "../utils/EventsUtils";
 import RobinHoodBracket from "../components/RobinHoodBracket";
+import EliminationsBrackets from "../components/EliminationsBrackets";
 import EventRankings from "../components/EventRankings";
 
 import ConfirmationModal from "../components/ConfirmationModal";
@@ -52,8 +53,14 @@ const Event = () => {
   const { state } = useLocation();
   const db = getFirestore();
   const dispatch = useDispatch();
-  const { registerFromEvent, unregisterFromEvent, createPairsForEvent, addSinglePair } =
-    useEventActions();
+  const {
+    createMatchsRobinHood,
+    createMatchsElimination,
+    registerFromEvent,
+    unregisterFromEvent,
+    createPairsForEvent,
+    addSinglePair,
+  } = useEventActions();
 
   const { eventId: paramEventId } = useParams();
   const eventId = state?.eventId ?? paramEventId;
@@ -70,13 +77,23 @@ const Event = () => {
   const [pairSlots, setPairSlots] = useState({ player1: null, player2: null });
   const [tab, setTab] = useState(0);
   const [type, setType] = useState("joinGame");
+  const [modeToSearchPlayer, setModeToSearchPlayer] = useState("single");
+  const [confirmationModalTitle, setConfirmationModalTitle] = useState("");
   const [draggedPlayerId, setDraggedPlayerId] = useState(null);
 
   const initialFetchDone = useRef(false);
 
   const filteredUsers = [...users, ...(event?.Guests || [])]
-    .filter((user) => !event?.PlayersWithPairsIds?.includes(user.id) && !event?.PlayersWithPairsIds?.includes(user.UserId))
-    .filter((user) => event?.PlayersIds?.includes(user.id) || (user.IsGuest && event?.PlayersIds?.includes(user.UserId)))
+    .filter(
+      (user) =>
+        !event?.PlayersWithPairsIds?.includes(user.id) &&
+        !event?.PlayersWithPairsIds?.includes(user.UserId)
+    )
+    .filter(
+      (user) =>
+        event?.PlayersIds?.includes(user.id) ||
+        (user.IsGuest && event?.PlayersIds?.includes(user.UserId))
+    )
     .filter(
       (user) =>
         !usersBeingPairedIds.includes(user.id) &&
@@ -96,12 +113,16 @@ const Event = () => {
       }}
     >
       {value === index && (
-        <Box sx={{
-          flex: 1,
-          overflow: "auto",
-          scrollBehavior: "smooth",
-          WebkitOverflowScrolling: "touch"
-        }}>{children}</Box>
+        <Box
+          sx={{
+            flex: 1,
+            overflow: "auto",
+            scrollBehavior: "smooth",
+            WebkitOverflowScrolling: "touch",
+          }}
+        >
+          {children}
+        </Box>
       )}
     </div>
   );
@@ -184,6 +205,14 @@ const Event = () => {
     // Enable "Create Pair" button only when both slots are filled
     setCreatePairDisabled(!pairSlots.player1 || !pairSlots.player2);
   }, [pairSlots]);
+
+  useEffect(() => {
+    if (type === "joinGame" || type === "joinGameInPairs") {
+      setConfirmationModalTitle("You wanna join this event?");
+    } else if (type === "exitGame") {
+      setConfirmationModalTitle("You wanna leave this event?");
+    }
+  }, [type]);
 
   const getColor = (type) => {
     switch (type) {
@@ -345,7 +374,7 @@ const Event = () => {
                     </Stack>
                     {event.Price && (
                       <Typography color="text.primary">
-                        💰 {event.Price}
+                        💰 {event.Price}€
                       </Typography>
                     )}
                     <Divider sx={{ my: 0.5 }} />
@@ -366,8 +395,16 @@ const Event = () => {
                         "&:hover": { bgcolor: "white", color: "primary.main" },
                       }}
                       onClick={async () => {
-                        setConfirmation(true);
-                        setType("joinGame");
+                        if (event.TypeOfTournament === "SecretMix") {
+                          //Register only it self
+                          setConfirmation(true);
+                          setType("joinGame");
+                        } else if (event.TypeOfTournament !== "SecretMix") {
+                          // Register in pairs
+                          setConfirmation(true);
+                          setType("joinGameInPairs");
+                          setModeToSearchPlayer("pairs");                          
+                        }
                       }}
                     >
                       Register
@@ -416,25 +453,50 @@ const Event = () => {
                   <>
                     <Divider />
                     <Stack spacing={2.5}>
+                      {event.TypeOfTournament === "SecretMix" && (
+                        <Button
+                          variant="outlined"
+                          startIcon={<Group />}
+                          fullWidth
+                          sx={{ borderColor: "gray" }}
+                          disabled={
+                            filteredUsers.length < 2 || event.PairsCreated
+                          }
+                          onClick={async () => {
+                            // if filteredUsers is not even, block action
+                            if (filteredUsers.length % 2 !== 0) {
+                              alert("Please ensure an even number of players.");
+                              return;
+                            }
+                            await createPairsForEvent(filteredUsers, eventId);
+                            dispatch(fetchEvents({ db, forceRefresh: false }));
+                          }}
+                        >
+                          Create Random Pairs
+                        </Button>
+                      )}
+
                       <Button
                         variant="outlined"
                         startIcon={<Group />}
                         fullWidth
                         sx={{ borderColor: "gray" }}
-                        disabled={
-                          filteredUsers.length < 2 || event.PairsCreated
-                        }
+                        disabled={event.TournamentStarted}
                         onClick={async () => {
                           // if filteredUsers is not even, block action
                           if (filteredUsers.length % 2 !== 0) {
                             alert("Please ensure an even number of players.");
                             return;
                           }
-                          await createPairsForEvent(filteredUsers, eventId);
+                          if(event.TypeOfTournament === "SecretMix"){
+                            await createMatchsRobinHood(eventId, event.TournamentId);
+                          }else {
+                            await createMatchsElimination(eventId);
+                          }
                           dispatch(fetchEvents({ db, forceRefresh: false }));
                         }}
                       >
-                        Create Random Pairs
+                        Create Brackets
                       </Button>
                     </Stack>
                   </>
@@ -449,193 +511,201 @@ const Event = () => {
                 <Paper elevation={1}>
                   <Stack spacing={2} sx={{ p: 2 }} direction="column">
                     {/* BOX to drag players and form new pairs */}
-
-                    <Box
-                      sx={{
-                        height: "5rem",
-                        paddingY: "0 !important",
-                        border: "1px dashed #aaaaaa",
-                        display: "flex",
-                        flexDirection: "row",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          height: "100%",
-                          width: "40%",
-                          display: "flex",
-                          flexDirection: "row",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          paddingX: "2 !important",
-                          cursor: "pointer",
-                        }}
-                        onDrop={(e) => dropHandler(e, "player1")}
-                        onDragOver={(e) => dragoverHandler(e)}
-                        onTouchEnd={(e) => touchEndHandler(e, "player1")}
-                        onClick={() => removeFromPair("player1")}
-                      >
-                        {pairSlots.player1 ? (
-                          <Stack
-                            direction="row"
-                            alignItems="center"
-                            spacing={1}
+                    {event.TypeOfTournament === "SecretMix" || user?.IsAdmin ? (
+                      <>
+                        <Box
+                          sx={{
+                            height: "5rem",
+                            paddingY: "0 !important",
+                            border: "1px dashed #aaaaaa",
+                            display: "flex",
+                            flexDirection: "row",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              height: "100%",
+                              width: "40%",
+                              display: "flex",
+                              flexDirection: "row",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              paddingX: "2 !important",
+                              cursor: "pointer",
+                            }}
+                            onDrop={(e) => dropHandler(e, "player1")}
+                            onDragOver={(e) => dragoverHandler(e)}
+                            onTouchEnd={(e) => touchEndHandler(e, "player1")}
+                            onClick={() => removeFromPair("player1")}
                           >
-                            <Avatar
-                              sx={{
-                                width: 32,
-                                height: 32,
-                                bgcolor: "primary.main",
-                              }}
-                            >
-                              <Person fontSize="small" />
-                            </Avatar>
-                            <Typography variant="h6" fontWeight="bold">
-                              {pairSlots.player1.Name || "No Name"}
-                            </Typography>
-                          </Stack>
-                        ) : (
-                          <Typography color="text.secondary">
-                            Player 1
-                          </Typography>
-                        )}
-                      </Box>
-
-                      <Divider
-                        sx={{
-                          height: "50%",
-                          border: "1px solid #aaaaaa",
-                          transform: "rotate(33deg)",
-                        }}
-                      />
-                      <Box
-                        sx={{
-                          width: "40%",
-                          height: "100%",
-                          textAlign: "center",
-                          flexDirection: "row",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          paddingX: "2 !important",
-                          cursor: "pointer",
-                        }}
-                        onDrop={(e) => dropHandler(e, "player2")}
-                        onDragOver={(e) => dragoverHandler(e)}
-                        onTouchEnd={(e) => touchEndHandler(e, "player2")}
-                        onClick={() => removeFromPair("player2")}
-                      >
-                        {pairSlots.player2 ? (
-                          <Stack
-                            direction="row"
-                            alignItems="center"
-                            spacing={1}
-                          >
-                            <Avatar
-                              sx={{
-                                width: 32,
-                                height: 32,
-                                bgcolor: "primary.main",
-                              }}
-                            >
-                              <Person fontSize="small" />
-                            </Avatar>
-                            <Typography variant="h6" fontWeight="bold">
-                              {pairSlots.player2.Name || "No Name"}
-                            </Typography>
-                          </Stack>
-                        ) : (
-                          <Typography color="text.secondary">
-                            Player 2
-                          </Typography>
-                        )}
-                      </Box>
-                    </Box>
-                    <Button
-                      disabled={createPairDisabled}
-                      variant="contained"
-                      sx={{ color: "white" }}
-                      onClick={async () => {
-                        const newPairName = `${pairSlots.player1.Name} & ${pairSlots.player2.Name}`;
-                        const newPair = {
-                          DisplayName: newPairName,
-                          Player1Id: pairSlots.player1.id || pairSlots.player1.UserId,
-                          Player2Id: pairSlots.player2.id || pairSlots.player2.UserId,
-                          CreatedAt: new Date().toISOString(),
-                        };
-                        await addSinglePair(newPair, event.id);
-                        setPairSlots({ player1: null, player2: null });
-                        dispatch(fetchEvents({ db, forceRefresh: false }));
-                      }}
-                    >
-                      Create Pair
-                    </Button>
-
-                    <Typography variant="title1" fontWeight="bold">
-                      Single players registered
-                    </Typography>
-                    <Divider />
-                    <List
-                      sx={{ margin: "0 !important", padding: "0 !important" }}
-                    >
-                      {filteredUsers.map((player, index) => (
-                        <React.Fragment key={player.id || player.Name}>
-                          <ListItem
-                            draggable="true"
-                            onDragStart={(e) => dragstartHandler(e)}
-                            onTouchStart={(e) =>
-                              touchStartHandler(e, player.id || player.Name)
-                            }
-                            onTouchMove={(e) => touchMoveHandler(e)}
-                            sx={{ py: 2, cursor: "grab" }}
-                            secondaryAction={
-                              <IconButton
-                                edge="end"
-                                aria-label="delete"
-                                onClick={async () => {
-                                  await unregisterFromEvent(
-                                    event.id,
-                                    player.id || player.UserId,
-                                    player.IsGuest
-                                  );
-                                  dispatch(
-                                    fetchEvents({ db, forceRefresh: false })
-                                  );
-                                }}
+                            {pairSlots.player1 ? (
+                              <Stack
+                                direction="row"
+                                alignItems="center"
+                                spacing={1}
                               >
-                                <DeleteIcon color="error" />
-                              </IconButton>
-                            }
-                          >
-                            <Avatar
-                              sx={{
-                                mr: 2,
-                                bgcolor: "primary.main",
-                              }}
-                            >
-                              <Person />
-                            </Avatar>
-                            <ListItemText
-                              primary={
-                                <Typography
-                                  id={player.id || player.Name}
-                                  variant="h6"
-                                  sx={{
-                                    fontWeight: "bold",
+                                <Avatar
+                                  sx={{width: 32,
+                                    height: 32,
+                                    bgcolor: "primary.main",
                                   }}
                                 >
-                                  {player.Name || "No Name"}
+                                  <Person fontSize="small" />
+                                </Avatar>
+                                <Typography variant="h6" fontWeight="bold">
+                                  {pairSlots.player1.Name || "No Name"}
                                 </Typography>
-                              }
-                            />
-                            {/* FUTURE -- add inscription date */}
-                          </ListItem>
-                          {index < filteredUsers.length - 1 && <Divider />}
-                        </React.Fragment>
-                      ))}
-                    </List>
+                              </Stack>
+                            ) : (
+                              <Typography color="text.secondary">
+                                Player 1
+                              </Typography>
+                            )}
+                          </Box>
+
+                          <Divider
+                            sx={{
+                              height: "50%",
+                              border: "1px solid #aaaaaa",
+                              transform: "rotate(33deg)",
+                            }}
+                          />
+                          <Box
+                            sx={{
+                              width: "40%",
+                              height: "100%",
+                              textAlign: "center",
+                              flexDirection: "row",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              paddingX: "2 !important",
+                              cursor: "pointer",
+                            }}
+                            onDrop={(e) => dropHandler(e, "player2")}
+                            onDragOver={(e) => dragoverHandler(e)}
+                            onTouchEnd={(e) => touchEndHandler(e, "player2")}
+                            onClick={() => removeFromPair("player2")}
+                          >
+                            {pairSlots.player2 ? (
+                              <Stack
+                                direction="row"
+                                alignItems="center"
+                                spacing={1}
+                              >
+                                <Avatar
+                                  sx={{
+                                    width: 32,
+                                    height: 32,
+                                    bgcolor: "primary.main",
+                                  }}
+                                >
+                                  <Person fontSize="small" />
+                                </Avatar>
+                                <Typography variant="h6" fontWeight="bold">
+                                  {pairSlots.player2.Name || "No Name"}
+                                </Typography>
+                              </Stack>
+                            ) : (
+                              <Typography color="text.secondary">
+                                Player 2
+                              </Typography>
+                            )}
+                          </Box>
+                        </Box>
+                        <Button
+                          disabled={createPairDisabled}
+                          variant="contained"
+                          sx={{ color: "white" }}
+                          onClick={async () => {
+                            const newPairName = `${pairSlots.player1.Name} & ${pairSlots.player2.Name}`;
+                            const newPair = {
+                              DisplayName: newPairName,
+                              Player1Id:
+                                pairSlots.player1.id ||
+                                pairSlots.player1.UserId,
+                              Player2Id:
+                                pairSlots.player2.id ||
+                                pairSlots.player2.UserId,
+                              CreatedAt: new Date().toISOString(),
+                            };
+                            await addSinglePair(newPair, event.id);
+                            setPairSlots({ player1: null, player2: null });
+                            dispatch(fetchEvents({ db, forceRefresh: false }));
+                          }}
+                        >
+                          Create Pair
+                        </Button>
+                        <Typography variant="title1" fontWeight="bold">
+                          Single players registered
+                        </Typography>
+                        <Divider />
+                        <List
+                          sx={{
+                            margin: "0 !important",
+                            padding: "0 !important",
+                          }}
+                        >
+                          {filteredUsers.map((player, index) => (
+                            <React.Fragment key={player.id || player.Name}>
+                              <ListItem
+                                draggable="true"
+                                onDragStart={(e) => dragstartHandler(e)}
+                                onTouchStart={(e) =>
+                                  touchStartHandler(e, player.id || player.Name)
+                                }
+                                onTouchMove={(e) => touchMoveHandler(e)}
+                                sx={{ py: 2, cursor: "grab" }}
+                                secondaryAction={
+                                  <IconButton
+                                    edge="end"
+                                    aria-label="delete"
+                                    onClick={async () => {
+                                      await unregisterFromEvent(
+                                        event.id,
+                                        player.id || player.UserId,
+                                        player.IsGuest
+                                      );
+                                      dispatch(
+                                        fetchEvents({ db, forceRefresh: false })
+                                      );
+                                    }}
+                                  >
+                                    <DeleteIcon color="error" />
+                                  </IconButton>
+                                }
+                              >
+                                <Avatar
+                                  sx={{
+                                    mr: 2,
+                                    bgcolor: "primary.main",
+                                  }}
+                                >
+                                  <Person />
+                                </Avatar>
+                                <ListItemText
+                                  primary={
+                                    <Typography
+                                      id={player.id || player.Name}
+                                      variant="h6"
+                                      sx={{
+                                        fontWeight: "bold",
+                                      }}
+                                    >
+                                      {player.Name || "No Name"}
+                                    </Typography>
+                                  }
+                                />
+                                {/* FUTURE -- add inscription date */}
+                              </ListItem>
+                              {index < filteredUsers.length - 1 && <Divider />}
+                            </React.Fragment>
+                          ))}
+                        </List>
+                      </>
+                    ) : null}
                   </Stack>
                 </Paper>
               )}
@@ -742,6 +812,7 @@ const Event = () => {
                 aria-label="add"
                 sx={{ position: "fixed", bottom: 76, right: 16 }}
                 onClick={() => {
+                  setModeToSearchPlayer("single");
                   setOpenSearchPlayer(true);
                 }}
               >
@@ -751,16 +822,17 @@ const Event = () => {
           </TabPanel>
           {/* Brackets */}
           <TabPanel value={tab} index={2}>
-            {
-            event.TypeOfTournament === "SecretMix" ? 
-            (<RobinHoodBracket
-              eventId={event.id}
-              tournamentId={event.TournamentId}
-            />) 
-            : event.TypeOfTournament === "RobinHood" ? 
-            (<></>) 
-            : null}
-
+            {event.TypeOfTournament === "SecretMix" ? (
+              <RobinHoodBracket
+                eventId={event.id}
+                tournamentId={event.TournamentId}
+              />
+            ) : event.TypeOfTournament !== "SecretMix" ? (
+              <EliminationsBrackets 
+                eventId={event.id}
+                tournamentId={event.TournamentId}
+              />
+            ) : null}
           </TabPanel>
           {/* Rankings */}
           <TabPanel value={tab} index={3}>
@@ -771,11 +843,7 @@ const Event = () => {
           </TabPanel>
           <ConfirmationModal
             open={showConfirmation}
-            title={
-              type === "joinGame"
-                ? "You wanna join this event?"
-                : "You wanna leave this event?"
-            }
+            title={confirmationModalTitle}
             description=""
             type={type}
             negativeText="Cancel"
@@ -786,8 +854,12 @@ const Event = () => {
                 await unregisterFromEvent(event.id);
                 setShowExitSuccess(true);
               } else {
-                await registerFromEvent(event.id);
-                setShowJoinSuccess(true);
+                if (type === "joinGameInPairs") {
+                  setOpenSearchPlayer(true);
+                }else {
+                  await registerFromEvent(event.id);
+                  setShowJoinSuccess(true);
+                }
               }
               dispatch(fetchEvents({ db, forceRefresh: false }));
             }}
@@ -809,12 +881,23 @@ const Event = () => {
           <SearchPlayer
             open={openSearchPlayer}
             playersIds={event.PlayersIds}
-            onClose={async (selectedPlayer) => {
+            mode={modeToSearchPlayer}
+            onClose={async (selectedPlayer, pairMode) => {
               setOpenSearchPlayer(false);
               if (selectedPlayer && typeof selectedPlayer === "object") {
-                await registerFromEvent(event.id, selectedPlayer.id, false);
+                if(!pairMode){
+                  await registerFromEvent(event.id, selectedPlayer.id, false, false);
+                }else {
+                  //register it self as well as a pair
+                  await registerFromEvent(event.id, selectedPlayer.id, false, true);
+                }
               } else if (selectedPlayer && typeof selectedPlayer === "string") {
-                await registerFromEvent(event.id, selectedPlayer, true);
+                if(!pairMode){
+                  await registerFromEvent(event.id, selectedPlayer, true, false);
+                }else {
+                  //register it self as well as a pair
+                  await registerFromEvent(event.id, selectedPlayer, true, true);
+                }
               }
               dispatch(fetchEvents({ db, forceRefresh: false }));
             }}

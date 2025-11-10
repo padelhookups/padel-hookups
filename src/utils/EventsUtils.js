@@ -16,48 +16,118 @@ import {
 } from "firebase/firestore";
 import useAuth from "../utils/useAuth";
 
-const createMatchs = async (eventId, tournamentId) => {
-  const db = getFirestore();
-
-  // Get Event to get fresh pairs
-  const eventSnap = await getDoc(doc(db, `Events/${eventId}`));
-  const pairs = eventSnap.data().Pairs;
-
-  // 2️⃣ Create adapter and manager
-  const adapter = new FirestoreAdapter(
-    db,
-    `Events/${eventId}/TournamentData/${tournamentId}`,
-    tournamentId
-  );
-  const manager = new BracketsManager(adapter);
-
-  const seeding = pairs.map((pair, i) => ({
-    id: i + 1, // manager-side temporary ID
-    name: pair.DisplayName, // display name
-  }));
-
-  // 4) create stage with seeding set to those participant ids
-
-  const stage = await manager.create.stage({
-    name: "Padel Event",
-    tournamentId: 1,
-    type: "round_robin",
-    settings: {
-      groupCount: 1,
-      size: pairs.length,
-      seedOrdering: ["groups.bracket_optimized"],
-    },
-    seeding: seeding,
-  });
-
-  console.log("state", stage);
-};
-
 const useEventActions = () => {
   const { user } = useAuth();
   const db = getFirestore();
 
-  const registerFromEvent = async (eventSelectedId, selectedUser, isGuest) => {
+  const createMatchsRobinHood = async (eventId, tournamentId) => {
+    const db = getFirestore();
+
+    // Get Event to get fresh pairs
+    const eventSnap = await getDoc(doc(db, `Events/${eventId}`));
+    const pairs = eventSnap.data().Pairs;
+
+    // 2️⃣ Create adapter and manager
+    const adapter = new FirestoreAdapter(
+      db,
+      `Events/${eventId}/TournamentData/${tournamentId}`,
+      tournamentId
+    );
+    const manager = new BracketsManager(adapter);
+
+    const seeding = pairs.map((pair, i) => ({
+      id: i + 1, // manager-side temporary ID
+      name: pair.DisplayName, // display name
+    }));
+
+    // 4) create stage with seeding set to those participant ids
+
+    const stage = await manager.create.stage({
+      name: "Padel Event",
+      tournamentId: 1,
+      type: "round_robin",
+      settings: {
+        groupCount: 1,
+        size: pairs.length,
+        seedOrdering: ["groups.bracket_optimized"],
+      },
+      seeding: seeding,
+    });
+
+    console.log("state", stage);
+    const eventDocRef = doc(db, `Events/${eventId}`);
+    await updateDoc(eventDocRef, {
+      ModifiedAt: Timestamp.fromDate(new Date()),
+      TournamentStarted: true,
+    });
+  };
+
+  const createMatchsElimination = async (eventId) => {
+    const db = getFirestore();
+
+    // Get Event to get fresh pairs
+    const eventDocRef = doc(db, `Events/${eventId}`);
+    const eventSnap = await getDoc(eventDocRef);
+    const pairs = eventSnap.data().Pairs;
+
+    // 1️⃣ Create a "TournamentData" document for this event
+    const tournamentCol = collection(db, `Events/${eventId}/TournamentData`);
+    const tournamentRef = await addDoc(tournamentCol, {
+      createdAt: Date.now(),
+      eventId,
+    });
+    const tournamentId = tournamentRef.id;
+
+    await updateDoc(eventDocRef, {
+      PairsCreated: true,
+      ModifiedAt: Timestamp.fromDate(new Date()),
+      TournamentId: tournamentId
+    });
+
+    // 2️⃣ Create adapter and manager
+    const adapter = new FirestoreAdapter(
+      db,
+      `Events/${eventId}/TournamentData/${tournamentId}`,
+      tournamentId
+    );
+    const manager = new BracketsManager(adapter);
+
+    const seeding = pairs.map((pair, i) => ({
+      id: i + 1, // manager-side temporary ID
+      name: pair.DisplayName, // display name
+    }));
+
+    const groupStage = await manager.create.stage({
+      name: "Group Stage",
+      tournamentId: 1,
+      type: "round_robin",
+      settings: {
+        groupCount: 2,
+        size: pairs.length,
+        seedOrdering: ["groups.bracket_optimized"],
+      },
+      seeding: seeding,
+    });
+
+    /* const stage = await manager.create.stage({
+      name: "Padel Event",
+      tournamentId: 1,
+      type: "round_robin",
+      settings: {
+        groupCount: 1,
+        size: pairs.length,
+        seedOrdering: ["groups.bracket_optimized"],
+      },
+      seeding: seeding,
+    }); */
+  };
+
+  const registerFromEvent = async (
+    eventSelectedId,
+    selectedUser,
+    isGuest,
+    registerItSelf
+  ) => {
     let finalUser = selectedUser || user.uid;
     const userDocRef = doc(db, `Users/${finalUser}`);
     const eventDocRef = doc(db, `Events/${eventSelectedId}`);
@@ -95,7 +165,11 @@ const useEventActions = () => {
     console.log("registerFromEvent FINAL");
   };
 
-  const unregisterFromEvent = async (eventSelectedId, selectedUser, isGuest) => {
+  const unregisterFromEvent = async (
+    eventSelectedId,
+    selectedUser,
+    isGuest
+  ) => {
     let finalUser = selectedUser || user.uid;
     let userDocRef = doc(db, `Users/${finalUser}`);
     const eventDocRef = doc(db, `Events/${eventSelectedId}`);
@@ -111,8 +185,10 @@ const useEventActions = () => {
       // For guests, fetch current guests array and filter out the matching one
       const eventSnap = await getDoc(eventDocRef);
       const currentGuests = eventSnap.data()?.Guests || [];
-      const updatedGuests = currentGuests.filter(guest => guest.UserId !== finalUser);
-      
+      const updatedGuests = currentGuests.filter(
+        (guest) => guest.UserId !== finalUser
+      );
+
       await updateDoc(eventDocRef, {
         ModifiedAt: Timestamp.fromDate(new Date()),
         PlayersIds: arrayRemove(userDocRef),
@@ -134,10 +210,9 @@ const useEventActions = () => {
       PlayersWithPairsIds: arrayUnion(pair.Player1Id, pair.Player2Id),
       Pairs: arrayUnion(pair),
     });
-  }
+  };
 
   const createPairsForEvent = async (players, eventId) => {
-    
     const shuffled = players
       .map((value) => ({ value, sort: Math.random() }))
       .sort((a, b) => a.sort - b.sort)
@@ -173,12 +248,16 @@ const useEventActions = () => {
       TournamentId: tournamentId,
       Pairs: arrayUnion(...pairs),
     });
-
-    // Create matchs in brackets-manager
-    await createMatchs(eventId, tournamentId);
   };
 
-  return { addSinglePair, registerFromEvent, unregisterFromEvent, createPairsForEvent };
+  return {
+    addSinglePair,
+    createMatchsRobinHood,
+    createMatchsElimination,
+    registerFromEvent,
+    unregisterFromEvent,
+    createPairsForEvent,
+  };
 };
 
 export default useEventActions;
