@@ -15,13 +15,21 @@ import {
   getDoc,
 } from "firebase/firestore";
 import useAuth from "../utils/useAuth";
+import { Tour } from "@mui/icons-material";
 
 const useEventActions = () => {
   const { user } = useAuth();
   const db = getFirestore();
 
-  const createMatchsRobinHood = async (eventId, tournamentId) => {
+  const createMatchsRobinHood = async (eventId) => {
     const db = getFirestore();
+
+    const tournamentCol = collection(db, `Events/${eventId}/TournamentData`);
+    const tournamentRef = await addDoc(tournamentCol, {
+      createdAt: Date.now(),
+      eventId,
+    });
+    const tournamentId = tournamentRef.id;
 
     // Get Event to get fresh pairs
     const eventSnap = await getDoc(doc(db, `Events/${eventId}`));
@@ -58,6 +66,8 @@ const useEventActions = () => {
     const eventDocRef = doc(db, `Events/${eventId}`);
     await updateDoc(eventDocRef, {
       ModifiedAt: Timestamp.fromDate(new Date()),
+      TournamentId: tournamentId,
+      PairsCreated: true,
       TournamentStarted: true,
     });
   };
@@ -81,7 +91,7 @@ const useEventActions = () => {
     await updateDoc(eventDocRef, {
       PairsCreated: true,
       ModifiedAt: Timestamp.fromDate(new Date()),
-      TournamentId: tournamentId
+      TournamentId: tournamentId,
     });
 
     // 2️⃣ Create adapter and manager
@@ -92,12 +102,12 @@ const useEventActions = () => {
     );
     const manager = new BracketsManager(adapter);
 
-    const seeding = pairs.map((pair, i) => ({
+    /* const seeding = pairs.map((pair, i) => ({
       id: i + 1, // manager-side temporary ID
       name: pair.DisplayName, // display name
     }));
 
-    const groupStage = await manager.create.stage({
+   const groupStage = await manager.create.stage({
       name: "Group Stage",
       tournamentId: 1,
       type: "round_robin",
@@ -107,19 +117,46 @@ const useEventActions = () => {
         seedOrdering: ["groups.bracket_optimized"],
       },
       seeding: seeding,
+    }); */
+
+    const participantRefs = await Promise.all(
+      pairs.map((pair, i) =>
+        addDoc(
+          collection(
+            db,
+            `Events/${eventId}/TournamentData/${tournamentId}/participants`
+          ),
+          {
+            id: i + 1,
+            name: pair.DisplayName,
+            tournament_id: tournamentId,
+          }
+        )
+      )
+    );
+
+    // 5️⃣ Build seeding array required by brackets-manager
+    const seeding = participantRefs.map((ref, i) => ({
+      id: i + 1, // required by brackets-manager
+      name: pairs[i].DisplayName,
+    }));
+
+    console.log("Seeding array:", seeding);
+
+    // 6️⃣ Create single elimination stage
+    const eliminationStage = await manager.create.stage({
+      tournamentId: tournamentId,
+      name: "Master Final",
+      type: "single_elimination",
+      seeding, // pass the full objects
+      settings: {
+        size: seeding.length, // must match number of participants
+        seedOrdering: ["inner_outer"],
+        balanceByes: true,
+      },
     });
 
-    /* const stage = await manager.create.stage({
-      name: "Padel Event",
-      tournamentId: 1,
-      type: "round_robin",
-      settings: {
-        groupCount: 1,
-        size: pairs.length,
-        seedOrdering: ["groups.bracket_optimized"],
-      },
-      seeding: seeding,
-    }); */
+    console.log(eliminationStage);
   };
 
   const registerFromEvent = async (
@@ -233,19 +270,11 @@ const useEventActions = () => {
     }, []);
     console.log("pairs", pairs);
 
-    // 1️⃣ Create a "TournamentData" document for this event
-    const tournamentCol = collection(db, `Events/${eventId}/TournamentData`);
-    const tournamentRef = await addDoc(tournamentCol, {
-      createdAt: Date.now(),
-      eventId,
-    });
-    const tournamentId = tournamentRef.id;
-
     const eventDocRef = doc(db, `Events/${eventId}`);
     await updateDoc(eventDocRef, {
-      PairsCreated: true,
+      //PairsCreated: true,
       ModifiedAt: Timestamp.fromDate(new Date()),
-      TournamentId: tournamentId,
+      //TournamentId: tournamentId,
       Pairs: arrayUnion(...pairs),
     });
   };

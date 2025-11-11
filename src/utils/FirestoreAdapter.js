@@ -45,64 +45,105 @@ export class FirestoreAdapter {
   }
 
   async insert(table, data) {
+    console.warn("insert table", table);
+    console.log("insert data", data);
+
     const colRef = this.getCollection(table);
 
     if (Array.isArray(data)) {
       // Handle array of objects (manager might pass seeding array)
       return Promise.all(
-        data.map(item => {
-          if (typeof item !== 'object' || item === null) {
-            throw new Error('FirestoreAdapter: data item must be an object');
+        data.map((item) => {
+          if (typeof item !== "object" || item === null) {
+            throw new Error("FirestoreAdapter: data item must be an object");
           }
-          return addDoc(colRef, item).then(docRef => ({ id: docRef.id }));
+          return addDoc(colRef, item).then((docRef) => ({ id: docRef.id }));
         })
       );
     }
 
-    if (typeof data !== 'object' || data === null) {
-      throw new Error('FirestoreAdapter: data must be an object');
+    if (typeof data !== "object" || data === null) {
+      throw new Error("FirestoreAdapter: data must be an object");
     }
 
-    const docRef = await addDoc(colRef, data);
+    const docRef = await addDoc(colRef, this.sanitize(data));
     return { id: docRef.id };
+  }
+
+  sanitize(data) {
+    return JSON.parse(
+      JSON.stringify(data, (key, value) => (value === undefined ? null : value))
+    );
   }
 
   async select(table, filters = {}) {
     const colRef = this.getCollection(table);
 
-    if (this.tournamentId && Object.keys(filters).includes('tournament_id') && filters.tournament_id === undefined) {
+    if (
+      this.tournamentId &&
+      Object.keys(filters).includes("tournament_id") &&
+      filters.tournament_id === undefined
+    ) {
       filters.tournament_id = this.tournamentId;
     }
 
     // ✅ If filters is a string, treat it as document ID
     if (typeof filters === "string") {
-      const docRef = doc(this.db, `${this.baseDocPath}/${this.getCollectionName(table)}/${filters}`);
+      const docRef = doc(
+        this.db,
+        `${this.baseDocPath}/${this.getCollectionName(table)}/${filters}`
+      );
       const snapshot = await getDoc(docRef);
-      return snapshot.exists() ? [{ id: snapshot.id, ...snapshot.data() }] : [];
+      return snapshot.exists()
+        ? [
+            {
+              id: snapshot.id,
+              ...snapshot.data(),
+              round_id: snapshot.data()?.round_id?.id,
+              group_id: snapshot.data()?.group_id?.id,
+              stage_id: snapshot.data()?.stage_id?.id,
+            },
+          ]
+        : [];
     }
 
     // ✅ If filters contains an ID, just fetch that doc
     if (filters[0]?.id) {
-      const docRef = doc(this.db, `${this.baseDocPath}/${this.getCollectionName(table)}/${filters[0]?.id}`);
+      const docRef = doc(
+        this.db,
+        `${this.baseDocPath}/${this.getCollectionName(table)}/${filters[0]?.id}`
+      );
       const snapshot = await getDoc(docRef);
       return snapshot.exists() ? [{ id: snapshot.id, ...snapshot.data() }] : [];
     }
 
     if (filters.stage_id) {
       let docRef;
-      if (table === 'stage') {
-        const docRef = doc(this.db, `${this.baseDocPath}/${this.getCollectionName(table)}/${filters.stage_id}`);
+      if (table === "stage") {
+        const docRef = doc(
+          this.db,
+          `${this.baseDocPath}/${this.getCollectionName(table)}/${
+            filters.stage_id
+          }`
+        );
         const snapshot = await getDoc(docRef);
-        return snapshot.exists() ? [{ id: snapshot.id, ...snapshot.data() }] : [];
+        return snapshot.exists()
+          ? [{ id: snapshot.id, ...snapshot.data() }]
+          : [];
       } else {
-        const snapshot = await getDocs(colRef, where('stage_id', '==', filters.stage_id));
+        const snapshot = await getDocs(
+          colRef,
+          where("stage_id", "==", filters.stage_id)
+        );
         return snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
       }
-
     }
 
     if (filters.tournament_id) {
-      const snapshot = await getDocs(colRef, where('tournament_id', '==', filters.tournament_id));
+      const snapshot = await getDocs(
+        colRef,
+        where("tournament_id", "==", filters.tournament_id)
+      );
       return snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
     }
 
@@ -110,102 +151,148 @@ export class FirestoreAdapter {
     let q = query(colRef);
     if (filters && Object.keys(filters).length > 0) {
       const safeFilters = Object.fromEntries(
-        Object.entries(filters).filter(([_, value]) => typeof value !== "object")
+        Object.entries(filters).filter(
+          ([_, value]) => typeof value !== "object"
+        )
       );
 
-      const conditions = Object.entries(safeFilters).map(([key, value]) => where(key, "==", value));
+      const conditions = Object.entries(safeFilters).map(([key, value]) =>
+        where(key, "==", value || null)
+      );
       if (conditions.length > 0) q = query(colRef, ...conditions);
     }
 
     const snapshot = await getDocs(q);
     if (snapshot.docs.length === 1) {
-      return [{ id: snapshot.docs[0].id, ...snapshot.docs[0].data() }];
+      return {
+        id: snapshot.docs[0].id,
+        ...snapshot.docs[0].data(),
+      };
     } else if (snapshot.docs.length > 1) {
       return snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
-
     } else {
       return [];
     }
   }
 
-
   // Get a document directly by ID
+  // replace your getById with this
   async getById(table, id) {
-    const docRef = doc(this.db, `${this.baseDocPath}/${table}/${id}`);
+    const collectionName = this.getCollectionName(table);
+    const docRef = doc(this.db, `${this.baseDocPath}/${collectionName}/${id}`);
     const snapshot = await getDoc(docRef);
     if (!snapshot.exists()) return null;
     return { id: snapshot.id, ...snapshot.data() };
   }
 
+  // replace your update() with this (keeps most of your logic, but normalizes returns)
   async update(table, data, filters) {
-    if (!data && filters && typeof filters === "object" && filters[0].id) {
-      // Extract only fields that should be saved
-      const allowedKeys = [
-        "opponent1",
-        "opponent2",
-        "scoreTeam1",
-        "scoreTeam2",
-        "status",
-        "score",
-        "number",
-        "group_id",
-        "round_id",
-        "stage_id",
-        "child_count"
-      ];
+    console.log("update table", table);
+    console.log("update data", data);
+    console.log("update filters", filters);
 
-      data = {};
-      for (const key of allowedKeys) {
-        if (filters[key] !== undefined) {
-          data[key] = filters[key];
+    const collectionName = this.getCollectionName(table);
+
+    // Normalize filters that come as [{ id, ... }] to { id }
+    if (Array.isArray(filters) && filters[0] && filters[0].id) {
+      // If caller passed the full match object as filters (some clients do)
+      // we will extract allowed keys when data is missing (keep old behavior but clearer)
+      if (!data) {
+        const allowedKeys = [
+          "opponent1",
+          "opponent2",
+          "scoreTeam1",
+          "scoreTeam2",
+          "status",
+          "score",
+          "number",
+          "group_id",
+          "round_id",
+          "stage_id",
+          "child_count",
+        ];
+
+        data = {};
+        for (const key of allowedKeys) {
+          if (filters[0][key] !== undefined) data[key] = filters[0][key];
+        }
+
+        // patch opponent score objects if present
+        if (filters[0].opponent1) {
+          data.opponent1 = {
+            ...filters[0].opponent1,
+            id: filters[0].opponent1.id,
+            score: filters.scoreTeam1 ?? filters.opponent1.score,
+          };
+        }
+        if (filters[0].opponent2) {
+          data.opponent2 = {
+            ...filters[0].opponent2,
+            id: filters[0].opponent2.id,
+            score: filters.scoreTeam2 ?? filters.opponent2.score,
+          };
         }
       }
-
-      data.opponent1 = { ...filters[0].opponent1, ...data.opponent1, id: filters[0].opponent1.id };
-      data.opponent2 = { ...filters[0].opponent2, ...data.opponent2, id: filters[0].opponent2.id };
-      if(filters.customStatus){
-        data.status = filters.customStatus;
-      }
-      filters = { id: filters[0].id }; // Now filters just identifies the doc
+      // reduce filters to simple id doc reference for update below
+      filters = { id: filters[0].id };
     }
 
-    // If filters is a simple string treat as id
-    if (typeof filters === 'string') {
-      const docRef = doc(this.db, `${this.baseDocPath}/${this.getCollectionName(table)}/${filters}`);
-      await updateDoc(docRef, data, { merge: true });
-      return { ...data };
+    // If filters is a string = id
+    if (typeof filters === "string") {
+      const docRef = doc(
+        this.db,
+        `${this.baseDocPath}/${collectionName}/${filters}`
+      );
+      await updateDoc(docRef, this.sanitize(data), { merge: true });
+
+      // re-fetch full updated doc and return full object
+      const updatedSnapshot = await getDoc(docRef);
+      return { id: updatedSnapshot.id, ...updatedSnapshot.data() };
     }
 
-    // If filters is an object and contains id, use direct doc update
-    if (filters && typeof filters === 'object' && filters.id) {
-      const docRef = doc(this.db, `${this.baseDocPath}/${this.getCollectionName(table)}/${filters.id}`);
-      await updateDoc(docRef, data, { merge: true });
-      return { ...data };
+    // If filters is object with id
+    if (filters && typeof filters === "object" && filters.id) {
+      const docRef = doc(
+        this.db,
+        `${this.baseDocPath}/${collectionName}/${filters.id}`
+      );
+      await updateDoc(docRef, this.sanitize(data), { merge: true });
+
+      const updatedSnapshot = await getDoc(docRef);
+      return { id: updatedSnapshot.id, ...updatedSnapshot.data() };
     }
 
-    if(table === 'match_game' && !data.parent_id){
-      return [];
-    }
+    // Generic multi-doc update (e.g. update by stage_id or tournament_id)
+    if (data) {
+      const docs = await this.select(table, filters);
+      const updatedDocs = await Promise.all(
+        docs.map(async (d) => {
+          const docRef = doc(
+            this.db,
+            `${this.baseDocPath}/${collectionName}/${d.id}`
+          );
+          await updateDoc(docRef, this.sanitize(data), { merge: true });
+          const refreshed = await getDoc(docRef);
+          return { id: refreshed.id, ...refreshed.data() };
+        })
+      );
 
-    // otherwise select and update all matches
-    const docs = await this.select(table, filters);
-    const updatedDocs = await Promise.all(
-      docs.map(async (d) => {
-        const docRef = doc(this.db, `${this.baseDocPath}/${this.getCollectionName(table)}/${d.id}`);
-        await updateDoc(docRef, data);
-        // return the updated doc object
-        return { id: d.id, ...d, ...data };
-      })
-    );
-    return updatedDocs.length === 1 ? updatedDocs[0] : updatedDocs;
+      return updatedDocs.length === 1 ? updatedDocs[0] : updatedDocs;
+    } else {
+      return null;
+    }
   }
-
 
   async delete(table, filters) {
     const docs = await this.select(table, filters);
     await Promise.all(
       docs.map((d) =>
-        deleteDocument(doc(this.db, `${this.baseDocPath}/${this.getCollectionName(table)}/${d.id}`))
+        deleteDocument(
+          doc(
+            this.db,
+            `${this.baseDocPath}/${this.getCollectionName(table)}/${d.id}`
+          )
+        )
       )
     );
   }

@@ -489,7 +489,7 @@ const Event = () => {
                             return;
                           }
                           if(event.TypeOfTournament === "SecretMix"){
-                            await createMatchsRobinHood(eventId, event.TournamentId);
+                            await createMatchsRobinHood(eventId);
                           }else {
                             await createMatchsElimination(eventId);
                           }

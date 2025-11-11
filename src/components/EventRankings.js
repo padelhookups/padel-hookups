@@ -254,7 +254,8 @@ const EventRankings = ({ eventId, tournamentId }) => {
                 />
                 <Chip
                   variant="outlined"
-                  label={`${pair.points} pts`}
+                  label={`${pair.points} SP`}
+                  title="Scored points in all matches"
                   size="small"
                 />
                 {pair.miniWins !== undefined && pair.miniDiff !== undefined ? (

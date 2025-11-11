@@ -22,6 +22,14 @@ const EliminationsBrackets = ({ eventId, tournamentId }) => {
 
   async function render() {
     const stage = await manager.get.currentStage(tournamentId);
+    if (!stage) {
+      const tournamentData = await manager.get.tournamentData(tournamentId);
+      console.log(tournamentData);
+      if (!tournamentData.stage || tournamentData.stage.length === 0) {
+        return;
+      }
+      
+    }
     console.log(stage);
 
     const participantsData = await adapter.select("participant");
@@ -59,6 +67,7 @@ const EliminationsBrackets = ({ eventId, tournamentId }) => {
         participants: stageData.participant,
       },
       {
+        clear: true,
         onMatchClick: (match) => {
           console.log("A match was clicked", match);
           setSelectedMatch(match);

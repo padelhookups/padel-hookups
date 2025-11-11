@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { BracketsManager } from "brackets-manager";
+import { BracketsManager, helpers, Find } from "brackets-manager";
 
 import {
   Box,
@@ -34,8 +34,10 @@ const UploadScoreModal = ({
         opponent2: { ...match.opponent2, score: team2Score },
       });
 
-      const opponent1Result = team1Score > team2Score ? "win" : team1Score < team2Score ? "lose" : "";
-      const opponent2Result = team2Score > team1Score ? "win" : team2Score < team1Score ? "lose" : "";
+      const opponent1Result =
+        team1Score > team2Score ? "win" : team1Score < team2Score ? "lose" : "";
+      const opponent2Result =
+        team2Score > team1Score ? "win" : team2Score < team1Score ? "lose" : "";
 
       // Update in manager
       await manager.update.match({
@@ -43,15 +45,42 @@ const UploadScoreModal = ({
         scoreTeam1: team1Score,
         scoreTeam2: team2Score,
         customStatus: 4,
+        status: 4,
         opponent1: {
           result: opponent1Result,
-          score: team1Score
+          score: team1Score,
         },
         opponent2: {
           result: opponent2Result,
-          score: team2Score
+          score: team2Score,
         },
       });
+      const winnerId =
+        opponent1Result === "win" ? match.opponent1.id : match.opponent2.id;
+      /* const nextSide = await helpers.getSide(match.number);
+      console.log("nextSide", nextSide); */
+
+      const matchLocation = await helpers.getMatchLocation(
+        "single_elimination",
+        1
+      );
+      console.log("matchLocation", matchLocation);
+
+      const nextMatches = await manager.find.nextMatches(match.id, winnerId);
+      console.log("nextMatches", nextMatches);
+
+      /* nextMatches.forEach(async (nextMatch) => {
+        await manager.update.match({
+          id: nextMatch.id,
+          status: 2, // set to ready
+          [opponent1Result === "win" ? "opponent1" : "opponent2"]: {
+            id:
+              opponent1Result === "win"
+                ? match.opponent1.id
+                : match.opponent2.id,
+          },
+        });
+      }); */
       onClose();
       console.log("✅ Match updated");
     } catch (err) {
