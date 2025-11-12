@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { BracketsManager, helpers, Find } from "brackets-manager";
+import { BracketsManager, helpers } from "brackets-manager";
 
 import {
   Box,
@@ -60,14 +60,14 @@ const UploadScoreModal = ({
       /* const nextSide = await helpers.getSide(match.number);
       console.log("nextSide", nextSide); */
 
-      const matchLocation = await helpers.getMatchLocation(
+      /* const matchLocation = await helpers.getMatchLocation(
         "single_elimination",
         1
       );
       console.log("matchLocation", matchLocation);
 
       const nextMatches = await manager.find.nextMatches(match.id, winnerId);
-      console.log("nextMatches", nextMatches);
+      console.log("nextMatches", nextMatches); */
 
       /* nextMatches.forEach(async (nextMatch) => {
         await manager.update.match({

@@ -71,9 +71,31 @@ export class FirestoreAdapter {
   }
 
   sanitize(data) {
-    return JSON.parse(
+    const removedUndefined = JSON.parse(
       JSON.stringify(data, (key, value) => (value === undefined ? null : value))
     );
+    // remove nested objects
+    const sanitized = this.flattenIds(removedUndefined);
+    return sanitized;
+  }
+
+  flattenIds(obj) {
+    const allowedKeys = ["stage_id", "group_id", "round_id"];
+    const result = { ...obj }; // shallow copy
+
+    for (const key in result) {
+      if (
+        allowedKeys.includes(key) &&
+        result[key] &&
+        typeof result[key] === "object" &&
+        !Array.isArray(result[key]) &&
+        "id" in result[key]
+      ) {
+        result[key] = result[key].id;
+      }
+    }
+
+    return result;
   }
 
   async select(table, filters = {}) {
@@ -95,16 +117,16 @@ export class FirestoreAdapter {
       );
       const snapshot = await getDoc(docRef);
       return snapshot.exists()
-        ? [
-            {
-              id: snapshot.id,
-              ...snapshot.data(),
-              round_id: snapshot.data()?.round_id?.id,
-              group_id: snapshot.data()?.group_id?.id,
-              stage_id: snapshot.data()?.stage_id?.id,
-            },
-          ]
-        : [];
+        ?
+        {
+          id: snapshot.id,
+          ...snapshot.data(),
+          /* round_id: snapshot.data()?.round_id?.id,
+          group_id: snapshot.data()?.group_id?.id,
+          stage_id: snapshot.data()?.stage_id?.id, */
+        }
+
+        : null;
     }
 
     // ✅ If filters contains an ID, just fetch that doc
@@ -122,8 +144,7 @@ export class FirestoreAdapter {
       if (table === "stage") {
         const docRef = doc(
           this.db,
-          `${this.baseDocPath}/${this.getCollectionName(table)}/${
-            filters.stage_id
+          `${this.baseDocPath}/${this.getCollectionName(table)}/${filters.stage_id
           }`
         );
         const snapshot = await getDoc(docRef);
@@ -157,17 +178,17 @@ export class FirestoreAdapter {
       );
 
       const conditions = Object.entries(safeFilters).map(([key, value]) =>
-        where(key, "==", value || null)
+        where(key, "==", value)
       );
       if (conditions.length > 0) q = query(colRef, ...conditions);
     }
 
     const snapshot = await getDocs(q);
     if (snapshot.docs.length === 1) {
-      return {
+      return [{
         id: snapshot.docs[0].id,
         ...snapshot.docs[0].data(),
-      };
+      }];
     } else if (snapshot.docs.length > 1) {
       return snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
     } else {
@@ -197,7 +218,7 @@ export class FirestoreAdapter {
     if (Array.isArray(filters) && filters[0] && filters[0].id) {
       // If caller passed the full match object as filters (some clients do)
       // we will extract allowed keys when data is missing (keep old behavior but clearer)
-      if (!data) {
+      if (!data || typeof data === "string") {
         const allowedKeys = [
           "opponent1",
           "opponent2",
@@ -256,7 +277,11 @@ export class FirestoreAdapter {
         this.db,
         `${this.baseDocPath}/${collectionName}/${filters.id}`
       );
-      await updateDoc(docRef, this.sanitize(data), { merge: true });
+      if (typeof data === 'object') {
+        await updateDoc(docRef, this.sanitize(data), { merge: true });
+      } else {
+        await updateDoc(docRef, this.sanitize(filters), { merge: true });
+      }
 
       const updatedSnapshot = await getDoc(docRef);
       return { id: updatedSnapshot.id, ...updatedSnapshot.data() };

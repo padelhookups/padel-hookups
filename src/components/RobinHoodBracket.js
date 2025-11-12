@@ -42,7 +42,7 @@ const RobinHoodBracket = ({ eventId, tournamentId }) => {
         setMatches(matchesData);
 
         const groupedByRound = matchesData.reduce((acc, match) => {
-            const roundId = match.round_id?.id || `round-${match.id}`; // fallback if missing
+            const roundId = match.round_id || `round-${match.id}`; // fallback if missing
             if (!acc[roundId]) acc[roundId] = [];
             acc[roundId].push(match);
             return acc;

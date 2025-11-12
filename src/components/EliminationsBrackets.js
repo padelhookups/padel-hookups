@@ -22,20 +22,24 @@ const EliminationsBrackets = ({ eventId, tournamentId }) => {
 
   async function render() {
     const stage = await manager.get.currentStage(tournamentId);
+    let stageData;
+
     if (!stage) {
       const tournamentData = await manager.get.tournamentData(tournamentId);
       console.log(tournamentData);
       if (!tournamentData.stage || tournamentData.stage.length === 0) {
         return;
+      } else {
+        stageData = tournamentData;
       }
-      
+
+    } else {
+      stageData = await manager.get.stageData(stage.id);
     }
     console.log(stage);
 
     const participantsData = await adapter.select("participant");
     setParticipants(participantsData);
-
-    const stageData = await manager.get.stageData(stage.id);
     console.log(stageData);
 
     console.log({
