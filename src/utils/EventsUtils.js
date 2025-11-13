@@ -102,61 +102,37 @@ const useEventActions = () => {
     );
     const manager = new BracketsManager(adapter);
 
-    /* const seeding = pairs.map((pair, i) => ({
+    const seeding = pairs.map((pair, i) => ({
       id: i + 1, // manager-side temporary ID
       name: pair.DisplayName, // display name
     }));
 
-   const groupStage = await manager.create.stage({
+    const groupCount = getNumberOfGroups(pairs.length);
+
+    const groupStage = await manager.create.stage({
       name: "Group Stage",
-      tournamentId: 1,
+      tournamentId: tournamentId,
       type: "round_robin",
       settings: {
-        groupCount: 2,
+        groupCount: groupCount,
         size: pairs.length,
         seedOrdering: ["groups.bracket_optimized"],
       },
       seeding: seeding,
-    }); */
+    });
 
-    const participantRefs = await Promise.all(
-      pairs.map((pair, i) =>
-        addDoc(
-          collection(
-            db,
-            `Events/${eventId}/TournamentData/${tournamentId}/participants`
-          ),
-          {
-            id: i + 1,
-            name: pair.DisplayName,
-            tournament_id: tournamentId,
-          }
-        )
-      )
-    );
-
-    // 5️⃣ Build seeding array required by brackets-manager
-    const seeding = participantRefs.map((ref, i) => ({
-      id: i + 1, // required by brackets-manager
-      name: pairs[i].DisplayName,
-    }));
-
-    console.log("Seeding array:", seeding);
-
-    // 6️⃣ Create single elimination stage
-    const eliminationStage = await manager.create.stage({
+    /* const eliminationStage = await manager.create.stage({
       tournamentId: tournamentId,
       name: "Master Final",
       type: "single_elimination",
-      seeding, // pass the full objects
       settings: {
-        size: seeding.length, // must match number of participants
-        seedOrdering: ["inner_outer"],
+        size: 4,
+        seedOrdering: ["inner_outer"], // <-- valid now
         balanceByes: true,
       },
     });
 
-    console.log(eliminationStage);
+    console.log(eliminationStage); */
   };
 
   const registerFromEvent = async (
@@ -191,11 +167,11 @@ const useEventActions = () => {
       ),
       Guests: isGuest
         ? arrayUnion({
-            Name: selectedUser,
-            IsGuest: true,
-            CreatedAt: Timestamp.fromDate(new Date()),
-            UserId: finalUser,
-          })
+          Name: selectedUser,
+          IsGuest: true,
+          CreatedAt: Timestamp.fromDate(new Date()),
+          UserId: finalUser,
+        })
         : arrayRemove(null),
     });
 
@@ -278,6 +254,16 @@ const useEventActions = () => {
       Pairs: arrayUnion(...pairs),
     });
   };
+
+  function getNumberOfGroups(totalPairs) {
+    let groupSize;
+
+    if (totalPairs % 4 === 0) groupSize = 4;
+    else if (totalPairs % 3 === 0) groupSize = 3;
+    else groupSize = 2;
+
+    return totalPairs / groupSize;
+  }
 
   return {
     addSinglePair,
