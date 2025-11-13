@@ -23,59 +23,149 @@ code {
 }
 
 /* Padel court texture backgrounds */
-  .padel-court-texture {
-    background-image:
-      linear-gradient(45deg, transparent 25%, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.1) 50%, transparent 50%, transparent 75%, rgba(255,255,255,0.1) 75%),
-      linear-gradient(-45deg, transparent 25%, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.1) 50%, transparent 50%, transparent 75%, rgba(255,255,255,0.1) 75%);
-    background-size: 20px 20px;
-  }
+.padel-court-texture {
+  background-image:
+    linear-gradient(45deg, transparent 25%, rgba(255, 255, 255, 0.1) 25%, rgba(255, 255, 255, 0.1) 50%, transparent 50%, transparent 75%, rgba(255, 255, 255, 0.1) 75%),
+    linear-gradient(-45deg, transparent 25%, rgba(255, 255, 255, 0.1) 25%, rgba(255, 255, 255, 0.1) 50%, transparent 50%, transparent 75%, rgba(255, 255, 255, 0.1) 75%);
+  background-size: 20px 20px;
+}
 
-  .padel-racket-pattern {
-    background-image: radial-gradient(circle at 25% 25%, rgba(0,0,0,0.1) 2px, transparent 2px);
-    background-size: 15px 15px;
-  }
+.padel-racket-pattern {
+  background-image: radial-gradient(circle at 25% 25%, rgba(0, 0, 0, 0.1) 2px, transparent 2px);
+  background-size: 15px 15px;
+}
 
-  .padel-glass-effect {
-    backdrop-filter: blur(10px);
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-  }
+.padel-glass-effect {
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
 
-  .padel-gradient {
-    background: linear-gradient(135deg, hsl(var(--padel-court-green)) 0%, hsl(var(--padel-glass-blue)) 100%);
-  }
+.padel-gradient {
+  background: linear-gradient(135deg, hsl(var(--padel-court-green)) 0%, hsl(var(--padel-glass-blue)) 100%);
+}
 
-  .padel-shadow {
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  }
+.padel-shadow {
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.brackets-viewer h1 {
+  display: none !important;
+}
+
+.brackets-viewer .round-robin {
+  flex-wrap: nowrap !important;
+}
 
 /* Padel animation keyframes */
-  @keyframes swing {
-    0% { transform: rotate(-25deg); }
-    15% { transform: rotate(-35deg); }
-    25% { transform: rotate(15deg); }
-    35% { transform: rotate(-10deg); }
-    50% { transform: rotate(-25deg); }
-    100% { transform: rotate(-25deg); }
+@keyframes swing {
+  0% {
+    transform: rotate(-25deg);
   }
 
-  @keyframes ballBounce {
-    0% { transform: translate(0, 0); }
-    15% { transform: translate(-12px, -8px); }
-    25% { transform: translate(32px, -20px); }
-    35% { transform: translate(48px, -16px); }
-    50% { transform: translate(28px, 8px); }
-    65% { transform: translate(12px, 4px); }
-    80% { transform: translate(-8px, 2px); }
-    100% { transform: translate(0, 0); }
+  15% {
+    transform: rotate(-35deg);
   }
 
-  @keyframes impact {
-    0% { opacity: 0; transform: scale(0); }
-    20% { opacity: 0; transform: scale(0); }
-    25% { opacity: 0.8; transform: scale(1); }
-    30% { opacity: 0.5; transform: scale(2); }
-    35% { opacity: 0.2; transform: scale(3); }
-    40% { opacity: 0; transform: scale(4); }
-    100% { opacity: 0; transform: scale(0); }
+  25% {
+    transform: rotate(15deg);
   }
+
+  35% {
+    transform: rotate(-10deg);
+  }
+
+  50% {
+    transform: rotate(-25deg);
+  }
+
+  100% {
+    transform: rotate(-25deg);
+  }
+}
+
+@keyframes ballBounce {
+  0% {
+    transform: translate(0, 0);
+  }
+
+  15% {
+    transform: translate(-12px, -8px);
+  }
+
+  25% {
+    transform: translate(32px, -20px);
+  }
+
+  35% {
+    transform: translate(48px, -16px);
+  }
+
+  50% {
+    transform: translate(28px, 8px);
+  }
+
+  65% {
+    transform: translate(12px, 4px);
+  }
+
+  80% {
+    transform: translate(-8px, 2px);
+  }
+
+  100% {
+    transform: translate(0, 0);
+  }
+}
+
+@keyframes impact {
+  0% {
+    opacity: 0;
+    transform: scale(0);
+  }
+
+  20% {
+    opacity: 0;
+    transform: scale(0);
+  }
+
+  25% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+
+  30% {
+    opacity: 0.5;
+    transform: scale(2);
+  }
+
+  35% {
+    opacity: 0.2;
+    transform: scale(3);
+  }
+
+  40% {
+    opacity: 0;
+    transform: scale(4);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(0);
+  }
+}
+
+@media screen and (max-width: 778px) {
+  .brackets-viewer .round-robin .group table {
+    margin: auto;
+    margin-top: 2rem;
+  }
+
+  .brackets-viewer .round-robin .group:not(:last-of-type) {
+    margin-right: 0 !important;
+  }
+
+  .brackets-viewer .round-robin .group {
+    width: 100vw !important;
+  }
+}

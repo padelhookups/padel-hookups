@@ -2,11 +2,15 @@ import React, { useEffect } from "react";
 import { getFirestore } from "firebase/firestore";
 import { BracketsManager } from "brackets-manager";
 import { FirestoreAdapter } from "../utils/FirestoreAdapter";
+import useAuth from "../utils/useAuth";
+
+import { Button } from "@mui/material";
 
 import UploadScoreModal from "./UploadScoreModal";
 
 const EliminationsBrackets = ({ eventId, tournamentId }) => {
   const db = getFirestore();
+  const { user } = useAuth();
 
   const adapter = new FirestoreAdapter(
     db,
@@ -19,6 +23,7 @@ const EliminationsBrackets = ({ eventId, tournamentId }) => {
   const [selectedMatch, setSelectedMatch] = React.useState([]);
   const [participants, setParticipants] = React.useState([]);
   const [uploadModalOpen, setUploadModalOpen] = React.useState(false);
+  const [showEliminationStageButton, setShowEliminationStageButton] = React.useState(false);
 
   async function render() {
     const stage = await manager.get.currentStage(tournamentId);
@@ -30,6 +35,7 @@ const EliminationsBrackets = ({ eventId, tournamentId }) => {
       if (!tournamentData.stage || tournamentData.stage.length === 0) {
         return;
       } else {
+        setShowEliminationStageButton(true);
         stageData = tournamentData;
       }
 
@@ -212,7 +218,25 @@ const EliminationsBrackets = ({ eventId, tournamentId }) => {
 
   return (
     <div style={{ width: "100%", height: "100vh" }}>
-      <div className="brackets-viewer"></div>
+      {
+        showEliminationStageButton && user.IsAdmin && (
+          <Button
+            variant="contained"
+            onClick={async () => { }}
+            sx={{
+              display: "flex",
+              marginX: "auto !important",
+              marginTop: '2rem !important',
+              marginBottom: '1rem !important',
+              bgcolor: "primary.main",
+              color: "white",
+              "&:hover": { bgcolor: "white", color: "primary.main" },
+            }}
+          >
+            Create Elimination Stage
+          </Button>)
+      }
+      <div className="brackets-viewer" style={{ padding: "0", paddingBottom: "1rem" }}></div>
       {adapter && selectedMatch && (
         <UploadScoreModal
           open={uploadModalOpen}

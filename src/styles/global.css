@@ -3,17 +3,22 @@
   -webkit-overflow-scrolling: touch;
 }
 
-html, body, #root, .app-container {
+html,
+body,
+#root,
+.app-container {
   height: Calc(100vh - 60px);
   min-height: 100%;
   display: flex;
-  flex-direction: column;  
+  flex-direction: column;
 }
 
 /* Safe-area + bottom nav aware main container */
 .app-container {
-  flex-grow: 1; /* take all available vertical space */
-  overflow-y: auto; /* allow scrolling if needed */
+  flex-grow: 1;
+  /* take all available vertical space */
+  overflow-y: auto;
+  /* allow scrolling if needed */
   /* Remove safe-area padding - let pages handle their own */
   padding-top: 0;
   /* Just reserve space for nav height, no safe-area */
@@ -49,3 +54,14 @@ html, body, #root, .app-container {
   justify-content: space-around;
   z-index: 1000;
 }
+
+.brackets-viewer .round-robin {
+  flex-wrap: nowrap !important;
+}
+
+/* @media screen and (max-width: 900px) {
+  .brackets-viewer .round-robin .group:not(:last-of-type) {
+    margin-right: 0 !important;
+  }
+}
+ */
