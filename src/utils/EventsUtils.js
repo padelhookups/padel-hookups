@@ -107,7 +107,7 @@ const useEventActions = () => {
       name: pair.DisplayName, // display name
     }));
 
-    const groupCount = getNumberOfGroups(pairs.length);
+    const groupCount = getNumberOfGroups(pairs.length);   
 
     const groupStage = await manager.create.stage({
       name: "Group Stage",
@@ -116,7 +116,7 @@ const useEventActions = () => {
       settings: {
         groupCount: groupCount,
         size: pairs.length,
-        seedOrdering: ["groups.bracket_optimized"],
+        seedOrdering: ["groups.bracket_optimized"]        
       },
       seeding: seeding,
     });

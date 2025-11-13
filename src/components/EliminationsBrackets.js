@@ -49,6 +49,116 @@ const EliminationsBrackets = ({ eventId, tournamentId }) => {
       participants: stageData.participant,
     });
 
+    const participantGroups = {};
+
+    for (const match of stageData.match) {
+      const groupId = match.group_id?.id || match.group_id;
+      if (!groupId) continue;
+
+      if (!participantGroups[groupId]) participantGroups[groupId] = [];
+
+      if (match.opponent1?.id && !participantGroups[groupId].includes(match.opponent1.id)) {
+        participantGroups[groupId].push(match.opponent1.id);
+      }
+
+      if (match.opponent2?.id && !participantGroups[groupId].includes(match.opponent2.id)) {
+        participantGroups[groupId].push(match.opponent2.id);
+      }
+    }
+
+    console.log("participantGroups", participantGroups);
+
+
+
+    function computeStandings(participants, matches) {
+      const results = participants.map(p => ({
+        id: p.id,
+        name: p.name,
+        wins: 0,
+        losses: 0,
+        draws: 0,
+        points: 0,
+      }));
+
+      for (const match of matches) {
+        const p1 = results.find(p => p.id === match.opponent1?.id);
+        const p2 = results.find(p => p.id === match.opponent2?.id);
+
+        if (!p1 || !p2) continue;
+        if (!match.opponent1.score && !match.opponent2.score) continue; // Skip unplayed matches
+
+        const matchWinnerId = match.opponent1.result === "win" ? match.opponent1.id :
+          match.opponent2.result === "win" ? match.opponent2.id : null;
+
+        if (matchWinnerId === p1.id) {
+          p1.wins++;
+          p1.points += 3; // You can chan ge this scoring system
+          p2.losses++;
+        } else if (matchWinnerId === p2.id) {
+          p2.wins++;
+          p2.points += 3;
+          p1.losses++;
+        } else {
+          // Optional: handle draw
+          p1.draws++;
+          p2.draws++;
+          p1.points++;
+          p2.points++;
+        }
+      }
+
+      return results;
+    }
+
+    const standings = computeStandings(stageData.participant, stageData.match);
+
+    stageData.participant = stageData.participant.map(p => {
+      const s = standings.find(x => x.id === p.id);
+      return { ...p, ...s, group_id: Object.keys(participantGroups).find(key => participantGroups[key].includes(p.id)) };
+    });
+
+    const rankingFormula = (participant) => {
+      let tempParticipant = stageData.participant.find(p => p.id === participant.id);
+      if (!tempParticipant) return 0;
+      participant = { ...participant, ...tempParticipant };
+      let points = participant.points || 0;
+
+      const groupIndex = Object.values(participantGroups).findIndex(group =>
+        group.includes(participant.id)
+      );
+      const groupId = Object.keys(participantGroups)[groupIndex];
+
+      if (!groupId) return participant.points;
+
+      // Filter participants from the same group
+      const sameGroup = stageData.participant.filter(
+        p => p.group_id === groupId
+      );
+
+      // Find ties within the same group
+      const tied = sameGroup.filter(
+        p => p.id !== participant.id && p.points === points
+      );
+
+      for (const other of tied) {
+        const directMatch = stageData.match.find(
+          m =>
+            (m.group_id?.id || m.group_id) === groupId &&
+            [m.opponent1?.id, m.opponent2?.id].includes(participant.id) &&
+            [m.opponent1?.id, m.opponent2?.id].includes(other.id)
+        );
+
+        if (directMatch) {
+          const winnerId = directMatch.opponent1?.result === "win" ? directMatch.opponent1?.id :
+            directMatch.opponent2?.result === "win" ? directMatch.opponent2?.id : null;
+          if (winnerId === participant.id) points += 0.1;
+          else if (winnerId === other.id) points -= 0.1;
+        }
+      }
+
+      return points;
+    };
+
     window.bracketsViewer.render(
       {
         stages: stageData.stage.flat(),
@@ -91,6 +201,7 @@ const EliminationsBrackets = ({ eventId, tournamentId }) => {
             }
           }
         },
+        rankingFormula: rankingFormula
       }
     );
   }
