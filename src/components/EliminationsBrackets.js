@@ -1,7 +1,9 @@
 import React, { useEffect } from "react";
 import { getFirestore } from "firebase/firestore";
 import { BracketsManager } from "brackets-manager";
+
 import { FirestoreAdapter } from "../utils/FirestoreAdapter";
+import useEventActions from "../utils/EventsUtils";
 import useAuth from "../utils/useAuth";
 
 import { Button } from "@mui/material";
@@ -11,6 +13,11 @@ import UploadScoreModal from "./UploadScoreModal";
 const EliminationsBrackets = ({ eventId, tournamentId }) => {
   const db = getFirestore();
   const { user } = useAuth();
+  const {
+    createBracketsElimination,
+  } = useEventActions();
+
+
 
   const adapter = new FirestoreAdapter(
     db,
@@ -24,6 +31,20 @@ const EliminationsBrackets = ({ eventId, tournamentId }) => {
   const [participants, setParticipants] = React.useState([]);
   const [uploadModalOpen, setUploadModalOpen] = React.useState(false);
   const [showEliminationStageButton, setShowEliminationStageButton] = React.useState(false);
+
+  const nextStage = async () => {
+    const tournamentData = await manager.get.tournamentData(tournamentId);
+    console.log(tournamentData);
+    const roundRobinSeeding = await manager.get.roundRobinSeeding(tournamentData.stage[0]);
+    console.log(roundRobinSeeding);
+    const singleEliminationStandings = await manager.get.singleEliminationStandings(tournamentData.stage[0].id);
+    console.log(singleEliminationStandings);
+    const finalStandings = await manager.get.finalStandings(tournamentData.stage[0].id);
+    console.log(finalStandings);
+    
+
+    //await createBracketsElimination(eventId, tournamentId, participants);
+  }
 
   async function render() {
     const stage = await manager.get.currentStage(tournamentId);
@@ -222,7 +243,9 @@ const EliminationsBrackets = ({ eventId, tournamentId }) => {
         showEliminationStageButton && user.IsAdmin && (
           <Button
             variant="contained"
-            onClick={async () => { }}
+            onClick={async () => {
+              nextStage();
+            }}
             sx={{
               display: "flex",
               marginX: "auto !important",

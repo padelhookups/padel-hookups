@@ -120,20 +120,32 @@ const useEventActions = () => {
       },
       seeding: seeding,
     });
+  };
 
-    /* const eliminationStage = await manager.create.stage({
+  const createBracketsElimination = async (eventId, tournamentId, pairs) => {
+    const db = getFirestore();
+
+    // 2️⃣ Create adapter and manager
+    const adapter = new FirestoreAdapter(
+      db,
+      `Events/${eventId}/TournamentData/${tournamentId}`,
+      tournamentId
+    );
+    const manager = new BracketsManager(adapter);
+
+    const eliminationStage = await manager.create.stage({
       tournamentId: tournamentId,
-      name: "Master Final",
+      name: "Elimination Stage",
       type: "single_elimination",
       settings: {
-        size: 4,
+        size: pairs.length,
         seedOrdering: ["inner_outer"], // <-- valid now
         balanceByes: true,
       },
     });
 
-    console.log(eliminationStage); */
-  };
+    console.log(eliminationStage);
+  }
 
   const registerFromEvent = async (
     eventSelectedId,
@@ -269,6 +281,7 @@ const useEventActions = () => {
     addSinglePair,
     createMatchsRobinHood,
     createMatchsElimination,
+    createBracketsElimination,
     registerFromEvent,
     unregisterFromEvent,
     createPairsForEvent,
