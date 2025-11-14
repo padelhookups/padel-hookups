@@ -13,11 +13,7 @@ import UploadScoreModal from "./UploadScoreModal";
 const EliminationsBrackets = ({ eventId, tournamentId }) => {
   const db = getFirestore();
   const { user } = useAuth();
-  const {
-    createBracketsElimination,
-  } = useEventActions();
-
-
+  const { createBracketsElimination } = useEventActions();
 
   const adapter = new FirestoreAdapter(
     db,
@@ -29,76 +25,99 @@ const EliminationsBrackets = ({ eventId, tournamentId }) => {
 
   const [selectedMatch, setSelectedMatch] = React.useState([]);
   const [participants, setParticipants] = React.useState([]);
+  const [finalStandings, setFinalStandings] = React.useState({});
   const [uploadModalOpen, setUploadModalOpen] = React.useState(false);
-  const [showEliminationStageButton, setShowEliminationStageButton] = React.useState(false);
+  const [showEliminationStageButton, setShowEliminationStageButton] =
+    React.useState(true);
+
+  const sortStandings = (standings) => {
+    return standings.sort((a, b) => {
+      if (b.points !== a.points) return b.points - a.points;
+      const scoredAgainstA = a.scoredAgainst ?? 0;
+      const scoredAgainstB = b.scoredAgainst ?? 0;
+      return scoredAgainstA - scoredAgainstB;
+    });
+  };
 
   const nextStage = async () => {
-    const tournamentData = await manager.get.tournamentData(tournamentId);
-    console.log(tournamentData);
-    const roundRobinSeeding = await manager.get.roundRobinSeeding(tournamentData.stage[0]);
-    console.log(roundRobinSeeding);
-    const singleEliminationStandings = await manager.get.singleEliminationStandings(tournamentData.stage[0].id);
-    console.log(singleEliminationStandings);
-    const finalStandings = await manager.get.finalStandings(tournamentData.stage[0].id);
     console.log(finalStandings);
-    
 
-    //await createBracketsElimination(eventId, tournamentId, participants);
-  }
+    let playersToPass = [];
+    let thirdPlaces = [];
+
+    let keys = Object.keys(finalStandings);
+    keys.forEach((key) => {
+      let group = finalStandings[key];
+      group = sortStandings(group);
+      playersToPass.push(...group.slice(0, 2)); // Take top 2 from each group
+      thirdPlaces.push(group[2]); // Collect third places
+    });
+    console.log("Players to pass to elimination:", playersToPass);
+    console.log("Third places:", thirdPlaces);
+
+    thirdPlaces = sortStandings(thirdPlaces);
+
+    playersToPass.push(...thirdPlaces.slice(0, 2)); // Add the best 2 third places
+    console.log("Final players to pass:", playersToPass);
+    createBracketsElimination(eventId, tournamentId, playersToPass);
+  };
 
   async function render() {
-    const stage = await manager.get.currentStage(tournamentId);
-    let stageData;
-
-    if (!stage) {
-      const tournamentData = await manager.get.tournamentData(tournamentId);
-      console.log(tournamentData);
-      if (!tournamentData.stage || tournamentData.stage.length === 0) {
-        return;
-      } else {
-        setShowEliminationStageButton(true);
-        stageData = tournamentData;
-      }
-
-    } else {
-      stageData = await manager.get.stageData(stage.id);
+    const tournamentData = await manager.get.tournamentData(tournamentId);
+    console.log(tournamentData);
+    if(tournamentData.stage.length === 0){
+      return;
     }
+    tournamentData.stage = tournamentData.stage.sort((a, b) => {
+      return a.number - b.number;
+    });
+    const stage = tournamentData.stage[tournamentData.stage.length - 1];
     console.log(stage);
+    
+    const stageData = await manager.get.getStageSpecificData(stage.id);
+    console.log(stageData);
 
     const participantsData = await adapter.select("participant");
-    setParticipants(participantsData);
+    setParticipants((prev) => [...participantsData]);
     console.log(stageData);
 
     console.log({
       stages: stageData.stage,
-      matches: stageData.match,
-      matchGames: stageData.match_game,
-      participants: stageData.participant,
+      matches: stageData.matches,
+      matchGames: stageData.matchGames,
+      participants: participantsData,
     });
 
     const participantGroups = {};
 
-    for (const match of stageData.match) {
+    for (const match of stageData.matches) {
+      if(match.status !== 4){
+        setShowEliminationStageButton(false);
+      }
       const groupId = match.group_id?.id || match.group_id;
       if (!groupId) continue;
 
       if (!participantGroups[groupId]) participantGroups[groupId] = [];
 
-      if (match.opponent1?.id && !participantGroups[groupId].includes(match.opponent1.id)) {
+      if (
+        match.opponent1?.id &&
+        !participantGroups[groupId].includes(match.opponent1.id)
+      ) {
         participantGroups[groupId].push(match.opponent1.id);
       }
 
-      if (match.opponent2?.id && !participantGroups[groupId].includes(match.opponent2.id)) {
+      if (
+        match.opponent2?.id &&
+        !participantGroups[groupId].includes(match.opponent2.id)
+      ) {
         participantGroups[groupId].push(match.opponent2.id);
       }
     }
 
     console.log("participantGroups", participantGroups);
 
-
-
-    function computeStandings(participants, matches) {
-      const results = participants.map(p => ({
+    function computeStandings(matches) {
+      const results = participantsData.map((p) => ({
         id: p.id,
         name: p.name,
         wins: 0,
@@ -108,14 +127,18 @@ const EliminationsBrackets = ({ eventId, tournamentId }) => {
       }));
 
       for (const match of matches) {
-        const p1 = results.find(p => p.id === match.opponent1?.id);
-        const p2 = results.find(p => p.id === match.opponent2?.id);
+        const p1 = results.find((p) => p.id === match.opponent1?.id);
+        const p2 = results.find((p) => p.id === match.opponent2?.id);
 
         if (!p1 || !p2) continue;
         if (!match.opponent1.score && !match.opponent2.score) continue; // Skip unplayed matches
 
-        const matchWinnerId = match.opponent1.result === "win" ? match.opponent1.id :
-          match.opponent2.result === "win" ? match.opponent2.id : null;
+        const matchWinnerId =
+          match.opponent1.result === "win"
+            ? match.opponent1.id
+            : match.opponent2.result === "win"
+            ? match.opponent2.id
+            : null;
 
         if (matchWinnerId === p1.id) {
           p1.wins++;
@@ -137,20 +160,28 @@ const EliminationsBrackets = ({ eventId, tournamentId }) => {
       return results;
     }
 
-    const standings = computeStandings(stageData.participant, stageData.match);
+    const standings = computeStandings(stageData.matches);
 
-    stageData.participant = stageData.participant.map(p => {
-      const s = standings.find(x => x.id === p.id);
-      return { ...p, ...s, group_id: Object.keys(participantGroups).find(key => participantGroups[key].includes(p.id)) };
+    stageData.participant = participantsData?.map((p) => {
+      const s = standings.find((x) => x.id === p.id);
+      return {
+        ...p,
+        ...s,
+        group_id: Object.keys(participantGroups).find((key) =>
+          participantGroups[key].includes(p.id)
+        ),
+      };
     });
 
     const rankingFormula = (participant) => {
-      let tempParticipant = stageData.participant.find(p => p.id === participant.id);
+      let tempParticipant = stageData.participant.find(
+        (p) => p.id === participant.id
+      );
       if (!tempParticipant) return 0;
       participant = { ...participant, ...tempParticipant };
       let points = participant.points || 0;
 
-      const groupIndex = Object.values(participantGroups).findIndex(group =>
+      const groupIndex = Object.values(participantGroups).findIndex((group) =>
         group.includes(participant.id)
       );
       const groupId = Object.keys(participantGroups)[groupIndex];
@@ -159,37 +190,57 @@ const EliminationsBrackets = ({ eventId, tournamentId }) => {
 
       // Filter participants from the same group
       const sameGroup = stageData.participant.filter(
-        p => p.group_id === groupId
+        (p) => p.group_id === groupId
       );
 
       // Find ties within the same group
       const tied = sameGroup.filter(
-        p => p.id !== participant.id && p.points === points
+        (p) => p.id !== participant.id && p.points === points
       );
 
       for (const other of tied) {
-        const directMatch = stageData.match.find(
-          m =>
+        const directMatch = stageData.matches.find(
+          (m) =>
             (m.group_id?.id || m.group_id) === groupId &&
             [m.opponent1?.id, m.opponent2?.id].includes(participant.id) &&
             [m.opponent1?.id, m.opponent2?.id].includes(other.id)
         );
 
         if (directMatch) {
-          const winnerId = directMatch.opponent1?.result === "win" ? directMatch.opponent1?.id :
-            directMatch.opponent2?.result === "win" ? directMatch.opponent2?.id : null;
+          const winnerId =
+            directMatch.opponent1?.result === "win"
+              ? directMatch.opponent1?.id
+              : directMatch.opponent2?.result === "win"
+              ? directMatch.opponent2?.id
+              : null;
           if (winnerId === participant.id) points += 0.1;
           else if (winnerId === other.id) points -= 0.1;
         }
       }
+
+      setFinalStandings((prev) => {
+        const next = {
+          ...prev,
+          [groupId]: [
+            ...(prev[groupId]?.filter((x) => x.id !== participant.id) || []),
+            {
+              name: participant.name,
+              points,
+              id: participant.id,
+              scoredAgainst: participant.scoreAgainst,
+            },
+          ],
+        };
+        return next;
+      });
 
       return points;
     };
 
     window.bracketsViewer.render(
       {
-        stages: stageData.stage.flat(),
-        matches: stageData.match.map((match) => ({
+        stages: [stage],
+        matches: stageData.matches.map((match) => ({
           ...match,
           stage_id:
             typeof match.stage_id === "object"
@@ -204,8 +255,8 @@ const EliminationsBrackets = ({ eventId, tournamentId }) => {
               ? match.round_id.id
               : match.round_id,
         })),
-        matchGames: stageData.match_game,
-        participants: stageData.participant,
+        matchGames: stageData.matchGames,
+        participants: participantsData,
       },
       {
         clear: true,
@@ -228,7 +279,7 @@ const EliminationsBrackets = ({ eventId, tournamentId }) => {
             }
           }
         },
-        rankingFormula: rankingFormula
+        rankingFormula: rankingFormula,
       }
     );
   }
@@ -239,27 +290,29 @@ const EliminationsBrackets = ({ eventId, tournamentId }) => {
 
   return (
     <div style={{ width: "100%", height: "100vh" }}>
-      {
-        showEliminationStageButton && user.IsAdmin && (
-          <Button
-            variant="contained"
-            onClick={async () => {
-              nextStage();
-            }}
-            sx={{
-              display: "flex",
-              marginX: "auto !important",
-              marginTop: '2rem !important',
-              marginBottom: '1rem !important',
-              bgcolor: "primary.main",
-              color: "white",
-              "&:hover": { bgcolor: "white", color: "primary.main" },
-            }}
-          >
-            Create Elimination Stage
-          </Button>)
-      }
-      <div className="brackets-viewer" style={{ padding: "0", paddingBottom: "1rem" }}></div>
+      {showEliminationStageButton && user?.IsAdmin && (
+        <Button
+          variant="contained"
+          onClick={async () => {
+            nextStage();
+          }}
+          sx={{
+            display: "flex",
+            marginX: "auto !important",
+            marginTop: "2rem !important",
+            marginBottom: "1rem !important",
+            bgcolor: "primary.main",
+            color: "white",
+            "&:hover": { bgcolor: "white", color: "primary.main" },
+          }}
+        >
+          Create Elimination Stage
+        </Button>
+      )}
+      <div
+        className="brackets-viewer"
+        style={{ padding: "0", paddingBottom: "1rem" }}
+      ></div>
       {adapter && selectedMatch && (
         <UploadScoreModal
           open={uploadModalOpen}

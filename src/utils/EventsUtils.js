@@ -107,7 +107,7 @@ const useEventActions = () => {
       name: pair.DisplayName, // display name
     }));
 
-    const groupCount = getNumberOfGroups(pairs.length);   
+    const groupCount = getNumberOfGroups(pairs.length);
 
     const groupStage = await manager.create.stage({
       name: "Group Stage",
@@ -116,7 +116,7 @@ const useEventActions = () => {
       settings: {
         groupCount: groupCount,
         size: pairs.length,
-        seedOrdering: ["groups.bracket_optimized"]        
+        seedOrdering: ["groups.bracket_optimized"],
       },
       seeding: seeding,
     });
@@ -133,6 +133,10 @@ const useEventActions = () => {
     );
     const manager = new BracketsManager(adapter);
 
+    const seeding = pairs.map((pair) => {
+      return pair.id;
+    });
+
     const eliminationStage = await manager.create.stage({
       tournamentId: tournamentId,
       name: "Elimination Stage",
@@ -142,10 +146,11 @@ const useEventActions = () => {
         seedOrdering: ["inner_outer"], // <-- valid now
         balanceByes: true,
       },
+      seedingIds: seeding,
     });
 
     console.log(eliminationStage);
-  }
+  };
 
   const registerFromEvent = async (
     eventSelectedId,
@@ -179,11 +184,11 @@ const useEventActions = () => {
       ),
       Guests: isGuest
         ? arrayUnion({
-          Name: selectedUser,
-          IsGuest: true,
-          CreatedAt: Timestamp.fromDate(new Date()),
-          UserId: finalUser,
-        })
+            Name: selectedUser,
+            IsGuest: true,
+            CreatedAt: Timestamp.fromDate(new Date()),
+            UserId: finalUser,
+          })
         : arrayRemove(null),
     });
 
