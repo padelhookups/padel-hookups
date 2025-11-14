@@ -8,6 +8,7 @@ import {
   where,
   updateDoc,
   doc,
+  setDoc,
   deleteDoc as deleteDocument,
 } from "firebase/firestore";
 
@@ -53,11 +54,15 @@ export class FirestoreAdapter {
     if (Array.isArray(data)) {
       // Handle array of objects (manager might pass seeding array)
       return Promise.all(
-        data.map((item) => {
+        data.map(async (item) => {
           if (typeof item !== "object" || item === null) {
             throw new Error("FirestoreAdapter: data item must be an object");
           }
-          return addDoc(colRef, item).then((docRef) => ({ id: docRef.id }));
+          const docRef = doc(colRef, item.id.toString() || undefined);
+
+          const sanitizedItem = this.sanitize(item);
+          await setDoc(docRef, sanitizedItem);
+          return { id: docRef.id, ...sanitizedItem };
         })
       );
     }
@@ -66,8 +71,32 @@ export class FirestoreAdapter {
       throw new Error("FirestoreAdapter: data must be an object");
     }
 
-    const docRef = await addDoc(colRef, this.sanitize(data));
-    return { id: docRef.id };
+    if (data.round_id?.id) {
+      data.round_id = data.round_id.id;
+    }
+    if (data.group_id?.id) {
+      data.group_id = data.group_id.id;
+    }
+    if (data.stage_id?.id) {
+      data.stage_id = data.stage_id.id;
+    }
+
+    if (data.opponent1?.position === undefined) {
+      //data.opponent1.position = data.round_id * data.number;
+    }
+
+    if (data.opponent2?.position === undefined) {
+      
+    }
+
+    if (data.id) {
+      const docRef = doc(colRef, data.id.toString());
+      await setDoc(docRef, this.sanitize(data));
+      return { id: data.id, ...this.sanitize(data) };
+    } else {
+      const docRef = await addDoc(colRef, this.sanitize(data));
+      return { id: docRef.id, ...this.sanitize(data) };
+    }
   }
 
   sanitize(data) {
@@ -77,6 +106,7 @@ export class FirestoreAdapter {
     // remove nested objects
     const sanitized = this.flattenIds(removedUndefined);
     return sanitized;
+    /* return removedUndefined; */
   }
 
   flattenIds(obj) {
@@ -100,7 +130,6 @@ export class FirestoreAdapter {
 
   async select(table, filters = {}) {
     const colRef = this.getCollection(table);
-
     if (
       this.tournamentId &&
       Object.keys(filters).includes("tournament_id") &&

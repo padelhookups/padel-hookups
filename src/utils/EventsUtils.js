@@ -146,7 +146,7 @@ const useEventActions = () => {
         seedOrdering: ["inner_outer"], // <-- valid now
         balanceByes: true,
       },
-      seedingIds: seeding,
+      seeding: seeding,
     });
 
     console.log(eliminationStage);

@@ -59,7 +59,8 @@ const EliminationsBrackets = ({ eventId, tournamentId }) => {
 
     playersToPass.push(...thirdPlaces.slice(0, 2)); // Add the best 2 third places
     console.log("Final players to pass:", playersToPass);
-    createBracketsElimination(eventId, tournamentId, playersToPass);
+    await createBracketsElimination(eventId, tournamentId, playersToPass);
+    render();
   };
 
   async function render() {
