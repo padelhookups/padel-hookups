@@ -195,8 +195,7 @@ const Home = () => {
               sx={{
                 bgcolor: "#b88f34",
                 color: "white",
-                textAlign: "start",
-                height: '14em',
+                textAlign: "start",                
                 /* Push header below iOS notch */
                 pt: "env(safe-area-inset-top)",
               }}
@@ -326,6 +325,7 @@ const Home = () => {
                 bgcolor: "#b88f34",
                 color: "white",
                 textAlign: "center",
+                height: '14em',
                 /* Push header below iOS notch */
                 pt: "env(safe-area-inset-top)"
               }}>
