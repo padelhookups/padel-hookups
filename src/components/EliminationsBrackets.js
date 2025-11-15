@@ -40,59 +40,66 @@ const EliminationsBrackets = ({ eventId, tournamentId }) => {
   };
 
   const nextStage = async () => {
-    console.log(finalStandings);
 
     let playersToPass = [];
     let thirdPlaces = [];
 
     let keys = Object.keys(finalStandings);
-    keys.forEach((key) => {
-      let group = finalStandings[key];
-      group = sortStandings(group);
-      playersToPass.push(...group.slice(0, 2)); // Take top 2 from each group
-      thirdPlaces.push(group[2]); // Collect third places
-    });
-    console.log("Players to pass to elimination:", playersToPass);
-    console.log("Third places:", thirdPlaces);
+    const groupCount = keys.length;
 
-    thirdPlaces = sortStandings(thirdPlaces);
+    if (groupCount === 3) {
+      // 3 groups: pass 1st and 2nd from each group + 2 best 3rd places
+      keys.forEach((key) => {
+        let group = finalStandings[key];
+        group = sortStandings(group);
+        playersToPass.push(...group.slice(0, 2)); // Take top 2 from each group
+        thirdPlaces.push(group[2]); // Collect third places
+      });
 
-    playersToPass.push(...thirdPlaces.slice(0, 2)); // Add the best 2 third places
-    console.log("Final players to pass:", playersToPass);
+      thirdPlaces = sortStandings(thirdPlaces);
+      playersToPass.push(...thirdPlaces.slice(0, 2)); // Add the best 2 third places
+    } else if (groupCount === 2) {
+      // 2 groups: pass 1st, 2nd, and 3rd from each group
+      keys.forEach((key) => {
+        let group = finalStandings[key];
+        group = sortStandings(group);
+        playersToPass.push(...group.slice(0, 2)); // Take top 2 from each group
+      });
+    } else {
+      // Fallback for other group counts
+      keys.forEach((key) => {
+        let group = finalStandings[key];
+        group = sortStandings(group);
+        playersToPass.push(...group.slice(0, 2));
+      });
+    }
+
     await createBracketsElimination(eventId, tournamentId, playersToPass);
     render();
   };
 
   async function render() {
     const tournamentData = await manager.get.tournamentData(tournamentId);
-    console.log(tournamentData);
-    if(tournamentData.stage.length === 0){
+
+    if (tournamentData.stage.length === 0) {
       return;
     }
     tournamentData.stage = tournamentData.stage.sort((a, b) => {
       return a.number - b.number;
     });
     const stage = tournamentData.stage[tournamentData.stage.length - 1];
-    console.log(stage);
-    
+
+    /* const finalFinalStandings = await manager.get.finalStandings(stage.id);
+    console.log("Final Final Standings:", finalFinalStandings);
+ */
     const stageData = await manager.get.getStageSpecificData(stage.id);
-    console.log(stageData);
 
     const participantsData = await adapter.select("participant");
     setParticipants((prev) => [...participantsData]);
-    console.log(stageData);
-
-    console.log({
-      stages: stageData.stage,
-      matches: stageData.matches,
-      matchGames: stageData.matchGames,
-      participants: participantsData,
-    });
-
     const participantGroups = {};
 
     for (const match of stageData.matches) {
-      if(match.status !== 4){
+      if (match.status !== 4) {
         setShowEliminationStageButton(false);
       }
       const groupId = match.group_id?.id || match.group_id;
@@ -113,9 +120,7 @@ const EliminationsBrackets = ({ eventId, tournamentId }) => {
       ) {
         participantGroups[groupId].push(match.opponent2.id);
       }
-    }
-
-    console.log("participantGroups", participantGroups);
+    };
 
     function computeStandings(matches) {
       const results = participantsData.map((p) => ({
@@ -138,8 +143,8 @@ const EliminationsBrackets = ({ eventId, tournamentId }) => {
           match.opponent1.result === "win"
             ? match.opponent1.id
             : match.opponent2.result === "win"
-            ? match.opponent2.id
-            : null;
+              ? match.opponent2.id
+              : null;
 
         if (matchWinnerId === p1.id) {
           p1.wins++;
@@ -212,8 +217,8 @@ const EliminationsBrackets = ({ eventId, tournamentId }) => {
             directMatch.opponent1?.result === "win"
               ? directMatch.opponent1?.id
               : directMatch.opponent2?.result === "win"
-              ? directMatch.opponent2?.id
-              : null;
+                ? directMatch.opponent2?.id
+                : null;
           if (winnerId === participant.id) points += 0.1;
           else if (winnerId === other.id) points -= 0.1;
         }
@@ -281,6 +286,7 @@ const EliminationsBrackets = ({ eventId, tournamentId }) => {
           }
         },
         rankingFormula: rankingFormula,
+        showSlotsOrigin: false
       }
     );
   }

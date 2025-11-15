@@ -21,9 +21,9 @@ const EventRankings = ({ eventId, tournamentId }) => {
 
   useEffect(() => {
     const fetchTournamentData = async () => {
-      const stageId = await manager.get.tournamentData(1);
-      console.log("Current Stage ID:", stageId);
-      const stageData = await manager.get.stageData(stageId);
+      const tournamentData = await manager.get.tournamentData(1);
+      console.log("Current Stage ID:", tournamentData.stage[0].id);
+      const stageData = await manager.get.stageData(tournamentData.stage[0].id);
       console.log("Current Stage:", stageData);
       setAllMatches(stageData.match || []);
       setParticipants(stageData.participant || []);
