@@ -9,6 +9,7 @@ import {
 } from "firebase/firestore";
 import { getMessaging, getToken, onMessage } from "firebase/messaging";
 import { getPerformance } from "firebase/performance";
+import { getRemoteConfig } from "firebase/remote-config";
 
 const firebaseConfig = {
 	apiKey: "AIzaSyBOW8pVZPA8nlU9xcwjnNTxe7dbqCBxub8",
@@ -25,10 +26,13 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const messaging = getMessaging(app);
+const remoteConfig = getRemoteConfig(app);
 console.log(process.env.NODE_ENV);
 
 if (process.env.NODE_ENV === "production") {
-  getPerformance(app);
+	getPerformance(app);
+} else {
+	remoteConfig.settings.minimumFetchIntervalMillis = 3600000;
 }
 
 // Dedup guards for token writes
@@ -85,7 +89,7 @@ async function saveFcmToken(currentToken) {
 			return;
 		}
 
-		
+
 		console.log("FCM token saved to Firestore.");
 	} catch (e) {
 		console.error("Failed to save FCM token to Firestore:", e);
@@ -197,7 +201,7 @@ function _getToken() {
 	})
 		.then(async (currentToken) => {
 			if (currentToken) {
-				alert("Current token for client: " + currentToken);				
+				alert("Current token for client: " + currentToken);
 				await saveFcmToken(currentToken);
 			} else {
 				console.log(

@@ -6,6 +6,7 @@ import useEventActions from "../utils/EventsUtils";
 
 
 import { addDoc, collection, getFirestore, Timestamp } from "firebase/firestore";
+import { getRemoteConfig, getBoolean } from "firebase/remote-config";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchEvents, selectEvents, selectEventsLoading } from "../redux/slices/eventsSlice";
 
@@ -49,6 +50,7 @@ const StyledBox = styled("div")(({ theme }) => ({
 const Home = () => {
   const dispatch = useDispatch();
   const db = getFirestore();
+  const remoteConfig = getRemoteConfig();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { registerFromEvent } = useEventActions();
@@ -74,6 +76,8 @@ const Home = () => {
   const events = useSelector(selectEvents);
   const loading = useSelector(selectEventsLoading);
 
+  const NewHomeForEveryOne = getBoolean(remoteConfig, "NewHomeForEveryOne");
+
   useEffect(() => {
     // Only fetch if we haven't done initial fetch and don't have benefits
     if (!initialFetchDone.current) {
@@ -86,6 +90,11 @@ const Home = () => {
   useEffect(() => {
     console.log('user', user);
   }, [user]);
+
+  useEffect(() => {
+    console.log('NewHomeForEveryOne', NewHomeForEveryOne);
+    
+  }, [NewHomeForEveryOne]);
 
   /* const registerEvent = async () => {
     console.log("Registering user for event", eventSelectedId);
@@ -285,22 +294,6 @@ const Home = () => {
                       />
                       {event.RecordGames && <span>🎥</span>}
                     </Box>
-                    {/* Hide Join button if user already signed up for this event */}
-                    {/* {user && !alreadyRegistered && (
-                      <Button
-                        size="small"
-                        sx={{ mt: 1 }}
-                        variant="outlined"
-                        onClick={(e) => {
-                          console.log("Button 1 clicked - going to join page", event.id);
-                          setEventSelectedId(event.id);
-                          setShowSuccess(true);
-                          e.stopPropagation();
-                        }}
-                      >
-                        Join
-                      </Button>
-                    )} */}
                     {user && alreadyRegistered && <Chip label="💪 You already In!" color="primary" sx={{ color: 'white', mt: 1 }} size="small" />}
                   </Box>
                 </TimelineContent>
