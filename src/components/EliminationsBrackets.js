@@ -75,6 +75,7 @@ const EliminationsBrackets = ({ eventId, tournamentId }) => {
     }
 
     await createBracketsElimination(eventId, tournamentId, playersToPass);
+    alert("Elimination stage created!");
     render();
   };
 
