@@ -9,7 +9,7 @@ import {
 } from "firebase/firestore";
 import { getMessaging, getToken, onMessage } from "firebase/messaging";
 import { getPerformance } from "firebase/performance";
-import { getRemoteConfig } from "firebase/remote-config";
+import { getRemoteConfig, fetchAndActivate } from "firebase/remote-config";
 
 const firebaseConfig = {
 	apiKey: "AIzaSyBOW8pVZPA8nlU9xcwjnNTxe7dbqCBxub8",
@@ -32,7 +32,8 @@ console.log(process.env.NODE_ENV);
 if (process.env.NODE_ENV === "production") {
 	getPerformance(app);
 } else {
-	remoteConfig.settings.minimumFetchIntervalMillis = 3600000;
+	remoteConfig.settings.minimumFetchIntervalMillis = 0;
+	await fetchAndActivate(remoteConfig);
 }
 
 // Dedup guards for token writes
