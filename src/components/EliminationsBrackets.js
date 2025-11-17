@@ -100,7 +100,9 @@ const EliminationsBrackets = ({ eventId, tournamentId }) => {
     const participantGroups = {};
 
     for (const match of stageData.matches) {
-      if (match.status !== 4) {
+      console.log(match.status);
+
+      if (match.status !== 4 && match.status !== 5) {
         setShowEliminationStageButton(false);
       }
       const groupId = match.group_id?.id || match.group_id;

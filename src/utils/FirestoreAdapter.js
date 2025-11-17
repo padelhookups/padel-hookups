@@ -6,20 +6,20 @@ import {
   getDocs,
   query,
   where,
-  updateDoc,
   doc,
   setDoc,
   deleteDoc as deleteDocument,
+  writeBatch,
 } from "firebase/firestore";
 
 export class FirestoreAdapter {
   constructor(firestore, baseDocPath, tournamentId) {
     this.db = firestore;
-    this.baseDocPath = baseDocPath; // must be a DOCUMENT path, e.g. Events/{eventId}/TournamentData/{tournamentId}
+    this.baseDocPath = baseDocPath; // DOCUMENT path: Events/{eventId}/TournamentData/{tournamentId}
     this.tournamentId = tournamentId;
   }
 
-  // Map singular table names to plural Firestore collection names
+  // Map singular -> plural collection names
   getCollectionName(table) {
     const mapping = {
       tournament: "tournaments",
@@ -38,216 +38,185 @@ export class FirestoreAdapter {
     return mapping[table] || (table.endsWith("s") ? table : `${table}s`);
   }
 
+  // Return collection ref for e.g. Events/{eventId}/TournamentData/{tournamentId}/matches
   getCollection(table) {
     const colName = this.getCollectionName(table);
-    // e.g. this.baseDocPath = Events/{eventId}/TournamentData/{tournamentId}
-    // collection path -> Events/{eventId}/TournamentData/{tournamentId}/{colName}
     return collection(this.db, `${this.baseDocPath}/${colName}`);
   }
 
   /* ---------------------------
      INSERT
-     - when BM creates a stage it inserts MANY matches (array),
-       we must return the full object for each match (with id and nested opponent positions),
-       and store a sanitized copy in Firestore.
+     - Handles single object or array (bulk).
+     - For arrays we use a writeBatch to avoid partial writes & race conditions.
   --------------------------- */
   async insert(table, data) {
-    console.warn("insert table", table);
-    console.log("insert data", data);
-
     const colRef = this.getCollection(table);
 
-    // Array insertion (bulk inserts from manager.create.stage)
+    // Bulk array insert: use a batch to make writes atomic-ish and to avoid races.
     if (Array.isArray(data)) {
-      return Promise.all(
-        data.map(async (item) => {
-          if (typeof item !== "object" || item === null) {
-            throw new Error("FirestoreAdapter: data item must be an object");
-          }
+      if (data.length === 0) return [];
 
-          // If the manager provided a numeric id, ensure it's string for doc path
-          const providedId = item.id !== undefined && item.id !== null ? item.id.toString() : null;
+      const batch = writeBatch(this.db);
+      const results = [];
 
-          // Prepare the sanitized item for storage (but we will return the original item to BM)
-          const sanitizedItem = this.sanitize(item);
+      for (const item of data) {
+        if (typeof item !== "object" || item === null) {
+          throw new Error("FirestoreAdapter: each item in array must be an object");
+        }
 
-          // Write to Firestore using setDoc when providedId exists, otherwise addDoc
-          if (providedId) {
-            const docRef = doc(colRef, providedId);
-            await setDoc(docRef, sanitizedItem);
-            // Return the original item shape (not the sanitized one) plus the id so BM can use positions
-            return { id: docRef.id, ...item };
-          } else {
-            const addedRef = await addDoc(colRef, sanitizedItem);
-            return { id: addedRef.id, ...item };
-          }
-        })
-      );
+        const sanitizedItem = this.sanitize(item);
+        // If caller provided ID, use it; otherwise generate a new doc ref to get deterministic id
+        const providedId =
+          item.id !== undefined && item.id !== null && String(item.id).length > 0
+            ? String(item.id)
+            : null;
+
+        const docRef = providedId ? doc(colRef, providedId) : doc(colRef);
+        batch.set(docRef, sanitizedItem);
+        // Keep original shape for return but attach the final id
+        results.push({ id: docRef.id, ...item });
+      }
+
+      await batch.commit();
+      return results;
     }
 
-    // Single object insert
+    // Single insert
     if (typeof data !== "object" || data === null) {
       throw new Error("FirestoreAdapter: data must be an object");
     }
 
-    // If manager passed nested id objects (like round_id: { id: '...' }), do NOT flatten them here;
-    // instead store a sanitized copy and return the original shape back to the manager.
     const sanitized = this.sanitize(data);
 
     if (data.id) {
-      const docRef = doc(colRef, data.id.toString());
+      const docRef = doc(this.getCollection(table), String(data.id));
       await setDoc(docRef, sanitized);
       return { id: docRef.id, ...data };
     } else {
-      const docRef = await addDoc(colRef, sanitized);
+      const docRef = await addDoc(this.getCollection(table), sanitized);
       return { id: docRef.id, ...data };
     }
   }
 
   /* ---------------------------
      SANITIZE
-     - Only convert undefined -> null (so Firestore stores explicit nulls)
-     - Do NOT mutate nested opponent objects or nested id objects.
-     - This keeps the exact shape BM expects when it reads from the adapter return value.
+     - Convert undefined -> null for primitives.
+     - Flatten stage_id/group_id/round_id ONLY if they are objects with { id }.
+     - Preserve nested opponent objects shape (BM depends on it).
   --------------------------- */
   sanitize(data) {
-    // We want to preserve nested objects (opponent1/opponent2 and stage_id/round_id/group_id)
-    // but replace undefined with null for primitive values so Firestore stores them.
-    // Important: do NOT flatten stage_id/round_id/group_id here.
-    const removedUndefined = JSON.parse(
-      JSON.stringify(data, (key, value) => (value === undefined ? null : value))
-    );
-    const flattened = this.flattenIds(removedUndefined);
-    return flattened;
-  }
+    // Replace undefined with null (deep)
+    const replacer = (key, value) => (value === undefined ? null : value);
+    const copy = JSON.parse(JSON.stringify(data, replacer));
 
-  /* kept for reference but NOT used by sanitize above.
-     If you later want to store IDs as raw strings, you can use this.
-  */
-  flattenIds(obj) {
-    const allowedKeys = ["stage_id", "group_id", "round_id"];
-    const result = { ...obj }; // shallow copy
-
-    for (const key in result) {
+    // Flatten certain id objects to raw id strings (if they are objects with { id })
+    const flattenKeys = ["stage_id", "group_id", "round_id"];
+    for (const k of flattenKeys) {
       if (
-        allowedKeys.includes(key) &&
-        result[key] &&
-        typeof result[key] === "object" &&
-        !Array.isArray(result[key]) &&
-        "id" in result[key]
+        Object.prototype.hasOwnProperty.call(copy, k) &&
+        copy[k] &&
+        typeof copy[k] === "object" &&
+        !Array.isArray(copy[k]) &&
+        Object.prototype.hasOwnProperty.call(copy[k], "id")
       ) {
-        result[key] = result[key].id;
+        copy[k] = copy[k].id;
       }
     }
 
-    return result;
+    return copy;
   }
 
   /* ---------------------------
      SELECT
-     - Accepts string id, array with 0.id, filters objects
-     - Clean filters: ignore undefined/null values
-     - Convert nested filter objects like { stage_id: { id: '...' } } to raw id
+     - Accepts: id string, array with first.id, filters object
+     - Normalizes nested filter objects like { stage_id: { id: '...' } }
   --------------------------- */
   async select(table, filters = {}) {
     const colRef = this.getCollection(table);
+    const collectionName = this.getCollectionName(table);
 
-    // If caller expects tournamentId injected
-    if (
-      this.tournamentId &&
-      Object.prototype.hasOwnProperty.call(filters, "tournament_id") &&
-      filters.tournament_id === undefined
-    ) {
-      filters.tournament_id = this.tournamentId;
-    }
-
-    // String = doc id
+    // If filters is a string -> fetch by doc id
     if (typeof filters === "string") {
-      const docRef = doc(this.db, `${this.baseDocPath}/${this.getCollectionName(table)}/${filters}`);
+      const docRef = doc(this.db, `${this.baseDocPath}/${collectionName}/${filters}`);
       const snapshot = await getDoc(docRef);
       return snapshot.exists() ? { id: snapshot.id, ...snapshot.data() } : null;
     }
 
-    // If filters is an array of objects and first has id -> fetch that doc
+    // If filters is an array with first element having id -> fetch that doc
     if (Array.isArray(filters) && filters[0]?.id) {
-      const docRef = doc(this.db, `${this.baseDocPath}/${this.getCollectionName(table)}/${filters[0].id}`);
+      const docRef = doc(this.db, `${this.baseDocPath}/${collectionName}/${filters[0].id}`);
       const snapshot = await getDoc(docRef);
       return snapshot.exists() ? [{ id: snapshot.id, ...snapshot.data() }] : [];
     }
 
-    // If stage_id is an object like { id: '...' }, normalize it
-    if (filters.stage_id && typeof filters.stage_id === "object" && filters.stage_id.id) {
-      filters.stage_id = filters.stage_id.id;
-    }
-
-    // Stage by id
-    if (filters.stage_id) {
-      if (table === "stage") {
-        const docRef = doc(this.db, `${this.baseDocPath}/${this.getCollectionName(table)}/${filters.stage_id}`);
-        const snapshot = await getDoc(docRef);
-        return snapshot.exists() ? [{ id: snapshot.id, ...snapshot.data() }] : [];
-      } else {
-        const q = query(colRef, where("stage_id", "==", filters.stage_id));
-        const snapshot = await getDocs(q);
-        return snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+    // Normalize nested stage_id/group_id/round_id objects
+    const idKeys = ["stage_id", "group_id", "round_id", "tournament_id"];
+    for (const k of idKeys) {
+      if (filters[k] && typeof filters[k] === "object" && filters[k].id) {
+        filters[k] = filters[k].id;
       }
     }
 
-    // tournament_id explicit filter
+    // Shortcut: if caller explicitly requests a stage by id and table === "stage"
+    if (filters.stage_id && table === "stage") {
+      const docRef = doc(this.db, `${this.baseDocPath}/${this.getCollectionName(table)}/${filters.stage_id}`);
+      const snapshot = await getDoc(docRef);
+      return snapshot.exists() ? [{ id: snapshot.id, ...snapshot.data() }] : [];
+    }
+
+    // tournament_id filter
     if (filters.tournament_id) {
-      const snapshot = await getDocs(colRef, query(where("tournament_id", "==", filters.tournament_id)));
+      const q = query(colRef, where("tournament_id", "==", filters.tournament_id));
+      const snapshot = await getDocs(q);
       return snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
     }
 
-    // Generic: ignore undefined/null/object filters, only use flat primitives
+    // stage_id filter for generic tables (matches, rounds, groups)
+    if (filters.stage_id) {
+      const q = query(colRef, where("stage_id", "==", filters.stage_id));
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+    }
+
+    // Clean filters: keep only primitive equality filters (no objects)
     const cleaned = Object.fromEntries(
       Object.entries(filters || {}).filter(([_, v]) => v !== undefined && v !== null && typeof v !== "object")
     );
 
     if (Object.keys(cleaned).length === 0) {
-      // Return everything in the collection (BM expects this when it passes undefined filters)
+      // Return all documents in the collection
       const snapshot = await getDocs(colRef);
-      if (snapshot.docs.length === 0) return [];
-      if (snapshot.docs.length === 1) return [{ id: snapshot.docs[0].id, ...snapshot.docs[0].data() }];
       return snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
     }
 
     // Build query from cleaned filters
-    let q = query(colRef);
     const conditions = Object.entries(cleaned).map(([k, v]) => where(k, "==", v));
-    if (conditions.length > 0) q = query(colRef, ...conditions);
+    const q = query(colRef, ...conditions);
     const snapshot = await getDocs(q);
-    if (snapshot.docs.length === 0) return [];
-    if (snapshot.docs.length === 1) return [{ id: snapshot.docs[0].id, ...snapshot.docs[0].data() }];
     return snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
   }
 
-  // Get a document directly by ID
+  // Convenience: get by id
   async getById(table, id) {
+    if (!id) return null;
     const collectionName = this.getCollectionName(table);
     const docRef = doc(this.db, `${this.baseDocPath}/${collectionName}/${id}`);
     const snapshot = await getDoc(docRef);
-    if (!snapshot.exists()) return null;
-    return { id: snapshot.id, ...snapshot.data() };
+    return snapshot.exists() ? { id: snapshot.id, ...snapshot.data() } : null;
   }
 
   /* ---------------------------
      UPDATE
-     - Keep your existing logic where you accept [matchObject] as filters
-     - Normalize filters to { id } and use updateDoc with sanitized data
+     - Accepts: string id, { id } object, array-of-filters (first.id), or generic filter object.
+     - Uses setDoc(..., { merge: true }) to safely merge fields.
   --------------------------- */
   async update(table, data, filters) {
-    console.log("update table", table);
-    console.log("update data", data);
-    console.log("update filters", filters);
-
     const collectionName = this.getCollectionName(table);
 
-    // Normalize filters that come as [{ id, ... }] to { id }
+    // If caller passed array with object (common pattern in some libs)
     if (Array.isArray(filters) && filters[0] && filters[0].id) {
-      // If caller passed the full match object as filters (some clients do)
-      // we will extract allowed keys when data is missing (keep old behavior but clearer)
-      if (!data || typeof data === "string") {
+      // If data is missing or not an object, attempt to construct data from filters[0] (legacy support)
+      if (!data || typeof data !== "object") {
         const allowedKeys = [
           "opponent1",
           "opponent2",
@@ -261,87 +230,90 @@ export class FirestoreAdapter {
           "stage_id",
           "child_count",
         ];
-
-        data = {};
+        const constructed = {};
         for (const key of allowedKeys) {
-          if (filters[0][key] !== undefined) data[key] = filters[0][key];
+          if (filters[0][key] !== undefined) constructed[key] = filters[0][key];
         }
-
-        // patch opponent score objects if present
+        // Ensure opponent score/result consistency if present
         if (filters[0].opponent1) {
-          data.opponent1 = {
+          constructed.opponent1 = {
             ...filters[0].opponent1,
             id: filters[0].opponent1.id,
-            score: filters.scoreTeam1 ?? filters.opponent1?.score,
+            score: filters[0].opponent1.score ?? (filters.scoreTeam1 ?? null),
           };
         }
         if (filters[0].opponent2) {
-          data.opponent2 = {
+          constructed.opponent2 = {
             ...filters[0].opponent2,
             id: filters[0].opponent2.id,
-            score: filters.scoreTeam2 ?? filters.opponent2?.score,
+            score: filters[0].opponent2.score ?? (filters.scoreTeam2 ?? null),
           };
         }
+        data = constructed;
       }
-      // reduce filters to simple id doc reference for update below
+
+      // Reduce to single id filter
       filters = { id: filters[0].id };
     }
 
-    // If filters is a string = id
+    // If filters is a simple string (id)
     if (typeof filters === "string") {
       const docRef = doc(this.db, `${this.baseDocPath}/${collectionName}/${filters}`);
-      await updateDoc(docRef, this.sanitize(data), { merge: true });
-
-      // re-fetch full updated doc and return full object
+      await setDoc(docRef, this.sanitize(data), { merge: true });
       const updatedSnapshot = await getDoc(docRef);
       return { id: updatedSnapshot.id, ...updatedSnapshot.data() };
     }
 
-    // If filters is object with id
+    // If filters is object with .id
     if (filters && typeof filters === "object" && filters.id) {
       const docRef = doc(this.db, `${this.baseDocPath}/${collectionName}/${filters.id}`);
+
+      // If data is simple primitive or not an object, merge filters into db
       if (typeof data === "object") {
-        await updateDoc(docRef, this.sanitize(data), { merge: true });
+        await setDoc(docRef, this.sanitize(data), { merge: true });
       } else {
-        if (filters.scoreTeam1 && !filters.opponent1.score) {
-          filters.opponent1.score = filters.scoreTeam1;
-          filters.opponent1.result = filters.scoreTeam1 > (filters.scoreTeam2 || 0) ? 'win' : (filters.scoreTeam1 < (filters.scoreTeam2 || 0) ? 'loss' : 'draw');
-        }
-        if (filters.scoreTeam2 && !filters.opponent2.score) {
-          filters.opponent2.score = filters.scoreTeam2;
-          filters.opponent2.result = filters.scoreTeam2 > (filters.scoreTeam1 || 0) ? 'win' : (filters.scoreTeam2 < (filters.scoreTeam1 || 0) ? 'loss' : 'draw');
-        }
-        await updateDoc(docRef, this.sanitize(filters), { merge: true });
+        // fallback: merge filters shape
+        await setDoc(docRef, this.sanitize(filters), { merge: true });
       }
 
       const updatedSnapshot = await getDoc(docRef);
       return { id: updatedSnapshot.id, ...updatedSnapshot.data() };
     }
 
-    // Generic multi-doc update (e.g. update by stage_id or tournament_id)
+    // Generic multi-doc update: find docs via select and update each (use Promise.all)
     if (data) {
       const docs = await this.select(table, filters);
+      if (!docs || docs.length === 0) return [];
+
       const updatedDocs = await Promise.all(
         docs.map(async (d) => {
           const docRef = doc(this.db, `${this.baseDocPath}/${collectionName}/${d.id}`);
-          await updateDoc(docRef, this.sanitize(data), { merge: true });
+          await setDoc(docRef, this.sanitize(data), { merge: true });
           const refreshed = await getDoc(docRef);
           return { id: refreshed.id, ...refreshed.data() };
         })
       );
 
       return updatedDocs.length === 1 ? updatedDocs[0] : updatedDocs;
-    } else {
-      return null;
     }
+
+    return null;
   }
 
+  /* ---------------------------
+     DELETE
+     - Deletes docs returned by select(filters).
+     - Returns number of deleted docs.
+  --------------------------- */
   async delete(table, filters) {
     const docs = await this.select(table, filters);
+    if (!docs || docs.length === 0) return 0;
+
     await Promise.all(
       docs.map((d) =>
         deleteDocument(doc(this.db, `${this.baseDocPath}/${this.getCollectionName(table)}/${d.id}`))
       )
     );
+    return docs.length;
   }
 }
