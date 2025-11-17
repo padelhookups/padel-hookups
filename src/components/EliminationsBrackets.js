@@ -26,6 +26,7 @@ const EliminationsBrackets = ({ eventId, tournamentId }) => {
   const [selectedMatch, setSelectedMatch] = React.useState([]);
   const [participants, setParticipants] = React.useState([]);
   const [finalStandings, setFinalStandings] = React.useState({});
+  const [stageId, setStageId] = React.useState("");
   const [uploadModalOpen, setUploadModalOpen] = React.useState(false);
   const [showEliminationStageButton, setShowEliminationStageButton] =
     React.useState(true);
@@ -89,6 +90,7 @@ const EliminationsBrackets = ({ eventId, tournamentId }) => {
       return a.number - b.number;
     });
     const stage = tournamentData.stage[tournamentData.stage.length - 1];
+    setStageId(stage.id);
 
     /* const finalFinalStandings = await manager.get.finalStandings(stage.id);
     console.log("Final Final Standings:", finalFinalStandings);
@@ -319,6 +321,14 @@ const EliminationsBrackets = ({ eventId, tournamentId }) => {
           Create Elimination Stage
         </Button>
       )}
+      <Button onClick={async () => {
+        // apagar matches, rounds e groups para este stage
+        await adapter.delete("match", { stage_id: stageId });
+        await adapter.delete("round", { stage_id: stageId });
+        await adapter.delete("group", { stage_id: stageId });
+
+        console.log("Deleted old stage data for stage:", stageId);
+       }}>Eliminate stage</Button>
       <div
         className="brackets-viewer"
         style={{ padding: "0", paddingBottom: "1rem" }}
