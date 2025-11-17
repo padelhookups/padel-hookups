@@ -248,24 +248,34 @@ const EliminationsBrackets = ({ eventId, tournamentId }) => {
       return points;
     };
 
+    // 1) Ordenar os rounds pelo campo "number"
+    if (stageData.rounds) {
+      stageData.rounds = [...stageData.rounds].sort((a, b) => (a.number ?? 0) - (b.number ?? 0));
+    }
+
+    // 2) Criar mapa: round_id -> round_number (tabelas)
+    const roundNumberById = {};
+    if (stageData.rounds) {
+      for (const r of stageData.rounds) {
+        roundNumberById[r.id] = r.number;
+      }
+    }
+
+    // 3) Ordenar matches pelo número da ronda e número do match
+    const orderedMatches = [...stageData.matches].sort((a, b) => {
+      const roundA = roundNumberById[a.round_id] ?? 999;
+      const roundB = roundNumberById[b.round_id] ?? 999;
+
+      if (roundA !== roundB) return roundA - roundB;
+
+      // ordenar por número do match dentro da ronda
+      return (a.number ?? 0) - (b.number ?? 0);
+    });
+
     window.bracketsViewer.render(
       {
         stages: [stage],
-        matches: stageData.matches.map((match) => ({
-          ...match,
-          stage_id:
-            typeof match.stage_id === "object"
-              ? match.stage_id.id
-              : match.stage_id,
-          group_id:
-            typeof match.group_id === "object"
-              ? match.group_id.id
-              : match.group_id,
-          round_id:
-            typeof match.round_id === "object"
-              ? match.round_id.id
-              : match.round_id,
-        })),
+        matches: orderedMatches,
         matchGames: stageData.matchGames,
         participants: participantsData,
       },
@@ -321,14 +331,20 @@ const EliminationsBrackets = ({ eventId, tournamentId }) => {
           Create Elimination Stage
         </Button>
       )}
-      <Button onClick={async () => {
-        // apagar matches, rounds e groups para este stage
-        await adapter.delete("match", { stage_id: stageId });
-        await adapter.delete("round", { stage_id: stageId });
-        await adapter.delete("group", { stage_id: stageId });
+      {user?.IsAdmin && user?.Name == 'Tiago Pereira' && (
+        <Button sx={{
+          display: "flex",
+          marginX: "auto !important",
+          marginTop: "2rem !important",
+        }} onClick={async () => {
+          // apagar matches, rounds e groups para este stage
+          await adapter.delete("match", { stage_id: stageId });
+          await adapter.delete("round", { stage_id: stageId });
+          await adapter.delete("group", { stage_id: stageId });
+          await adapter.delete("stage", stageId);
 
-        console.log("Deleted old stage data for stage:", stageId);
-       }}>Eliminate stage</Button>
+          console.log("Deleted old stage data for stage:", stageId);
+        }}>Eliminate stage</Button>)}
       <div
         className="brackets-viewer"
         style={{ padding: "0", paddingBottom: "1rem" }}
