@@ -80,13 +80,16 @@ const Home = () => {
   const loading = useSelector(selectEventsLoading);
 
   const NewHomeForEveryOne = getBoolean(remoteConfig, "NewHomeForEveryOne");
+  const ForceRefresh = getBoolean(remoteConfig, "ForceRefresh");
+  console.log(ForceRefresh);
+  
 
   useEffect(() => {
     // Only fetch if we haven't done initial fetch and don't have benefits
     if (!initialFetchDone.current) {
       console.log("Fetch events using Redux with caching");
       initialFetchDone.current = true;
-      dispatch(fetchEvents({ db, forceRefresh: false }));
+      dispatch(fetchEvents({ db, forceRefresh: ForceRefresh }));
     }
   }, [dispatch, db, events.length]); // include dispatch
 

@@ -483,20 +483,21 @@ const Event = () => {
                         sx={{ borderColor: "gray" }}
                         disabled={event.TournamentStarted}
                         onClick={async () => {
-                          // if filteredUsers is not even, block action
-                          if (filteredUsers.length % 2 !== 0) {
-                            alert("Please ensure an even number of players.");
+                          if(event.Pairs.length % 2 !== 0 && event.Pairs.length === 0){
+                            alert("No players available to create matches.");
                             return;
                           }
                           if(event.TypeOfTournament === "SecretMix"){
                             await createMatchsRobinHood(eventId);
+                            alert("Matches created successfully. Navigate to the Brackets tab to view them.");
                           }else {
                             await createMatchsElimination(eventId);
+                            alert("Groups created successfully. Navigate to the Brackets tab to view them.");
                           }
                           dispatch(fetchEvents({ db, forceRefresh: false }));
                         }}
                       >
-                        Create Brackets
+                        {event.TypeOfTournament === "SecretMix" ? "Create Matches" : "Create Groups & Matches"}
                       </Button>
                     </Stack>
                   </>

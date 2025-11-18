@@ -20,24 +20,55 @@ const EventRankings = ({ eventId, tournamentId }) => {
   const [pairs, setPairs] = useState([]);
 
   useEffect(() => {
+    let stageData = {};
+    let winsByParticipant = {};
     const fetchTournamentData = async () => {
       const tournamentData = await manager.get.tournamentData(1);
       console.log("Current Stage ID:", tournamentData.stage[0].id);
-      const stageData = await manager.get.stageData(tournamentData.stage[0].id);
+      stageData = await manager.get.stageData(tournamentData.stage[0].id);
       console.log("Current Stage:", stageData);
       setAllMatches(stageData.match || []);
       setParticipants(stageData.participant || []);
       const tempMatches = stageData.match.filter((m) => m.status === 4) || [];
 
-      console.log(getRankings(tempMatches, stageData.participant));
+      /* tempMatches.forEach(match => {
+        if (match.scoreTeam1 > match.scoreTeam2) {
+          winsByParticipant[match.opponent1.id] = (winsByParticipant[match.opponent1.id] || 0) + 1;
+          if (!winsByParticipant[match.opponent2.id]) {
+            winsByParticipant[match.opponent2.id] = 0;
+          }
+        } else if (match.scoreTeam2 > match.scoreTeam1) {
+          winsByParticipant[match.opponent2.id] = (winsByParticipant[match.opponent2.id] || 0) + 1;
+          if (!winsByParticipant[match.opponent1.id]) {
+            winsByParticipant[match.opponent1.id] = 0;
+          }
+        }
+      }); */
+      //winsByParticipant = Object.values(winsByParticipant).sort();
+
+      //console.log('winsByParticipant', winsByParticipant);
+
+      /*  const tempRankings = await manager.get.finalStandings(tournamentData.stage[0].id, { rankingFormula: rankingFormula });
+       console.log('tempRankings', tempRankings); */
+
       const finalRankings = await getRankings(
         tempMatches,
         stageData.participant
       );
-      console.log("finalRankings", finalRankings);
+
       setPairs(finalRankings);
     };
     fetchTournamentData();
+
+    /* const rankingFormula = (participant) => {
+      let tempParticipant = stageData.participant.find(
+        (p) => p.id === participant.id
+      );
+      if (!tempParticipant) return 0;
+      participant = { ...participant, ...tempParticipant };
+      console.log('participant', participant);
+      return participant.wins;
+    }; */
   }, []);
 
   function getRankings(matches, participants = []) {
@@ -51,8 +82,10 @@ const EventRankings = ({ eventId, tournamentId }) => {
         b = m.opponent2;
       const sA = typeof m.scoreTeam1 === "number" ? m.scoreTeam1 : 0;
       const sB = typeof m.scoreTeam2 === "number" ? m.scoreTeam2 : 0;
-      stats[a.id] ??= { id: a.id, wins: 0, points: 0 };
-      stats[b.id] ??= { id: b.id, wins: 0, points: 0 };
+      const scoreDiffA = typeof m.scoreTeam1 === "number" ? m.scoreTeam1 - m.scoreTeam2 : 0;
+      const scoreDiffB = typeof m.scoreTeam2 === "number" ? m.scoreTeam2 - m.scoreTeam1 : 0;
+      stats[a.id] ??= { id: a.id, wins: 0, points: 0, scoreDiff: 0 };
+      stats[b.id] ??= { id: b.id, wins: 0, points: 0, scoreDiff: 0 };
       if (m.status === 4) {
         // apenas jogos completos
         if (a.result === "win") stats[a.id].wins += 1;
@@ -60,6 +93,8 @@ const EventRankings = ({ eventId, tournamentId }) => {
       }
       stats[a.id].points += sA;
       stats[b.id].points += sB;
+      stats[a.id].scoreDiff += scoreDiffA;
+      stats[b.id].scoreDiff += scoreDiffB;
     }
 
     const allTeams = Object.values(stats);
@@ -108,36 +143,35 @@ const EventRankings = ({ eventId, tournamentId }) => {
         if (group.length === 1) {
           result.push(group[0]);
           continue;
-        }
+        } else if (group.length === 2) {
+          // confronto direto
+          console.log(matches);
+          const match = matches.filter(
+            (m) =>
+              (m.opponent1.id === group[0].id &&
+                m.opponent2.id === group[1].id) ||
+              (m.opponent1.id === group[1].id && m.opponent2.id === group[0].id)
+          );
+          console.log(match);
 
-        // confronto direto
-        console.log(matches);
-        const match = matches.filter(
-          (m) =>
-            (m.opponent1.id === group[0].id &&
-              m.opponent2.id === group[1].id) ||
-            (m.opponent1.id === group[1].id && m.opponent2.id === group[0].id)
-        );
-        console.log(match);
-
-        if (match[0].scoreTeam1 !== match[0].scoreTeam2) {
-          console.log("Confronto direto:", match[0]);
+          if (match[0].scoreTeam1 !== match[0].scoreTeam2) {
+            console.log("Confronto direto:", match[0]);
             if (match[0].scoreTeam1 > match[0].scoreTeam2) {
-                result.push(group.filter(i => i.id === match[0].opponent1.id)[0]);
-                result.push(group.filter(i => i.id === match[0].opponent2.id)[0]);
-            }else{
-                result.push(group.filter(i => i.id === match[0].opponent2.id)[0]);
-                result.push(group.filter(i => i.id === match[0].opponent1.id)[0]);
+              result.push(group.filter(i => i.id === match[0].opponent1.id)[0]);
+              result.push(group.filter(i => i.id === match[0].opponent2.id)[0]);
+            } else {
+              result.push(group.filter(i => i.id === match[0].opponent2.id)[0]);
+              result.push(group.filter(i => i.id === match[0].opponent1.id)[0]);
             }
             continue;
+          }
         }
-        
 
-        // verificar empate
+        // verificar diferença de pontos
         const pointsMap = {};
         for (const t of group) {
-          pointsMap[t.points] ??= [];
-          pointsMap[t.points].push(t);
+          pointsMap[t.scoreDiff] ??= [];
+          pointsMap[t.scoreDiff].push(t);
         }
 
         const pointsKeys = Object.keys(pointsMap)
@@ -178,7 +212,7 @@ const EventRankings = ({ eventId, tournamentId }) => {
 
     const sorted = sortTeams(allTeams);
     console.log(allTeams);
-    console.log(sorted);
+    console.log('sorted', sorted);
 
     // 4️⃣ Adicionar nomes se fornecidos
     return sorted.map((r) => {
@@ -254,8 +288,8 @@ const EventRankings = ({ eventId, tournamentId }) => {
                 />
                 <Chip
                   variant="outlined"
-                  label={`${pair.points} SP`}
-                  title="Scored points in all matches"
+                  label={`${pair.scoreDiff} Score Diff`}
+                  title="Score Difference"
                   size="small"
                 />
                 {pair.miniWins !== undefined && pair.miniDiff !== undefined ? (
