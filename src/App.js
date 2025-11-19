@@ -109,7 +109,7 @@ function App() {
 					alignItems: "center",
 					height: "100vh"
 				}}>
-					<img src={logo} alt="Loading..." />
+					<img style={{ width: '80%', maxHeight: '50%' }} src={logo} alt="Loading..." />
 				</div>;
 	}
 

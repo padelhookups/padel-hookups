@@ -22,8 +22,8 @@ const UploadScoreModal = ({
   console.log(match);
   const manager = new BracketsManager(adapter);
 
-  const [team1Score, setTeam1Score] = useState(0);
-  const [team2Score, setTeam2Score] = useState(0);
+  const [team1Score, setTeam1Score] = useState(null);
+  const [team2Score, setTeam2Score] = useState(null);
 
   const handleSubmitScore = async () => {
     try {
@@ -57,36 +57,24 @@ const UploadScoreModal = ({
       });
       const winnerId =
         opponent1Result === "win" ? match.opponent1.id : match.opponent2.id;
-      /* const nextSide = await helpers.getSide(match.number);
-      console.log("nextSide", nextSide); */
-
-      /* const matchLocation = await helpers.getMatchLocation(
-        "single_elimination",
-        1
-      );
-      console.log("matchLocation", matchLocation);
-
-      const nextMatches = await manager.find.nextMatches(match.id, winnerId);
-      console.log("nextMatches", nextMatches); */
-
-      /* nextMatches.forEach(async (nextMatch) => {
-        await manager.update.match({
-          id: nextMatch.id,
-          status: 2, // set to ready
-          [opponent1Result === "win" ? "opponent1" : "opponent2"]: {
-            id:
-              opponent1Result === "win"
-                ? match.opponent1.id
-                : match.opponent2.id,
-          },
-        });
-      }); */
       onClose();
       console.log("✅ Match updated");
     } catch (err) {
       console.error("❌ Error updating match", err);
     }
   };
+
+  const handleEnter = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const form = e.target.form;
+      if (form && form.checkValidity()) {
+        handleSubmitScore();
+      } else if (form) {
+        form.reportValidity();
+      }
+    }
+  }
 
   if (!match) return null;
 
@@ -125,6 +113,7 @@ const UploadScoreModal = ({
             required
             value={team1Score}
             onChange={(e) => setTeam1Score(Number(e.target.value))}
+            onKeyUp={handleEnter}
             sx={{ my: 0 }}
           />
           <Divider sx={{ my: 2 }} />
@@ -138,6 +127,7 @@ const UploadScoreModal = ({
             fullWidth
             value={team2Score}
             onChange={(e) => setTeam2Score(Number(e.target.value))}
+            onKeyUp={handleEnter}
             sx={{ my: 0 }}
           />
           <Stack

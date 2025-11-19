@@ -313,7 +313,7 @@ const Home = () => {
                             });
                           }}
                         >
-                          <Typography variant="h6">
+                          <Typography variant="h6" sx={{ width: 'Calc(100% - 100px)' }}>
                             {getIcon(event.Type)}
                             {event.Name}
                           </Typography>
@@ -404,9 +404,9 @@ const Home = () => {
               >
                 {user?.displayName
                   ? user?.displayName
-                      .split(" ")
-                      .map((word) => word.charAt(0))
-                      .join("")
+                    .split(" ")
+                    .map((word) => word.charAt(0))
+                    .join("")
                   : "?"}
               </Avatar>
               <Typography variant="h4" component="h1" gutterBottom>
