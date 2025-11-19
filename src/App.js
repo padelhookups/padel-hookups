@@ -41,7 +41,7 @@ function App() {
 		window.addEventListener("error", (ev) => {
 			console.error("GLOBAL ERROR:", ev.error || ev.message, ev);
 			// show something on screen
-			const el = document.getElementById("__client_err__") || (() => {
+			/* const el = document.getElementById("__client_err__") || (() => {
 				const d = document.createElement("div");
 				d.id = "__client_err__";
 				d.style.position = "fixed";
@@ -55,7 +55,7 @@ function App() {
 				document.body.appendChild(d);
 				return d;
 			})();
-			el.innerText = (ev.error && ev.error.stack) || ev.message || JSON.stringify(ev);
+			el.innerText = (ev.error && ev.error.stack) || ev.message || JSON.stringify(ev); */
 		});
 	}, []);
 
