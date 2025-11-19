@@ -354,17 +354,37 @@ const useEventActions = () => {
     const pairs = eventSnap.data().Pairs;
 
     console.log("pairs", pairs);
-    
-    const pairsToKeep = pairs.filter((pair) => pair.Player1Id !== player1Id && pair.Player2Id !== player2Id);
-    if (!pairsToKeep.length) return;
+
+    const pairsToKeep = pairs.filter(
+      (pair) => pair.Player1Id !== player1Id && pair.Player2Id !== player2Id
+    );
     console.log("pairs to keep", pairsToKeep);
-    
+
+    const playersDocToDelete = query(
+      collection(db, `Events/${eventId}/Players`),
+      where("UserId", "in", [player1Id, player2Id])
+    );
+    const playersSnap = await getDocs(playersDocToDelete);
+    playersSnap.forEach((playerDoc) => {
+      deleteDoc(playerDoc.ref);
+    });
+
+    const docPlayer1Ref = player1Id.startsWith("guest_")
+      ? doc(db, `Events/${eventId}/Players/${player1Id}`)
+      : doc(db, `Users/${player1Id}`);
+    const docPlayer2Ref = player2Id.startsWith("guest_")
+      ? doc(db, `Events/${eventId}/Players/${player2Id}`)
+      : doc(db, `Users/${player2Id}`);
+
+    console.log(docPlayer1Ref, docPlayer2Ref);
 
     await updateDoc(eventDocRef, {
       ModifiedAt: Timestamp.fromDate(new Date()),
       Pairs: pairsToKeep,
+      PlayersIds: arrayRemove(player1Id, player2Id),
+      PlayersWithPairsIds: arrayRemove(docPlayer1Ref, docPlayer2Ref),
     });
-  }
+  };
 
   function getNumberOfGroups(totalPairs) {
     let groupSize;
@@ -385,7 +405,7 @@ const useEventActions = () => {
     unregisterFromEvent,
     createPairsForEvent,
     deleteAllGamesForEvent,
-    deletePairFromEvent
+    deletePairFromEvent,
   };
 };
 
