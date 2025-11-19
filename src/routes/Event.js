@@ -60,7 +60,8 @@ const Event = () => {
     unregisterFromEvent,
     createPairsForEvent,
     addSinglePair,
-    deleteAllGamesForEvent
+    deleteAllGamesForEvent,
+    deletePairFromEvent
   } = useEventActions();
 
   const { eventId: paramEventId } = useParams();
@@ -233,7 +234,9 @@ const Event = () => {
 
   const deleteAllGames = async () => {
     // Confirmation
-    const confirm = window.confirm("Are you sure you want to delete all games?");
+    const confirm = window.confirm(
+      "Are you sure you want to delete all games?"
+    );
     if (!confirm) {
       return;
     }
@@ -241,7 +244,7 @@ const Event = () => {
     await deleteAllGamesForEvent(event.id);
     alert("All games deleted.");
     dispatch(fetchEvents({ db, forceRefresh: false }));
-  }
+  };
 
   if (!event) {
     return (
@@ -781,7 +784,7 @@ const Event = () => {
                               <Stack
                                 direction="row"
                                 alignItems="center"
-                                justifyContent="space-between"
+                                justifyContent="start"
                                 sx={{ mb: 2 }}
                               >
                                 <Typography
@@ -790,7 +793,29 @@ const Event = () => {
                                 >
                                   Pair
                                 </Typography>
-                                <Chip size="small" label={`#${index + 1}`} />
+                                <Chip
+                                  size="small"
+                                  label={`#${index + 1}`}
+                                  sx={{ marginLeft: "auto" }}
+                                />
+                                {user?.IsAdmin && (
+                                  <IconButton
+                                    edge="end"
+                                    aria-label="delete"
+                                    onClick={async () => {
+                                      await deletePairFromEvent(
+                                        event.id,
+                                        pair.Player1Id,
+                                        pair.Player2Id
+                                      );
+                                      dispatch(
+                                        fetchEvents({ db, forceRefresh: false })
+                                      );
+                                    }}
+                                  >
+                                    <DeleteIcon color="error" />
+                                  </IconButton>
+                                )}
                               </Stack>
                               <Divider />
                               <Stack spacing={1} flexGrow={1} sx={{ mt: 2 }}>
@@ -873,7 +898,7 @@ const Event = () => {
             ) : null}
           </TabPanel>
           {/* Rankings */}
-          <TabPanel value={tab} index={3}>
+          <TabPanel value={tab} index={3} sx={{ display: "flex" }}>
             <EventRankings
               eventId={event.id}
               tournamentId={event.TournamentId}

@@ -348,6 +348,24 @@ const useEventActions = () => {
     });
   };
 
+  const deletePairFromEvent = async (eventId, player1Id, player2Id) => {
+    const eventDocRef = doc(db, `Events/${eventId}`);
+    const eventSnap = await getDoc(eventDocRef);
+    const pairs = eventSnap.data().Pairs;
+
+    console.log("pairs", pairs);
+    
+    const pairsToKeep = pairs.filter((pair) => pair.Player1Id !== player1Id && pair.Player2Id !== player2Id);
+    if (!pairsToKeep.length) return;
+    console.log("pairs to keep", pairsToKeep);
+    
+
+    await updateDoc(eventDocRef, {
+      ModifiedAt: Timestamp.fromDate(new Date()),
+      Pairs: pairsToKeep,
+    });
+  }
+
   function getNumberOfGroups(totalPairs) {
     let groupSize;
 
@@ -367,6 +385,7 @@ const useEventActions = () => {
     unregisterFromEvent,
     createPairsForEvent,
     deleteAllGamesForEvent,
+    deletePairFromEvent
   };
 };
 

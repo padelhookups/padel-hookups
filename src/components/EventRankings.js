@@ -4,7 +4,7 @@ import { BracketsManager } from "brackets-manager";
 import { getFirestore } from "firebase/firestore";
 import { FirestoreAdapter } from "../utils/FirestoreAdapter";
 
-import { Avatar, Chip, Stack, Typography, Paper } from "@mui/material";
+import { Chip, Container, Stack, Typography, Paper } from "@mui/material";
 
 const EventRankings = ({ eventId, tournamentId }) => {
   const db = getFirestore();
@@ -18,12 +18,17 @@ const EventRankings = ({ eventId, tournamentId }) => {
   const [allMatches, setAllMatches] = useState([]);
   const [participants, setParticipants] = useState([]);
   const [pairs, setPairs] = useState([]);
+  const [noRankings, setNoRankings] = useState(false);
 
   useEffect(() => {
     let stageData = {};
     let winsByParticipant = {};
     const fetchTournamentData = async () => {
       const tournamentData = await manager.get.tournamentData(1);
+      if (tournamentData.stage.length === 0) {
+        setNoRankings(true);
+        return;
+      }
       console.log("Current Stage ID:", tournamentData.stage[0].id);
       stageData = await manager.get.stageData(tournamentData.stage[0].id);
       console.log("Current Stage:", stageData);
@@ -82,8 +87,10 @@ const EventRankings = ({ eventId, tournamentId }) => {
         b = m.opponent2;
       const sA = typeof m.scoreTeam1 === "number" ? m.scoreTeam1 : 0;
       const sB = typeof m.scoreTeam2 === "number" ? m.scoreTeam2 : 0;
-      const scoreDiffA = typeof m.scoreTeam1 === "number" ? m.scoreTeam1 - m.scoreTeam2 : 0;
-      const scoreDiffB = typeof m.scoreTeam2 === "number" ? m.scoreTeam2 - m.scoreTeam1 : 0;
+      const scoreDiffA =
+        typeof m.scoreTeam1 === "number" ? m.scoreTeam1 - m.scoreTeam2 : 0;
+      const scoreDiffB =
+        typeof m.scoreTeam2 === "number" ? m.scoreTeam2 - m.scoreTeam1 : 0;
       stats[a.id] ??= { id: a.id, wins: 0, points: 0, scoreDiff: 0 };
       stats[b.id] ??= { id: b.id, wins: 0, points: 0, scoreDiff: 0 };
       if (m.status === 4) {
@@ -157,11 +164,19 @@ const EventRankings = ({ eventId, tournamentId }) => {
           if (match[0].scoreTeam1 !== match[0].scoreTeam2) {
             console.log("Confronto direto:", match[0]);
             if (match[0].scoreTeam1 > match[0].scoreTeam2) {
-              result.push(group.filter(i => i.id === match[0].opponent1.id)[0]);
-              result.push(group.filter(i => i.id === match[0].opponent2.id)[0]);
+              result.push(
+                group.filter((i) => i.id === match[0].opponent1.id)[0]
+              );
+              result.push(
+                group.filter((i) => i.id === match[0].opponent2.id)[0]
+              );
             } else {
-              result.push(group.filter(i => i.id === match[0].opponent2.id)[0]);
-              result.push(group.filter(i => i.id === match[0].opponent1.id)[0]);
+              result.push(
+                group.filter((i) => i.id === match[0].opponent2.id)[0]
+              );
+              result.push(
+                group.filter((i) => i.id === match[0].opponent1.id)[0]
+              );
             }
             continue;
           }
@@ -212,7 +227,7 @@ const EventRankings = ({ eventId, tournamentId }) => {
 
     const sorted = sortTeams(allTeams);
     console.log(allTeams);
-    console.log('sorted', sorted);
+    console.log("sorted", sorted);
 
     // 4️⃣ Adicionar nomes se fornecidos
     return sorted.map((r) => {
@@ -221,14 +236,23 @@ const EventRankings = ({ eventId, tournamentId }) => {
     });
   }
 
-  const initials = (n) =>
-    n
-      .split(" ")
-      .filter(Boolean)
-      .map((w) => w[0])
-      .slice(0, 2)
-      .join("")
-      .toUpperCase();
+  if (noRankings) {
+    return (
+      <Container maxWidth="sm" sx={{ py: 3, flex: 1 }}>
+        <Paper elevation={1} sx={{ p: 2.5 }}>
+          <Stack spacing={1.25}>
+            <Typography
+              variant="body1"
+              color="text.secondary"
+              textAlign="center"
+            >
+              No rankings available
+            </Typography>
+          </Stack>
+        </Paper>
+      </Container>
+    );
+  }
 
   return (
     <Paper elevation={1} sx={{ p: 2.5 }}>
