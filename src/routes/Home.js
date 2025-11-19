@@ -40,7 +40,7 @@ import {
   CalendarMonth,
   Construction,
   ShoppingCart,
-  Timeline
+  Timeline as TimelineIcon,
 } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
 import { grey } from "@mui/material/colors";
@@ -516,7 +516,7 @@ const Home = () => {
                 />
                 <Chip
                   label="Player Rankings"
-                  icon={<Timeline />}
+                  icon={<TimelineIcon />}
                   variant="outlined"
                   color="primary"
                   sx={{ fontSize: "0.9rem" }}
