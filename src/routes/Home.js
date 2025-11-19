@@ -251,8 +251,7 @@ const Home = () => {
             sx={{
               px: 0,
               pt: 0,
-              flex: 1, // match BottomBar height, no extra safe-area padding
-              maxHeight: "Calc(100vh - 180px)",
+              height: "Calc(100vh - 180px)",
               overflow: "auto",
             }}
           >
