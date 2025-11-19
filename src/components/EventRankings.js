@@ -251,26 +251,6 @@ const EventRankings = ({ eventId, tournamentId }) => {
               <Stack direction="row" spacing={1.25} alignItems="center">
                 <Chip size="small" label={`#${idx + 1}`} />
                 <Stack direction="row" spacing={1} alignItems="center">
-                  <Avatar
-                    sx={{
-                      width: 28,
-                      height: 28,
-                      bgcolor: "primary.main",
-                      fontSize: 12,
-                    }}
-                  >
-                    {initials(pairName1)}
-                  </Avatar>
-                  <Avatar
-                    sx={{
-                      width: 28,
-                      height: 28,
-                      bgcolor: "primary.main",
-                      fontSize: 12,
-                    }}
-                  >
-                    {initials(pairName2)}
-                  </Avatar>
                   <Typography variant="body1" fontWeight={600}>
                     {`${pairName1} / ${pairName2}`} {idx === 0 ? "🏆" : null}
                   </Typography>

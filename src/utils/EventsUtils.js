@@ -3,16 +3,19 @@ import { FirestoreAdapter } from "./FirestoreAdapter";
 
 import {
   addDoc,
-  doc,
   arrayUnion,
   arrayRemove,
   collection,
+  doc,
   deleteDoc,
   getFirestore,
   Timestamp,
   updateDoc,
   setDoc,
+  query,
+  where,
   getDoc,
+  getDocs,
 } from "firebase/firestore";
 import useAuth from "../utils/useAuth";
 import { Tour } from "@mui/icons-material";
@@ -272,6 +275,79 @@ const useEventActions = () => {
     });
   };
 
+  const deleteAllGamesForEvent = async (eventId) => {
+    // DELETE all sub collections "Games" under each tournament document
+
+    const tournamentDataCol = collection(
+      db,
+      `Events/${eventId}/TournamentData`
+    );
+    const tournamentDataSnap = await getDocs(tournamentDataCol);
+    for (const tournamentDoc of tournamentDataSnap.docs) {
+      const gamesCol = collection(
+        db,
+        `Events/${eventId}/TournamentData/${tournamentDoc.id}/matches`
+      );
+      const gamesSnap = await getDocs(gamesCol);
+      gamesSnap.forEach((gameDoc) => {
+        deleteDoc(gameDoc.ref);
+      });
+
+      const groupsCol = collection(
+        db,
+        `Events/${eventId}/TournamentData/${tournamentDoc.id}/groups`
+      );
+      const groupsSnap = await getDocs(groupsCol);
+      groupsSnap.forEach((gameDoc) => {
+        deleteDoc(gameDoc.ref);
+      });
+
+      const participantsCol = collection(
+        db,
+        `Events/${eventId}/TournamentData/${tournamentDoc.id}/participants`
+      );
+      const participantsSnap = await getDocs(participantsCol);
+      participantsSnap.forEach((gameDoc) => {
+        deleteDoc(gameDoc.ref);
+      });
+
+      const stagesCol = collection(
+        db,
+        `Events/${eventId}/TournamentData/${tournamentDoc.id}/stages`
+      );
+      const stagesSnap = await getDocs(stagesCol);
+      stagesSnap.forEach((gameDoc) => {
+        deleteDoc(gameDoc.ref);
+      });
+
+      const roundsCol = collection(
+        db,
+        `Events/${eventId}/TournamentData/${tournamentDoc.id}/rounds`
+      );
+      const roundsSnap = await getDocs(roundsCol);
+      roundsSnap.forEach((gameDoc) => {
+        deleteDoc(gameDoc.ref);
+      });
+    }
+
+    const q = query(
+      collection(db, `Events/${eventId}/TournamentData`),
+      where("eventId", "==", eventId)
+    );
+    const querySnapshot = await getDocs(q);
+    querySnapshot.forEach((doc) => {
+      deleteDoc(doc.ref);
+    });
+
+    const eventDocRef = doc(db, `Events/${eventId}`);
+    await updateDoc(eventDocRef, {
+      ModifiedAt: Timestamp.fromDate(new Date()),
+      TournamentId: null,
+      PairsCreated: false,
+      TournamentStarted: false,
+    });
+  };
+
   function getNumberOfGroups(totalPairs) {
     let groupSize;
 
@@ -290,6 +366,7 @@ const useEventActions = () => {
     registerFromEvent,
     unregisterFromEvent,
     createPairsForEvent,
+    deleteAllGamesForEvent,
   };
 };
 

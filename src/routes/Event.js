@@ -60,6 +60,7 @@ const Event = () => {
     unregisterFromEvent,
     createPairsForEvent,
     addSinglePair,
+    deleteAllGamesForEvent
   } = useEventActions();
 
   const { eventId: paramEventId } = useParams();
@@ -70,6 +71,7 @@ const Event = () => {
   const [event, setEvent] = useState(null);
   const [showConfirmation, setConfirmation] = useState(false);
   const [showExitSuccess, setShowExitSuccess] = useState(false);
+  const [showCustomSuccess, setShowCustomSuccess] = useState(false);
   const [showJoinSuccess, setShowJoinSuccess] = useState(false);
   const [openSearchPlayer, setOpenSearchPlayer] = useState(false);
   const [createPairDisabled, setCreatePairDisabled] = useState(true);
@@ -79,6 +81,8 @@ const Event = () => {
   const [type, setType] = useState("joinGame");
   const [modeToSearchPlayer, setModeToSearchPlayer] = useState("single");
   const [confirmationModalTitle, setConfirmationModalTitle] = useState("");
+  const [successTitle, setSuccessTitle] = useState("");
+  const [successDescription, setSuccessDescription] = useState("");
   const [draggedPlayerId, setDraggedPlayerId] = useState(null);
 
   const initialFetchDone = useRef(false);
@@ -226,6 +230,18 @@ const Event = () => {
         return "default";
     }
   };
+
+  const deleteAllGames = async () => {
+    // Confirmation
+    const confirm = window.confirm("Are you sure you want to delete all games?");
+    if (!confirm) {
+      return;
+    }
+    // Delete all games logic here
+    await deleteAllGamesForEvent(event.id);
+    alert("All games deleted.");
+    dispatch(fetchEvents({ db, forceRefresh: false }));
+  }
 
   if (!event) {
     return (
@@ -403,7 +419,7 @@ const Event = () => {
                           // Register in pairs
                           setConfirmation(true);
                           setType("joinGameInPairs");
-                          setModeToSearchPlayer("pairs");                          
+                          setModeToSearchPlayer("pairs");
                         }
                       }}
                     >
@@ -483,22 +499,42 @@ const Event = () => {
                         sx={{ borderColor: "gray" }}
                         disabled={event.TournamentStarted}
                         onClick={async () => {
-                          if(event.Pairs.length % 2 !== 0 && event.Pairs.length === 0){
+                          if (
+                            !event.Pairs ||
+                            event.Pairs.length % 2 !== 0 ||
+                            event.Pairs.length < 4
+                          ) {
                             alert("No players available to create matches.");
                             return;
                           }
-                          if(event.TypeOfTournament === "SecretMix"){
-                            await createMatchsRobinHood(eventId);
-                            alert("Matches created successfully. Navigate to the Brackets tab to view them.");
-                          }else {
+                          if (event.TypeOfTournament === "SecretMix") {
+                            setConfirmationModalTitle("Create matches?");
+                            setType("createMatchesRobinHood");
+                            setConfirmation(true);
+                          } else {
                             await createMatchsElimination(eventId);
-                            alert("Groups created successfully. Navigate to the Brackets tab to view them.");
+                            alert(
+                              "Groups created successfully. Navigate to the Brackets tab to view them."
+                            );
                           }
                           dispatch(fetchEvents({ db, forceRefresh: false }));
                         }}
                       >
-                        {event.TypeOfTournament === "SecretMix" ? "Create Matches" : "Create Groups & Matches"}
+                        {event.TypeOfTournament === "SecretMix"
+                          ? "Create Matches"
+                          : "Create Groups & Matches"}
                       </Button>
+                      {event.TournamentStarted && user.IsAdmin && (
+                        <Button
+                          variant="contained"
+                          startIcon={<Group />}
+                          fullWidth
+                          color="error"
+                          onClick={deleteAllGames}
+                        >
+                          Delete All Games{" "}
+                        </Button>
+                      )}
                     </Stack>
                   </>
                 )}
@@ -548,7 +584,8 @@ const Event = () => {
                                 spacing={1}
                               >
                                 <Avatar
-                                  sx={{width: 32,
+                                  sx={{
+                                    width: 32,
                                     height: 32,
                                     bgcolor: "primary.main",
                                   }}
@@ -829,7 +866,7 @@ const Event = () => {
                 tournamentId={event.TournamentId}
               />
             ) : event.TypeOfTournament !== "SecretMix" ? (
-              <EliminationsBrackets 
+              <EliminationsBrackets
                 eventId={event.id}
                 tournamentId={event.TournamentId}
               />
@@ -854,13 +891,22 @@ const Event = () => {
               if (type === "exitGame") {
                 await unregisterFromEvent(event.id);
                 setShowExitSuccess(true);
-              } else {
+              } else if (type === "joinGame") {
                 if (type === "joinGameInPairs") {
                   setOpenSearchPlayer(true);
-                }else {
+                } else {
                   await registerFromEvent(event.id);
                   setShowJoinSuccess(true);
                 }
+              } else if (type === "createMatchesRobinHood") {
+                await createMatchsRobinHood(eventId);
+                setSuccessTitle("Matches Created!");
+                setSuccessDescription(
+                  "Check out the Brackets tab to see the matchups."
+                );
+                setShowCustomSuccess((prev) => {
+                  return true;
+                });
               }
               dispatch(fetchEvents({ db, forceRefresh: false }));
             }}
@@ -879,6 +925,13 @@ const Event = () => {
             _description="You've successfully left the event."
             _buttonText="Got it"
           />
+          <SuccessModal
+            open={showCustomSuccess}
+            onClose={() => setShowCustomSuccess(false)}
+            _title={successTitle}
+            _description={successDescription}
+            _buttonText="Got it"
+          />
           <SearchPlayer
             open={openSearchPlayer}
             playersIds={event.PlayersIds}
@@ -886,16 +939,31 @@ const Event = () => {
             onClose={async (selectedPlayer, pairMode) => {
               setOpenSearchPlayer(false);
               if (selectedPlayer && typeof selectedPlayer === "object") {
-                if(!pairMode){
-                  await registerFromEvent(event.id, selectedPlayer.id, false, false);
-                }else {
+                if (!pairMode) {
+                  await registerFromEvent(
+                    event.id,
+                    selectedPlayer.id,
+                    false,
+                    false
+                  );
+                } else {
                   //register it self as well as a pair
-                  await registerFromEvent(event.id, selectedPlayer.id, false, true);
+                  await registerFromEvent(
+                    event.id,
+                    selectedPlayer.id,
+                    false,
+                    true
+                  );
                 }
               } else if (selectedPlayer && typeof selectedPlayer === "string") {
-                if(!pairMode){
-                  await registerFromEvent(event.id, selectedPlayer, true, false);
-                }else {
+                if (!pairMode) {
+                  await registerFromEvent(
+                    event.id,
+                    selectedPlayer,
+                    true,
+                    false
+                  );
+                } else {
                   //register it self as well as a pair
                   await registerFromEvent(event.id, selectedPlayer, true, true);
                 }
