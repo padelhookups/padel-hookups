@@ -24,6 +24,8 @@ import ChangePassword from "./routes/ChangePassword";
 import MyDevices from "./routes/MyDevices";
 import NotificationPermissionModal from "./components/NotificationPermissionModal";
 
+import logo from "./images/LogoWhite.svg";
+
 function App() {
 	const {
 		isInstalled,
@@ -100,7 +102,15 @@ function App() {
 
 	if (loading) {
 		// You can show a spinner or skeleton here while auth state loads
-		return <div>Loading...</div>;
+		return <div
+				style={{
+					display: "flex",
+					justifyContent: "center",
+					alignItems: "center",
+					height: "100vh"
+				}}>
+					<img src={logo} alt="Loading..." />
+				</div>;
 	}
 
 	firebase.onMessageListener().then((payload) => {
