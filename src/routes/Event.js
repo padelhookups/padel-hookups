@@ -547,7 +547,7 @@ const Event = () => {
           {/* Players/Pairs Details */}
           <TabPanel value={tab} index={1}>
             <Stack>
-              {!event.PairsCreated && (
+              {!event.PairsCreated && user?.IsAdmin && (
                 <Paper elevation={1}>
                   <Stack spacing={2} sx={{ p: 2 }} direction="column">
                     {/* BOX to drag players and form new pairs */}
