@@ -103,7 +103,7 @@ function App() {
 
 	if (loading) {
 		// You can show a spinner or skeleton here while auth state loads
-		return <Loading />;
+		return <Loading isGenericLoading={true} />;
 	}
 
 	firebase.onMessageListener().then((payload) => {
