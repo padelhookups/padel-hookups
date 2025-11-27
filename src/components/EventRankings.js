@@ -1,10 +1,12 @@
-import React, { useEffect, useState, useRef, useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import { BracketsManager } from "brackets-manager";
 
 import { getFirestore } from "firebase/firestore";
 import { FirestoreAdapter } from "../utils/FirestoreAdapter";
 
 import { Chip, Container, Stack, Typography, Paper } from "@mui/material";
+
+import Loading from "./Loading";
 
 const EventRankings = ({ eventId, tournamentId }) => {
   const db = getFirestore();
@@ -19,6 +21,7 @@ const EventRankings = ({ eventId, tournamentId }) => {
   const [participants, setParticipants] = useState([]);
   const [pairs, setPairs] = useState([]);
   const [noRankings, setNoRankings] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let stageData = {};
@@ -27,6 +30,7 @@ const EventRankings = ({ eventId, tournamentId }) => {
       const tournamentData = await manager.get.tournamentData(1);
       if (tournamentData.stage.length === 0) {
         setNoRankings(true);
+        setLoading(false);
         return;
       }
       console.log("Current Stage ID:", tournamentData.stage[0].id);
@@ -62,18 +66,9 @@ const EventRankings = ({ eventId, tournamentId }) => {
       );
 
       setPairs(finalRankings);
+      setLoading(false);
     };
     fetchTournamentData();
-
-    /* const rankingFormula = (participant) => {
-      let tempParticipant = stageData.participant.find(
-        (p) => p.id === participant.id
-      );
-      if (!tempParticipant) return 0;
-      participant = { ...participant, ...tempParticipant };
-      console.log('participant', participant);
-      return participant.wins;
-    }; */
   }, []);
 
   function getRankings(matches, participants = []) {
@@ -165,14 +160,20 @@ const EventRankings = ({ eventId, tournamentId }) => {
             console.log("Confronto direto:", match[0]);
             if (match[0].scoreTeam1 > match[0].scoreTeam2) {
               result.push(
-                group.filter((i) => i.id === match[0].opponent1.id)[0]
+                {
+                  ...group.filter((i) => i.id === match[0].opponent1.id)[0],
+                  miniWins: 1
+                }
               );
               result.push(
                 group.filter((i) => i.id === match[0].opponent2.id)[0]
               );
             } else {
               result.push(
-                group.filter((i) => i.id === match[0].opponent2.id)[0]
+                {
+                  ...group.filter((i) => i.id === match[0].opponent2.id)[0],
+                  miniWins: 1
+                }
               );
               result.push(
                 group.filter((i) => i.id === match[0].opponent1.id)[0]
@@ -222,6 +223,8 @@ const EventRankings = ({ eventId, tournamentId }) => {
         }
       }
 
+      console.log(result);
+      
       return result;
     }
 
@@ -234,6 +237,14 @@ const EventRankings = ({ eventId, tournamentId }) => {
       const p = participants.find((x) => x.id === r.id);
       return { ...r, name: p?.name ?? null };
     });
+  }
+
+  if (loading) {
+    return (
+      <Container maxWidth="sm" sx={{ py: 3, flex: 1 }}>
+        <Loading isGenericLoading={false} />
+      </Container>
+    );
   }
 
   if (noRankings) {
@@ -295,6 +306,7 @@ const EventRankings = ({ eventId, tournamentId }) => {
                   label={`${pair.scoreDiff} Score Diff`}
                   title="Score Difference"
                   size="small"
+                  sx={{ minWidth: '100px' }}
                 />
                 {pair.miniWins !== undefined && pair.miniDiff !== undefined ? (
                   <>

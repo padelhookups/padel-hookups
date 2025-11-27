@@ -8,6 +8,7 @@ import { usePWAInstallOrOpen } from "./utils/UsePWAInstallOrOpen";
 import NotFound from "./components/NotFound";
 import Layout from "./components/Layout";
 import InstallAppModal from "./components/InstallAppModal";
+import Loading from "./components/Loading";
 
 /* ROUTES */
 import Login from "./routes/Login";
@@ -102,15 +103,7 @@ function App() {
 
 	if (loading) {
 		// You can show a spinner or skeleton here while auth state loads
-		return <div
-				style={{
-					display: "flex",
-					justifyContent: "center",
-					alignItems: "center",
-					height: "100vh"
-				}}>
-					<img style={{ width: '80%', maxHeight: '50%' }} src={logo} alt="Loading..." />
-				</div>;
+		return <Loading />;
 	}
 
 	firebase.onMessageListener().then((payload) => {
