@@ -27,46 +27,31 @@ const EventRankings = ({ eventId, tournamentId }) => {
     let stageData = {};
     let winsByParticipant = {};
     const fetchTournamentData = async () => {
-      const tournamentData = await manager.get.tournamentData(1);
-      if (tournamentData.stage.length === 0) {
-        setNoRankings(true);
-        setLoading(false);
-        return;
-      }
-      console.log("Current Stage ID:", tournamentData.stage[0].id);
-      stageData = await manager.get.stageData(tournamentData.stage[0].id);
-      console.log("Current Stage:", stageData);
-      setAllMatches(stageData.match || []);
-      setParticipants(stageData.participant || []);
-      const tempMatches = stageData.match.filter((m) => m.status === 4) || [];
-
-      /* tempMatches.forEach(match => {
-        if (match.scoreTeam1 > match.scoreTeam2) {
-          winsByParticipant[match.opponent1.id] = (winsByParticipant[match.opponent1.id] || 0) + 1;
-          if (!winsByParticipant[match.opponent2.id]) {
-            winsByParticipant[match.opponent2.id] = 0;
-          }
-        } else if (match.scoreTeam2 > match.scoreTeam1) {
-          winsByParticipant[match.opponent2.id] = (winsByParticipant[match.opponent2.id] || 0) + 1;
-          if (!winsByParticipant[match.opponent1.id]) {
-            winsByParticipant[match.opponent1.id] = 0;
-          }
+      try {
+        const tournamentData = await manager.get.tournamentData(1);
+        if (tournamentData.stage.length === 0) {
+          setNoRankings(true);
+          setLoading(false);
+          return;
         }
-      }); */
-      //winsByParticipant = Object.values(winsByParticipant).sort();
+        console.log("Current Stage ID:", tournamentData.stage[0].id);
+        stageData = await manager.get.stageData(tournamentData.stage[0].id);
+        console.log("Current Stage:", stageData);
+        setAllMatches(stageData.match || []);
+        setParticipants(stageData.participant || []);
+        const tempMatches = stageData.match.filter((m) => m.status === 4) || [];
 
-      //console.log('winsByParticipant', winsByParticipant);
+        const finalRankings = await getRankings(
+          tempMatches,
+          stageData.participant
+        );
 
-      /*  const tempRankings = await manager.get.finalStandings(tournamentData.stage[0].id, { rankingFormula: rankingFormula });
-       console.log('tempRankings', tempRankings); */
+        setPairs(finalRankings);
+        setLoading(false);
+      } catch (error) {
+        alert("Error getting the rankings");
+      }
 
-      const finalRankings = await getRankings(
-        tempMatches,
-        stageData.participant
-      );
-
-      setPairs(finalRankings);
-      setLoading(false);
     };
     fetchTournamentData();
   }, []);
@@ -224,7 +209,7 @@ const EventRankings = ({ eventId, tournamentId }) => {
       }
 
       console.log(result);
-      
+
       return result;
     }
 
