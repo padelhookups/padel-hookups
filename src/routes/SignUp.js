@@ -120,16 +120,20 @@ function SignUp() {
 		e.preventDefault();
 		e.stopPropagation();
 
-		if (isLoading) return;
+		try {
+			if (isLoading) return;
 
-		const validPassword = await validatePasswordJS();
-		if (!validPassword) {
-			alert("Password does not meet complexity requirements.");
-			return;
+			const validPassword = await validatePasswordJS();
+			if (!validPassword) {
+				alert("Password does not meet complexity requirements.");
+				return;
+			}
+
+			setIsLoading(true);
+			validateValidInvitation();
+		} catch (error) {
+			alert("Error during sign up: " + error.message);
 		}
-
-		setIsLoading(true);
-		validateValidInvitation();
 	};
 
 	const validateValidInvitation = async () => {
@@ -691,8 +695,8 @@ function SignUp() {
 											alignItems: "center"
 										}}>
 										{confirmPassword === null ||
-										password !== confirmPassword ||
-										confirmPassword.trim() === "" ? (
+											password !== confirmPassword ||
+											confirmPassword.trim() === "" ? (
 											<Close
 												sx={{ color: "error.main", mr: 1 }}
 												fontSize='small'
@@ -724,8 +728,8 @@ function SignUp() {
 								mt: "0 !important",
 								pt: 2
 							}}>
-							<Switch 
-								required 
+							<Switch
+								required
 								checked={isTermsAccepted}
 								onChange={(e) => setIsTermsAccepted(e.target.checked)}
 							/>
@@ -758,8 +762,8 @@ function SignUp() {
 								mt: "0 !important",
 								pt: 1
 							}}>
-							<Switch 
-								required 
+							<Switch
+								required
 								checked={isRgpdAccepted}
 								onChange={(e) => setIsRgpdAccepted(e.target.checked)}
 							/>
