@@ -221,7 +221,7 @@ const Home = () => {
 
   return (
     <>
-      {NewHomeForEveryOne || user?.IsAdmin ? (
+      {NewHomeForEveryOne || user?.IsAdmin || user?.IsTester ? (
         <>
           <Paper
             sx={{

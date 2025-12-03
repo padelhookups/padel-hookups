@@ -93,12 +93,14 @@ const ManageUsers = () => {
 		Name: "",
 		Email: "",
 		Status: "Pending",
-		IsAdmin: false // Changed to boolean for admin status
+		IsAdmin: false, // Changed to boolean for admin status
+		IsTester: false,
 	});
 	const [editUser, setEditUser] = useState({
 		Name: "",
 		Email: "",
-		IsAdmin: false // Changed to boolean for admin status
+		IsAdmin: false, // Changed to boolean for admin status
+		IsTester: false,
 	});
 
 	const fetchUsers = useCallback(async () => {
@@ -556,6 +558,39 @@ const ManageUsers = () => {
 											/>
 										}
 										label='Administrator'
+										sx={{
+											ml: 0,
+											"& .MuiFormControlLabel-label": {
+												fontSize: "1rem",
+												fontWeight: "bold"
+											}
+										}}
+									/>
+								</FormControl>
+							</Box>
+							<Box sx={{ width: "100%" }}>
+								<FormControl
+									sx={{
+										width: "100%",
+										"&:focus-within": {
+											borderColor: "primary.main",
+											borderWidth: "2px"
+										}
+									}}>
+									<FormControlLabel
+										control={
+											<Switch
+												checked={newUser.IsTester}
+												onChange={(e) =>
+													handleNewUserChange(
+														"IsTester",
+														e.target.checked
+													)
+												}
+												color='primary'
+											/>
+										}
+										label='Tester'
 										sx={{
 											ml: 0,
 											"& .MuiFormControlLabel-label": {
