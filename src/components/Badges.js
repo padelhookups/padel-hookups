@@ -123,6 +123,7 @@ const Badges = ({ earnedBadges = [] }) => {
 					label={`${earnedBadges.length}/${AVAILABLE_BADGES.length}`}
 					color='primary'
 					size='small'
+                    sx={{color: 'white'}}
 				/>
 			</Box>
 			<Grid container spacing={2} columns={{ xs: 4, sm: 9, md: 12 }}>
