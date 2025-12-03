@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getFirestore } from "firebase/firestore";
+import useAuth from "../utils/useAuth";
 import { FirestoreAdapter } from "../utils/FirestoreAdapter";
 
 import UploadScoreModal from "./UploadScoreModal";
@@ -10,6 +11,7 @@ import { Sports } from "@mui/icons-material";
 
 const RobinHoodBracket = ({ eventId, tournamentId }) => {
   const db = getFirestore();
+  const { user } = useAuth();
 
   const [participants, setParticipants] = useState([]);
   const [matches, setMatches] = useState([]);
@@ -151,8 +153,12 @@ const RobinHoodBracket = ({ eventId, tournamentId }) => {
                     }}
                     onClick={() => {
                       // Handle match click if needed
-                      setSelectedMatch(match);
-                      setUploadModalOpen(true);
+                      if (user?.IsAdmin) {
+                        setSelectedMatch(match);
+                        setUploadModalOpen(true);
+                      }else {
+                        alert("Only admins can update scores");
+                      }
                     }}
                   >
                     <Typography
