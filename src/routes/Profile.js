@@ -38,6 +38,7 @@ import { grey } from "@mui/material/colors";
 
 import SuccessModal from "../components/SuccessModal";
 import ConfirmEditModal from "../components/ConfirmEditModal";
+import Badges from "../components/Badges";
 
 const iOS = typeof navigator !== "undefined" && /iPad|iPhone|iPod/.test(navigator.userAgent);
 
@@ -69,6 +70,8 @@ const Profile = () => {
 	const [editModalOpen, setEditModalOpen] = useState(false);
 	const [displayName, setDisplayName] = useState(null);
 	const [dateOfBirth, setDateOfBirth] = useState(null);
+	// Sample earned badges - replace with actual data from Firestore
+	const [earnedBadges, setEarnedBadges] = useState(["first_match", "social_player"]);
 
 	const handleUpdateProfile = () => {
 		setEditModalOpen(true);
@@ -160,7 +163,7 @@ const Profile = () => {
 								.join("")
 							: "?"}
 					</Avatar>
-					<Typography variant='h4' component='h1' gutterBottom>
+					{/* <Typography variant='h4' component='h1' gutterBottom>
 						{user?.displayName || "Player"}
 					</Typography>
 					<Typography
@@ -168,7 +171,7 @@ const Profile = () => {
 						color='text.secondary'
 						gutterBottom>
 						{user?.email}
-					</Typography>
+					</Typography> */}
 					<Box sx={{ mt: 2 }}>
 						<Chip
 							icon={<VerifiedUser />}
@@ -187,7 +190,8 @@ const Profile = () => {
 				sx={{
 					p: 3,
 					pb: 12,
-					height: "100%"
+					height: "Calc(100vh - 308px)",
+					overflow: "auto",
 				}}>
 
 				<Typography
@@ -259,6 +263,8 @@ const Profile = () => {
 					onClick={() => setOpen(true)}>
 					<Typography variant='button'>Edit Profile</Typography>
 				</Button>
+				<Divider sx={{ my: 4 }} />
+				<Badges earnedBadges={earnedBadges} />
 
 			</Box>
 			<SwipeableDrawer
