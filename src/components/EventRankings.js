@@ -46,6 +46,12 @@ const EventRankings = ({ eventId, tournamentId }) => {
           stageData.participant
         );
 
+        if (finalRankings.length === 0) {
+          setNoRankings(true);
+          setLoading(false);
+          return;
+        }
+
         setPairs(finalRankings);
         setLoading(false);
       } catch (error) {
