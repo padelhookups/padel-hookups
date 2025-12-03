@@ -219,6 +219,21 @@ const Home = () => {
     }
   };
 
+  // Sort events by date and group by month
+  const sortedEvents = [...events].sort((a, b) => b.Date - a.Date);
+  
+  const groupedEvents = sortedEvents.reduce((acc, event) => {
+    const eventDate = new Date(event.Date);
+    const monthKey = `${eventDate.getFullYear()}-${String(eventDate.getMonth() + 1).padStart(2, '0')}`;
+    const monthLabel = eventDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    
+    if (!acc[monthKey]) {
+      acc[monthKey] = { label: monthLabel, events: [] };
+    }
+    acc[monthKey].events.push(event);
+    return acc;
+  }, {});
+
   return (
     <>
       {NewHomeForEveryOne || user?.IsAdmin || user?.IsTester ? (
@@ -264,105 +279,124 @@ const Home = () => {
               }}
             >
               <PullToRefresh onRefresh={onRefresh}>
-                {events.map((event, index) => {
-                  const alreadyRegistered = event?.PlayersIds?.includes(
-                    user?.uid
-                  );
-                  return (
-                    <TimelineItem key={index}>
+                {Object.entries(groupedEvents).map(([monthKey, { label, events: monthEvents }]) => (
+                  <Box key={monthKey}>
+                    {/* Month Header */}
+                    <TimelineItem>
                       <TimelineSeparator>
                         <TimelineConnector />
-                        <TimelineDot
-                          sx={{
-                            bgcolor: `${getColor(event.Type)}.main`,
-                            color: "white",
-                            fontWeight: "bold",
-                            width: 24,
-                            height: 24,
-                          }}
-                        >
-                          <Typography
-                            variant="span"
-                            sx={{
-                              fontWeight: "bold",
-                              width: "100%",
-                              textAlign: "center",
-                              px: 0.2,
-                            }}
-                          >
-                            {new Date(event.Date).getDate()}
-                          </Typography>
+                        <TimelineDot sx={{ bgcolor: 'primary.main', width: 20, height: 20, borderWidth: 4 }}>
+                          <CalendarMonth sx={{ fontSize: 20, color: 'white' }} />
                         </TimelineDot>
                         <TimelineConnector />
                       </TimelineSeparator>
-                      <TimelineContent sx={{ py: "12px", px: 2 }}>
-                        <Box
-                          sx={{
-                            border: "2px dashed grey",
-                            borderRadius: 2,
-                            p: 1,
-                            position: "relative",
-                            cursor: "pointer",
-                          }}
-                          onClick={() => {
-                            console.log(
-                              "Box 1 clicked - going to event details"
-                            );
-                            navigate("/Event", {
-                              state: { eventId: event.id },
-                            });
-                          }}
-                        >
-                          <Typography variant="h6" sx={{ width: 'Calc(100% - 100px)' }}>
-                            {getIcon(event.Type)}
-                            {event.Name}
-                          </Typography>
-                          <Typography variant="body2">
-                            ⌚
-                            {Timestamp.fromMillis(event.Date)
-                              .toDate()
-                              .getHours()}
-                            :
-                            {Timestamp.fromMillis(event.Date)
-                              .toDate()
-                              .getMinutes()
-                              .toString()
-                              .padStart(2, "0")}
-                          </Typography>
-                          <Box
-                            sx={{
-                              position: "absolute",
-                              top: 8,
-                              right: 8,
-                              display: "flex",
-                              flexWrap: "wrap",
-                              flexDirection: "row",
-                              alignItems: "end",
-                              justifyContent: "end",
-                            }}
-                          >
-                            <Chip
-                              variant="solid"
-                              color={getColor(event.Type)}
-                              size="small"
-                              label={event.Type}
-                              sx={{ width: "100%" }}
-                            />
-                            {event.RecordGames && <span>🎥</span>}
-                          </Box>
-                          {user && alreadyRegistered && (
-                            <Chip
-                              label="💪 You already In!"
-                              color="primary"
-                              sx={{ color: "white", mt: 1 }}
-                              size="small"
-                            />
-                          )}
-                        </Box>
+                      <TimelineContent sx={{ py: '12px', px: 2 }}>
+                        <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+                          {label}
+                        </Typography>
                       </TimelineContent>
                     </TimelineItem>
-                  );
-                })}
+
+                    {/* Events for this month */}
+                    {monthEvents.map((event, index) => {
+                      const alreadyRegistered = event?.PlayersIds?.includes(user?.uid);
+                      return (
+                        <TimelineItem key={`${monthKey}-${index}`}>
+                          <TimelineSeparator>
+                            <TimelineConnector />
+                            <TimelineDot
+                              sx={{
+                                bgcolor: `${getColor(event.Type)}.main`,
+                                color: "white",
+                                fontWeight: "bold",
+                                width: 24,
+                                height: 24,
+                              }}
+                            >
+                              <Typography
+                                variant="span"
+                                sx={{
+                                  fontWeight: "bold",
+                                  width: "100%",
+                                  textAlign: "center",
+                                  px: 0.2,
+                                }}
+                              >
+                                {new Date(event.Date).getDate()}
+                              </Typography>
+                            </TimelineDot>
+                            <TimelineConnector />
+                          </TimelineSeparator>
+                          <TimelineContent sx={{ py: "12px", px: 2 }}>
+                            <Box
+                              sx={{
+                                border: "2px dashed grey",
+                                borderRadius: 2,
+                                p: 1,
+                                position: "relative",
+                                cursor: "pointer",
+                              }}
+                              onClick={() => {
+                                console.log(
+                                  "Box 1 clicked - going to event details"
+                                );
+                                navigate("/Event", {
+                                  state: { eventId: event.id },
+                                });
+                              }}
+                            >
+                              <Typography variant="h6" sx={{ width: 'Calc(100% - 100px)' }}>
+                                {getIcon(event.Type)}
+                                {event.Name}
+                              </Typography>
+                              <Typography variant="body2">
+                                ⌚
+                                {Timestamp.fromMillis(event.Date)
+                                  .toDate()
+                                  .getHours()}
+                                :
+                                {Timestamp.fromMillis(event.Date)
+                                  .toDate()
+                                  .getMinutes()
+                                  .toString()
+                                  .padStart(2, "0")}
+                              </Typography>
+                              <Box
+                                sx={{
+                                  position: "absolute",
+                                  top: 8,
+                                  right: 8,
+                                  display: "flex",
+                                  flexWrap: "wrap",
+                                  flexDirection: "row",
+                                  alignItems: "end",
+                                  justifyContent: "end",
+                                }}
+                              >
+                                <Chip
+                                  variant="solid"
+                                  color={getColor(event.Type)}
+                                  size="small"
+                                  label={event.Type}
+                                  sx={{ width: "100%" }}
+                                />
+                                {event.RecordGames && <span>🎥</span>}
+                              </Box>
+                              {user && alreadyRegistered && (
+                                <Chip
+                                  label="💪 You already In!"
+                                  color="primary"
+                                  sx={{ color: "white", mt: 1 }}
+                                  size="small"
+                                />
+                              )}
+                            </Box>
+                          </TimelineContent>
+                        </TimelineItem>
+                      );
+                    })}
+                  </Box>
+                ))}
               </PullToRefresh>
             </Timeline>
             {user?.IsAdmin && (
