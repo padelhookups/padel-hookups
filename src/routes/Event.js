@@ -404,7 +404,7 @@ const Event = () => {
                 </Paper>
 
                 <Stack direction="row" spacing={1.5}>
-                  {user && !alreadyRegistered && (
+                  {user && !alreadyRegistered && !event.TournamentStarted && (
                     <Button
                       fullWidth
                       variant="contained"
@@ -449,6 +449,7 @@ const Event = () => {
                       >
                         Good Luck 🤞
                       </Button>
+                      {!event.TournamentStarted && (
                       <Button
                         fullWidth
                         variant="outlined"
@@ -465,6 +466,7 @@ const Event = () => {
                       >
                         Unregister
                       </Button>
+                      )}
                     </>
                   )}
                 </Stack>
