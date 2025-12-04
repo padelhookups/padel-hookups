@@ -50,11 +50,11 @@ export const fetchEvents = createAsyncThunk(
       const sliceState = state.events ?? state.benefits ?? { items: [], lastModified: null };
       const { items, lastModified } = sliceState;
 
-      console.log(!forceRefresh, items.length);
+      /* console.log(!forceRefresh, items.length); */
 
       // If we have cached data and not forcing refresh, check if we need to update
       if (!forceRefresh && items.length > 0) {
-        console.log('Checking if cached events data is still valid');
+        /* console.log('Checking if cached events data is still valid'); */
 
         // Get the latest ModifiedAt timestamp from Firestore to compare
         const eventsCollection = collection(db, "Events");
@@ -71,14 +71,14 @@ export const fetchEvents = createAsyncThunk(
           const latestModifiedTimestamp = latestDoc.data().ModifiedAt;
           const latestModified = convertTimestampToMillis(latestModifiedTimestamp);
 
-          console.log('lastModified from cache', new Date(lastModified).toISOString());
+          /* console.log('lastModified from cache', new Date(lastModified).toISOString());
           console.log('latestModified from server', new Date(latestModified).toISOString());
-          console.log(latestModified <= lastModified);
+          console.log(latestModified <= lastModified); */
 
 
           // If our cached data is still current, return it
           if (lastModified && latestModified && latestModified <= lastModified) {
-            console.log('Using cached events data');
+            /* console.log('Using cached events data'); */
             return { events: items, fromCache: true };
           }
         }
@@ -86,7 +86,7 @@ export const fetchEvents = createAsyncThunk(
 
       // Decide whether to perform a delta fetch (only new/updated docs) or full fetch
       const canDeltaFetch = !forceRefresh && !!lastModified;
-      console.log('Delta fetch?', canDeltaFetch, 'lastModified:', lastModified);
+      /* console.log('Delta fetch?', canDeltaFetch, 'lastModified:', lastModified); */
 
       let eventsQuery;
       if (canDeltaFetch) {
@@ -102,9 +102,9 @@ export const fetchEvents = createAsyncThunk(
         eventsQuery = collection(db, 'Events');
       }
 
-      console.log('Fetching events (delta? ', canDeltaFetch, ') from Firestore');
+      /* console.log('Fetching events (delta? ', canDeltaFetch, ') from Firestore'); */
       const eventsSnapshot = await getDocs(eventsQuery);
-      console.log('eventsSnapshot.docs.length', eventsSnapshot.docs.length);
+      /* console.log('eventsSnapshot.docs.length', eventsSnapshot.docs.length); */
 
       if (eventsSnapshot.empty) {
         if (canDeltaFetch) {
@@ -115,7 +115,7 @@ export const fetchEvents = createAsyncThunk(
       }
 
       const fetchedEvents = eventsSnapshot.docs.map((doc) => {
-        console.log(doc.data());
+        /* console.log(doc.data()); */
 
         let finalDoc = { ...doc.data(), PlayersIds: doc.data().PlayersIds?.map(r => r?.id ?? null) ?? [] };
 
