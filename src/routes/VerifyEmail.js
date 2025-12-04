@@ -15,6 +15,7 @@ export default function VerifyEmail() {
 			let inviteId;
 			let name;
 			let isAdmin;
+			let isTester;
 
 			// Try to extract parameters from continueUrl
 			const urlParams = new URLSearchParams(window.location.search);
@@ -24,7 +25,7 @@ export default function VerifyEmail() {
 				email = contParams.get("email");
 				inviteId = contParams.get("inviteId");
 				name = contParams.get("name");
-				isAdmin = contParams.get("isAdmin");
+				isTester = contParams.get("isTester");
 			}
 
 			// Fallback: localStorage (same device)
@@ -45,6 +46,7 @@ export default function VerifyEmail() {
 					if (inviteId) signupParams.set('inviteId', inviteId);
 					if (name) signupParams.set('name', name);
 					if (isAdmin) signupParams.set('isAdmin', isAdmin);
+					if (isTester) signupParams.set('isTester', isTester);
 					
 					navigate(`/SignUp?${signupParams.toString()}`, { replace: true });
 				})

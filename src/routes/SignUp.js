@@ -66,9 +66,11 @@ function SignUp() {
 	const emailFromLink = urlParams.get("email");
 	const inviteId = urlParams.get("inviteId");
 	const isAdmin = urlParams.get("isAdmin")?.toLowerCase() === "true" || false;
+	const isTester = urlParams.get("isTester")?.toLowerCase() === "true" || false;
 	const nameFromLink = urlParams.get("name") || "";
 	console.log("Invite ID from URL:", inviteId);
 	console.log("IsAdmin from URL:", isAdmin);
+	console.log("IsTester from URL:", isTester);
 	console.log("Name from URL:", nameFromLink);
 
 	useEffect(() => {
@@ -194,6 +196,7 @@ function SignUp() {
 				LastLoginAt: new Date(),
 				InviteId: inviteId,
 				IsAdmin: isAdmin,
+				IsTester: isTester,
 				TotalSavings: 0,
 				RgpdAccepted: isRgpdAccepted,
 				TermsAccepted: isTermsAccepted,
