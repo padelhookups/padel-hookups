@@ -450,22 +450,22 @@ const Event = () => {
                         Good Luck 🤞
                       </Button>
                       {!event.TournamentStarted && (
-                      <Button
-                        fullWidth
-                        variant="outlined"
-                        sx={{
-                          bgcolor: "white",
-                          color: "error.main",
-                          borderColor: "error.main",
-                          "&:hover": { bgcolor: "error.main", color: "white" },
-                        }}
-                        onClick={() => {
-                          setConfirmation(true);
-                          setType("exitGame");
-                        }}
-                      >
-                        Unregister
-                      </Button>
+                        <Button
+                          fullWidth
+                          variant="outlined"
+                          sx={{
+                            bgcolor: "white",
+                            color: "error.main",
+                            borderColor: "error.main",
+                            "&:hover": { bgcolor: "error.main", color: "white" },
+                          }}
+                          onClick={() => {
+                            setConfirmation(true);
+                            setType("exitGame");
+                          }}
+                        >
+                          Unregister
+                        </Button>
                       )}
                     </>
                   )}
@@ -827,6 +827,7 @@ const Event = () => {
                                   alignItems="center"
                                   spacing={1.25}
                                 >
+                                  
                                   <Avatar
                                     sx={{
                                       width: 28,
@@ -837,6 +838,29 @@ const Event = () => {
                                   >
                                     {initials(player1Name)}
                                   </Avatar>
+                                  {/* <Avatar
+                                    src={user?.PhotoURL && !imageError ? user.PhotoURL : undefined}
+                                    sx={{
+                                      width: 100,
+                                      height: 100,
+                                      mx: "auto",
+                                      mb: 2,
+                                      fontSize: "2rem",
+                                      bgcolor: "primary.main",
+                                      border: '3px solid',
+                                      borderColor: 'primary.main',
+                                      opacity: imageLoading && user?.PhotoURL && !imageError ? 0 : 1,
+                                      transition: 'opacity 0.3s ease-in-out',
+                                    }}
+                                    imgProps={{
+                                      onLoad: () => setImageLoading(false),
+                                      onError: () => {
+                                        setImageLoading(false);
+                                        setImageError(true);
+                                      }
+                                    }}>
+                                    {user?.PhotoURL || getInitials()}
+                                  </Avatar> */}
                                   <Typography variant="body2" fontWeight={600}>
                                     {player1Name}
                                   </Typography>

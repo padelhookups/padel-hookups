@@ -51,6 +51,7 @@ import {
 } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
 import { grey } from "@mui/material/colors";
+import CircularProgress from "@mui/material/CircularProgress";
 
 const Puller = styled(Box)(({ theme }) => ({
 	width: 30,
@@ -102,6 +103,8 @@ const ManageUsers = () => {
 		IsAdmin: false, // Changed to boolean for admin status
 		IsTester: false,
 	});
+	const [loadingImages, setLoadingImages] = useState({});
+	const [imageErrors, setImageErrors] = useState({});
 
 	const fetchUsers = useCallback(async () => {
 		try {
@@ -236,6 +239,28 @@ const ManageUsers = () => {
 		}));
 	};
 
+	const handleImageLoad = (userId) => {
+		setLoadingImages(prev => ({ ...prev, [userId]: false }));
+	};
+
+	const handleImageError = (userId) => {
+		setLoadingImages(prev => ({ ...prev, [userId]: false }));
+		setImageErrors(prev => ({ ...prev, [userId]: true }));
+	};
+
+	useEffect(() => {
+		// Initialize loading states for users with photos
+		if (users.length > 0) {
+			const initialLoadingState = {};
+			users.forEach(user => {
+				if (user.PhotoURL) {
+					initialLoadingState[user.id] = true;
+				}
+			});
+			setLoadingImages(initialLoadingState);
+		}
+	}, [users]);
+
 	// Filter users based on search query
 	const filteredUsers = users.filter((user) => {
 		const searchLower = searchQuery.toLowerCase();
@@ -313,13 +338,37 @@ const ManageUsers = () => {
 														<Settings />
 													</IconButton>
 												}>
-												<Avatar
-													sx={{
-														mr: 2,
-														bgcolor: "primary.main"
-													}}>
-													<Person />
-												</Avatar>
+												<Box sx={{ position: 'relative', mr: 2 }}>
+													{user.PhotoURL && loadingImages[user.id] && !imageErrors[user.id] && (
+														<Box
+															sx={{
+																position: 'absolute',
+																top: 0,
+																left: 0,
+																right: 0,
+																bottom: 0,
+																display: 'flex',
+																alignItems: 'center',
+																justifyContent: 'center',
+																zIndex: 1,
+															}}>
+															<CircularProgress size={20} />
+														</Box>
+													)}
+													<Avatar
+														src={user.PhotoURL && !imageErrors[user.id] ? user.PhotoURL : undefined}
+														sx={{
+															bgcolor: user.PhotoURL && !imageErrors[user.id] ? "transparent" : "primary.main",
+															opacity: loadingImages[user.id] && user.PhotoURL && !imageErrors[user.id] ? 0 : 1,
+															transition: 'opacity 0.3s ease-in-out',
+														}}
+														imgProps={{
+															onLoad: () => handleImageLoad(user.id),
+															onError: () => handleImageError(user.id)
+														}}>
+														{(!user.PhotoURL || imageErrors[user.id]) && <Person />}
+													</Avatar>
+												</Box>
 												<ListItemText
 													primary={
 														<Typography
@@ -581,7 +630,7 @@ const ManageUsers = () => {
 										control={
 											<Switch
 												checked={newUser.IsTester}
-												onChange={(e) =>
+											 onChange={(e) =>
 													handleNewUserChange(
 														"IsTester",
 														e.target.checked

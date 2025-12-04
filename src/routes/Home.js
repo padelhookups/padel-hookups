@@ -427,22 +427,23 @@ const Home = () => {
           >
             {/* Welcome Header */}
             <Box sx={{ py: 3, px: 2 }}>
-              <Avatar
+              {/* <Avatar
+                src={user?.PhotoURL}
                 sx={{
                   width: 64,
                   height: 64,
                   mx: "auto",
                   mb: 2,
-                  bgcolor: "rgba(255,255,255,0.2)",
+                  bgcolor: user?.PhotoURL ? "transparent" : "rgba(255,255,255,0.2)",
                 }}
               >
-                {user?.displayName
+                {!user?.PhotoURL && (user?.displayName
                   ? user?.displayName
                     .split(" ")
                     .map((word) => word.charAt(0))
                     .join("")
-                  : "?"}
-              </Avatar>
+                  : "?")}
+              </Avatar> */}
               <Typography variant="h4" component="h1" gutterBottom>
                 Welcome back,{" "}
                 {user?.displayName || user?.email?.split("@")[0] || "Player"}!

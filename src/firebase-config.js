@@ -10,6 +10,7 @@ import {
 import { getMessaging, getToken, onMessage } from "firebase/messaging";
 import { getPerformance } from "firebase/performance";
 import { getRemoteConfig, fetchAndActivate } from "firebase/remote-config";
+import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
 	apiKey: "AIzaSyBOW8pVZPA8nlU9xcwjnNTxe7dbqCBxub8",
@@ -27,6 +28,7 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const messaging = getMessaging(app);
 const remoteConfig = getRemoteConfig(app);
+const storage = getStorage(app);
 console.log(process.env.NODE_ENV);
 
 if (process.env.NODE_ENV === "production") {
@@ -229,6 +231,7 @@ const firebaseConfigExport = {
 	app,
 	auth: auth,
 	db: db,
+	storage: storage,
 	messaging: messaging,
 	messagingToken: messagingToken,
 	onMessageListener: onMessageListener,

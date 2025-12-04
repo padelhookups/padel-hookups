@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import firebase from "../firebase-config";
@@ -9,39 +9,55 @@ export default function useAuth() {
 	const [user, setUser] = useState(null);
 	const [loading, setLoading] = useState(true);
 
+	// Extract user fetching logic into a separate function
+	const fetchUserData = useCallback(async (firebaseUser) => {
+		if (!firebaseUser) {
+			setUser(null);
+			return;
+		}
+
+		try {
+			const userDoc = await getDoc(doc(db, "Users", firebaseUser.uid));
+			if (userDoc.exists()) {
+				const firestoreUserData = userDoc.data();
+				setUser({
+					...firebaseUser,
+					...firestoreUserData,
+					PhotoURL: firestoreUserData.PhotoURL,
+					displayName: firebaseUser.displayName || firestoreUserData.Name,
+				});
+			} else {
+				setUser(firebaseUser);
+			}
+		} catch (error) {
+			console.error("Error fetching user from Firestore:", error);
+			setUser(firebaseUser);
+		}
+	}, [db]);
+
+	// Manual refresh function
+	const refreshUser = useCallback(async () => {
+		const currentUser = auth.currentUser;
+		if (currentUser) {
+			await currentUser.reload(); // Refresh Firebase Auth user
+			await fetchUserData(currentUser);
+		}
+	}, [auth, fetchUserData]);
+
 	useEffect(() => {
 		const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-			// console.log("Auth state changed:", firebaseUser);
-
 			if (firebaseUser) {
-				try {
-					// Get user data from Firestore
-					const userDoc = await getDoc(
-						doc(db, "Users", firebaseUser.uid)
-					);
-					if (userDoc.exists()) {
-						// Merge Firebase Auth user with Firestore user data
-						const firestoreUserData = userDoc.data();
-						setUser({ ...firebaseUser, ...firestoreUserData });
-					} else {
-						// If no Firestore document exists, just use Firebase Auth user
-						setUser(firebaseUser);
-					}
+				await fetchUserData(firebaseUser);
 
-					if (
-						!localStorage.getItem("messagingToken") &&
-						!localStorage.getItem("messagingTokenPending")
-					) {
-						alert(
-							"No messaging token found. Starting notification flow..."
-						);
-						localStorage.setItem("messagingTokenPending", true);
-						firebase.startNotificationsFlow();
-					}
-				} catch (error) {
-					console.error("Error fetching user from Firestore:", error);
-					// Fallback to Firebase Auth user if Firestore fetch fails
-					setUser(firebaseUser);
+				if (
+					!localStorage.getItem("messagingToken") &&
+					!localStorage.getItem("messagingTokenPending")
+				) {
+					alert(
+						"No messaging token found. Starting notification flow..."
+					);
+					localStorage.setItem("messagingTokenPending", true);
+					firebase.startNotificationsFlow();
 				}
 			} else {
 				setUser(null);
@@ -50,7 +66,7 @@ export default function useAuth() {
 		});
 
 		return unsubscribe;
-	}, []);
+	}, [auth, fetchUserData]);
 
-	return { user, loading };
+	return { user, loading, refreshUser };
 }

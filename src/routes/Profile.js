@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { updateProfile } from "firebase/auth";
 import { doc, updateDoc, Timestamp } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { getAuth } from "firebase/auth";
 import firebase from "../firebase-config";
 import useAuth from "../utils/useAuth";
@@ -20,7 +21,9 @@ import {
 	TextField,
 	FormControl,
 	InputAdornment,
-	Paper
+	Paper,
+	IconButton,
+	CircularProgress
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 
@@ -31,7 +34,9 @@ import {
 	VerifiedUser,
 	CalendarToday,
 	Edit,
-	Cake
+	Cake,
+	CameraAlt,
+	PhotoCamera
 } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
 import { grey } from "@mui/material/colors";
@@ -39,6 +44,8 @@ import { grey } from "@mui/material/colors";
 import SuccessModal from "../components/SuccessModal";
 import ConfirmEditModal from "../components/ConfirmEditModal";
 import Badges from "../components/Badges";
+import PhotoEditor from "../components/PhotoEditor";
+import { useNavigate } from "react-router";
 
 const iOS = typeof navigator !== "undefined" && /iPad|iPhone|iPod/.test(navigator.userAgent);
 
@@ -61,15 +68,25 @@ const StyledBox = styled("div")(({ theme }) => ({
 
 const Profile = () => {
 	const db = firebase.db;
+	const storage = firebase.storage;
 	const auth = getAuth();
 	const currentUser = auth.currentUser;
-	const { user } = useAuth();
+	const { user, refreshUser } = useAuth(); // Add refreshUser
+	const navigate = useNavigate();
 
 	const [open, setOpen] = useState(false);
 	const [showSuccess, setShowSuccess] = useState(false);
 	const [editModalOpen, setEditModalOpen] = useState(false);
-	const [displayName, setDisplayName] = useState(null);
+	const [displayName, setDisplayName] = useState("");
 	const [dateOfBirth, setDateOfBirth] = useState(null);
+	const [photoFile, setPhotoFile] = useState(null);
+	const [photoPreview, setPhotoPreview] = useState(null);
+	const [uploading, setUploading] = useState(false);
+	const [showPhotoEditor, setShowPhotoEditor] = useState(false);
+	const [originalPhoto, setOriginalPhoto] = useState(null);
+	const [imageLoading, setImageLoading] = useState(true);
+	const [imageError, setImageError] = useState(false);
+	const fileInputRef = useRef(null);
 	// Sample earned badges - replace with actual data from Firestore
 	const [earnedBadges, setEarnedBadges] = useState(["first_match", "social_player"]);
 
@@ -81,6 +98,13 @@ const Profile = () => {
 		if (user) {
 			console.log("User data:", user);
 			setDisplayName(user?.displayName || "");
+			setPhotoPreview(user?.PhotoURL || null);
+			
+			// Reset image states when user changes
+			if (user?.PhotoURL) {
+				setImageLoading(true);
+				setImageError(false);
+			}
 
 			let dob = null;
 			const rawDob = user.DateOfBirth;
@@ -108,31 +132,124 @@ const Profile = () => {
 		}
 	}, [user]);
 
+	const handlePhotoSelect = (event) => {
+		const file = event.target.files?.[0];
+		if (file) {
+			if (file.size > 10 * 1024 * 1024) { // 10MB limit for original
+				alert("File size must be less than 10MB");
+				return;
+			}
+			if (!file.type.startsWith('image/')) {
+				alert("Please select an image file");
+				return;
+			}
+			
+			const reader = new FileReader();
+			reader.onloadend = () => {
+				setOriginalPhoto(reader.result);
+				setShowPhotoEditor(true);
+			};
+			reader.readAsDataURL(file);
+		}
+	};
+
+	const handlePhotoEditorSave = (croppedBlob) => {
+		// Convert blob to file
+		const file = new File([croppedBlob], 'profile-photo.jpg', { type: 'image/jpeg' });
+		setPhotoFile(file);
+		
+		// Create preview
+		const reader = new FileReader();
+		reader.onloadend = () => {
+			setPhotoPreview(reader.result);
+		};
+		reader.readAsDataURL(croppedBlob);
+		
+		setShowPhotoEditor(false);
+	};
+
+	const handlePhotoEditorClose = () => {
+		setShowPhotoEditor(false);
+		setOriginalPhoto(null);
+		// Reset file input
+		if (fileInputRef.current) {
+			fileInputRef.current.value = '';
+		}
+	};
+
+	const uploadPhoto = async () => {
+		if (!photoFile) return user?.PhotoURL;
+
+		setUploading(true);
+		try {
+			const storageRef = ref(storage, `profile-photos/${user.uid}.jpg`);
+			await uploadBytes(storageRef, photoFile);
+			const downloadURL = await getDownloadURL(storageRef);
+			return downloadURL;
+		} catch (error) {
+			console.error("Error uploading photo:", error);
+			alert("Failed to upload photo. Please try again.");
+			return null;
+		} finally {
+			setUploading(false);
+		}
+	};
+
 	const handleConfirmUpdate = async () => {
 		try {
-			await updateProfile(currentUser, {
-				displayName: displayName
-			});
+			setUploading(true);
+			
+			// Upload photo if a new one was selected
+			const photoURL = await uploadPhoto();
 
-			// Update date of birth in Firestore or another database
+			// Update Firebase Auth profile
+			const updateData = { displayName };
+			if (photoURL) {
+				updateData.photoURL = photoURL;
+			}
+			await updateProfile(currentUser, updateData);
+
+			// Update Firestore
 			const userRef = doc(db, "Users", user.uid);
-			await updateDoc(userRef, {
+			const firestoreUpdate = {
+				Name: displayName,
 				DateOfBirth: dateOfBirth
 					? Timestamp.fromDate(dateOfBirth.toDate())
 					: null,
 				BirthdayMonth: dateOfBirth ? dateOfBirth.month() + 1 : null,
 				BirthdayDay: dateOfBirth ? dateOfBirth.date() : null
-			});
-			// Note: Firebase Auth doesn't store custom fields like dateOfBirth
-			// You would need to store this in Firestore or another database
+			};
+			if (photoURL) {
+				firestoreUpdate.PhotoURL = photoURL;
+			}
+			await updateDoc(userRef, firestoreUpdate);
+
+			// Refresh the user data
+			await refreshUser();
+
 			console.log("Profile updated successfully");
-			console.log("Date of birth:", dateOfBirth);
 			setOpen(false);
 			setEditModalOpen(false);
+			setPhotoFile(null);
+			setImageLoading(false);
+			setImageError(false);
 			setShowSuccess(true);
 		} catch (error) {
 			console.error("Error updating profile:", error);
+			alert("Failed to update profile. Please try again.");
+		} finally {
+			setUploading(false);
 		}
+	};
+
+	const getInitials = () => {
+		if (user?.displayName) {
+			return user.displayName
+				.split(" ")
+				.map((word) => word.charAt(0))
+				.join("");
+		}
+		return "??";
 	};
 
 	return (
@@ -146,32 +263,51 @@ const Profile = () => {
 					pt: "env(safe-area-inset-top, 0px)",
 				}}>
 
-				<Box sx={{ py: 3, px: 2 }}>
-					<Avatar
-						sx={{
-							width: 100,
-							height: 100,
-							mx: "auto",
-							mb: 2,
-							fontSize: "2rem",
-							bgcolor: "primary.main"
-						}}>
-						{user?.displayName
-							? user?.displayName
-								.split(" ")
-								.map((word) => word.charAt(0))
-								.join("")
-							: "?"}
-					</Avatar>
-					{/* <Typography variant='h4' component='h1' gutterBottom>
-						{user?.displayName || "Player"}
-					</Typography>
-					<Typography
-						variant='body1'
-						color='text.secondary'
-						gutterBottom>
-						{user?.email}
-					</Typography> */}
+				<Box sx={{ py: 3, px: 2, position: 'relative' }}>
+					<Box sx={{ position: 'relative', display: 'inline-block' }}>
+						{/* Loading Spinner */}
+						{user?.PhotoURL && imageLoading && !imageError && (
+							<Box
+								sx={{
+									position: 'absolute',
+									top: 0,
+									left: 0,
+									right: 0,
+									bottom: 0,
+									display: 'flex',
+									alignItems: 'center',
+									justifyContent: 'center',
+									zIndex: 1,
+								}}>
+								<CircularProgress size={40} />
+							</Box>
+						)}
+						
+						{/* Avatar with fallback */}
+						<Avatar
+							src={user?.PhotoURL && !imageError ? user.PhotoURL : undefined}
+							sx={{
+								width: 100,
+								height: 100,
+								mx: "auto",
+								mb: 2,
+								fontSize: "2rem",
+								bgcolor: "primary.main",
+								border: '3px solid',
+								borderColor: 'primary.main',
+								opacity: imageLoading && user?.PhotoURL && !imageError ? 0 : 1,
+								transition: 'opacity 0.3s ease-in-out',
+							}}
+							imgProps={{
+								onLoad: () => setImageLoading(false),
+								onError: () => {
+									setImageLoading(false);
+									setImageError(true);
+								}
+							}}>
+							{user?.PhotoURL || getInitials()}
+						</Avatar>
+					</Box>
 					<Box sx={{ mt: 2 }}>
 						<Chip
 							icon={<VerifiedUser />}
@@ -296,6 +432,50 @@ const Profile = () => {
 							e.preventDefault();
 							handleUpdateProfile();
 						}}>
+						
+						{/* Photo Upload Section */}
+						<Box sx={{ width: "100%", textAlign: 'center' }}>
+							<input
+								ref={fileInputRef}
+								type="file"
+								accept="image/*"
+								style={{ display: 'none' }}
+								onChange={handlePhotoSelect}
+							/>
+							<Box sx={{ position: 'relative', display: 'inline-block' }}>
+								<Avatar
+									src={photoPreview || undefined}
+									sx={{
+										width: 120,
+										height: 120,
+										mx: "auto",
+										fontSize: "2.5rem",
+										bgcolor: "primary.main",
+										border: '3px solid',
+										borderColor: 'primary.main'
+									}}>
+									{!photoPreview && getInitials()}
+								</Avatar>
+								<IconButton
+									sx={{
+										position: 'absolute',
+										bottom: 0,
+										right: 0,
+										bgcolor: 'primary.main',
+										color: 'white',
+										'&:hover': {
+											bgcolor: 'primary.dark',
+										}
+									}}
+									onClick={() => fileInputRef.current?.click()}>
+									<PhotoCamera />
+								</IconButton>
+							</Box>
+							<Typography variant='caption' display='block' sx={{ mt: 1, color: 'text.secondary' }}>
+								Click camera icon to upload and adjust photo
+							</Typography>
+						</Box>
+
 						<Box sx={{ width: "100%" }}>
 							<FormControl
 								sx={{
@@ -382,17 +562,34 @@ const Profile = () => {
 							variant='contained'
 							fullWidth
 							type='submit'
-							disabled={!displayName}>
-							<Typography
-								variant='button'
-								color='white'
-								sx={{ fontWeight: "bold" }}>
-								Update Profile
-							</Typography>
+							disabled={!displayName || uploading}>
+							{uploading ? (
+								<>
+									<CircularProgress size={20} sx={{ mr: 1, color: 'white' }} />
+									<Typography variant='button' color='white'>
+										Uploading...
+									</Typography>
+								</>
+							) : (
+								<Typography
+									variant='button'
+									color='white'
+									sx={{ fontWeight: "bold" }}>
+									Update Profile
+								</Typography>
+							)}
 						</Button>
 					</Box>
 				</StyledBox>
 			</SwipeableDrawer>
+
+			{/* Photo Editor Modal */}
+			<PhotoEditor
+				open={showPhotoEditor}
+				imageSrc={originalPhoto}
+				onClose={handlePhotoEditorClose}
+				onSave={handlePhotoEditorSave}
+			/>
 
 			<SuccessModal
 				open={showSuccess}
