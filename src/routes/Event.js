@@ -760,6 +760,14 @@ const Event = () => {
                     {event.Pairs.map((pair, index) => {
                       const player1Name = pair.DisplayName.split(" & ")[0];
                       const player2Name = pair.DisplayName.split(" & ")[1];
+                      
+                      const player1PhotoURL = users.find(
+                        (u) =>
+                          u.id === pair.Player1Id)?.PhotoURL;
+                      const player2PhotoURL = users.find(
+                        (u) =>
+                          u.id === pair.Player2Id)?.PhotoURL;
+
                       const initials = (name) =>
                         name
                           .split(" ")
@@ -829,6 +837,7 @@ const Event = () => {
                                 >
                                   
                                   <Avatar
+                                    src={player1PhotoURL}
                                     sx={{
                                       width: 28,
                                       height: 28,
@@ -872,6 +881,7 @@ const Event = () => {
                                   spacing={1.25}
                                 >
                                   <Avatar
+                                    src={player2PhotoURL}
                                     sx={{
                                       width: 28,
                                       height: 28,
