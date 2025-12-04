@@ -217,7 +217,8 @@ const Profile = () => {
 					? Timestamp.fromDate(dateOfBirth.toDate())
 					: null,
 				BirthdayMonth: dateOfBirth ? dateOfBirth.month() + 1 : null,
-				BirthdayDay: dateOfBirth ? dateOfBirth.date() : null
+				BirthdayDay: dateOfBirth ? dateOfBirth.date() : null,
+				LastModifiedAt: Timestamp.now()
 			};
 			if (photoURL) {
 				firestoreUpdate.PhotoURL = photoURL;
