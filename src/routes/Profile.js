@@ -263,9 +263,10 @@ const Profile = () => {
 					textAlign: "center",
 					pt: "env(safe-area-inset-top, 0px)",
 				}}>
-
-				<Box sx={{ py: 3, px: 2, position: 'relative' }}>
-					<Box sx={{ position: 'relative', display: 'inline-block' }}>
+				
+				{/* height less padding */}
+				<Box sx={{ py: 3, px: 2, position: 'relative', height: "Calc(200px - 48px)" }}>
+					<Box sx={{ position: 'relative', display: 'inline-block', height: '70%', }}>
 						{/* Loading Spinner */}
 						{user?.PhotoURL && imageLoading && !imageError && (
 							<Box
@@ -278,7 +279,7 @@ const Profile = () => {
 									display: 'flex',
 									alignItems: 'center',
 									justifyContent: 'center',
-									zIndex: 1,
+									zIndex: 1,									
 								}}>
 								<CircularProgress size={40} />
 							</Box>
@@ -326,7 +327,6 @@ const Profile = () => {
 			<Box
 				sx={{
 					p: 3,
-					pb: 12,
 					height: "Calc(100vh - 308px)",
 					overflow: "auto",
 				}}>
