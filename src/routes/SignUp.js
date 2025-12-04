@@ -92,17 +92,23 @@ function SignUp() {
 	}, [emailFromLink, inviteId, navigate]);
 
 	const validatePasswordJS = async () => {
-		const status = await validatePassword(auth, password);
-		console.log(status);
+		try {
+			const status = await validatePassword(auth, password);
+			console.log(status);
 
-		if (!status.isValid) {
-			// Password could not be validated. Use the status to show what
-			// requirements are met and which are missing.
-			// If a criterion is undefined, it is not required by policy. If the
-			// criterion is defined but false, it is required but not fulfilled by
-			// the given password. For example:
+			if (!status.isValid) {
+				// Password could not be validated. Use the status to show what
+				// requirements are met and which are missing.
+				// If a criterion is undefined, it is not required by policy. If the
+				// criterion is defined but false, it is required but not fulfilled by
+				// the given password. For example:
+			}
+			return status.isValid;
+		} catch (error) {
+			alert("Error during sign up: " + error.message);
+			setIsLoading(false);
 		}
-		return status.isValid;
+
 	};
 
 	const handlePasswordChange = (value) => {
@@ -135,76 +141,99 @@ function SignUp() {
 			validateValidInvitation();
 		} catch (error) {
 			alert("Error during sign up: " + error.message);
+			setIsLoading(false);
 		}
 	};
 
 	const validateValidInvitation = async () => {
-		// query firestore
-		// If valid, proceed with sign up
-		const docRef = doc(db, "Invites", inviteId);
-		const docSnap = await getDoc(docRef);
+		try {
+			// query firestore
+			// If valid, proceed with sign up
+			const docRef = doc(db, "Invites", inviteId);
+			const docSnap = await getDoc(docRef);
 
-		if (!docSnap.exists()) {
-			console.error("No valid invitation found for ID:", inviteId);
+			if (!docSnap.exists()) {
+				console.error("No valid invitation found for ID:", inviteId);
+				setIsLoading(false);
+				alert("Invalid or expired invitation link.");
+				navigate("/");
+			} else {
+				// update Invitation as used (optional)
+				await setDoc(docRef, { Status: 'Confirmed' }, { merge: true });
+				handleUserPassword();
+			}
+		} catch (error) {
+			alert("Error validating invitation: " + error.message);
 			setIsLoading(false);
-			alert("Invalid or expired invitation link.");
-			navigate("/");
-		} else {
-			// update Invitation as used (optional)
-			await setDoc(docRef, { Status: 'Confirmed' }, { merge: true });
-			handleUserPassword();
 		}
 	};
 
 	const handleUserPassword = () => {
-		updatePassword(auth.currentUser, password)
-			.then(() => {
-				handleDisplayName();
-			})
-			.catch((error) => {
-				// An error ocurred
-				// ...
-			});
+		try {
+			updatePassword(auth.currentUser, password)
+				.then(() => {
+					handleDisplayName();
+				})
+				.catch((error) => {
+					// An error ocurred
+					// ...
+				});
+		} catch (error) {
+			alert("Error setting password: " + error.message);
+			setIsLoading(false);
+		}
+
 	};
 
 	const handleDisplayName = () => {
-		updateProfile(auth.currentUser, {
-			displayName: name
-		})
-			.then(() => {
-				console.log("Display name updated successfully");
-				handleUser();
+		try {
+			updateProfile(auth.currentUser, {
+				displayName: name
 			})
-			.catch((error) => {
-				// An error occurred
-				console.error("Error updating display name:", error);
-			});
+				.then(() => {
+					console.log("Display name updated successfully");
+					handleUser();
+				})
+				.catch((error) => {
+					// An error occurred
+					console.error("Error updating display name:", error);
+				});
+		} catch (error) {
+			alert("Error updating profile: " + error.message);
+			setIsLoading(false);
+		}
+
 	};
 
 	const handleUser = async () => {
-		const docRef = doc(db, "Users", auth.currentUser.uid);
-		const docSnap = await getDoc(docRef);
+		try {
+			const docRef = doc(db, "Users", auth.currentUser.uid);
+			const docSnap = await getDoc(docRef);
 
-		if (!docSnap.exists()) {
-			console.warn("Non existent user, will be created");
-			// Create user document in Firestore
-			await setDoc(docRef, {
-				Name: name,
-				Email: email,
-				DateOfBirth: dateOfBirth ? dateOfBirth.toISOString() : null,
-				CreatedAt: new Date(),
-				LastLoginAt: new Date(),
-				InviteId: inviteId,
-				IsAdmin: isAdmin,
-				IsTester: isTester,
-				TotalSavings: 0,
-				RgpdAccepted: isRgpdAccepted,
-				TermsAccepted: isTermsAccepted,
-				LastModifiedAt: new Date()
-			});
+			if (!docSnap.exists()) {
+				console.warn("Non existent user, will be created");
+				// Create user document in Firestore
+				await setDoc(docRef, {
+					Name: name,
+					Email: email,
+					DateOfBirth: dateOfBirth ? dateOfBirth.toISOString() : null,
+					CreatedAt: new Date(),
+					LastLoginAt: new Date(),
+					InviteId: inviteId,
+					IsAdmin: isAdmin,
+					IsTester: isTester,
+					TotalSavings: 0,
+					RgpdAccepted: isRgpdAccepted,
+					TermsAccepted: isTermsAccepted,
+					LastModifiedAt: new Date()
+				});
+			}
+			setIsLoading(false);
+			setShowSuccess(true);
+		} catch (error) {
+			alert("Error creating user document: " + error.message);
+			setIsLoading(false);
 		}
-		setIsLoading(false);
-		setShowSuccess(true);
 	};
 
 	return (
