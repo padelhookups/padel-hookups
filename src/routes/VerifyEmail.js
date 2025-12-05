@@ -38,13 +38,17 @@ export default function VerifyEmail() {
 				email = window.prompt("Please provide your email for confirmation");
 			}
 
+			console.log('isAdmin', isAdmin);
+			console.log('isTester', isTester);
+			
+
 			signInWithEmailLink(auth, email, window.location.href)
 				.then(() => {
 					// Build the signup URL with all necessary parameters
 					const signupParams = new URLSearchParams();
 					if (email) signupParams.set('email', email);
 					if (inviteId) signupParams.set('inviteId', inviteId);
-					if (name) signupParams.set('name', name);
+					if (name) signupParams. set('name', name);
 					if (isAdmin) signupParams.set('isAdmin', isAdmin);
 					if (isTester) signupParams.set('isTester', isTester);
 					
