@@ -1,4 +1,4 @@
-import { getAuth, signInWithEmailLink, isSignInWithEmailLink, sendSignInLinkToEmail } from "firebase/auth";
+import { getAuth, signInWithEmailLink, isSignInWithEmailLink, sendSignInLinkToEmail, onAuthStateChanged } from "firebase/auth";
 import { useNavigate } from "react-router";
 import { useEffect, useRef } from "react";
 
@@ -15,11 +15,7 @@ export default function VerifyEmail() {
 
 		console.log("Verifying email link...");
 
-		if (!isSignInWithEmailLink(auth, window.location.href)) {
-			console.log("Not a Firebase email link");
-			return;
-		}
-
+		// 🔥 Extract URL values now
 		let email;
 		let inviteId;
 		let name;
@@ -44,53 +40,74 @@ export default function VerifyEmail() {
 			}
 		}
 
-		// fallback
+		// 🔥 fallback
 		if (!email) {
-			email = window.localStorage.getItem("emailForSignIn");
+			email = localStorage.getItem("emailForSignIn");
 		}
 
+		// 🔥 Prevent broken flow
 		if (!email) {
-			email = window.prompt("Please confirm your email");
+			alert("Unable to determine email — please restart login.");
+			navigate("/");
+			return;
 		}
 
-		async function processSignin() {
-			try {
-				try {
-					await signInWithEmailLink(auth, email, window.location.href);
+		// 🔥 Build redirect params ONCE
+		const signupParams = new URLSearchParams();
+		signupParams.set("email", email);
+		if (inviteId) signupParams.set("inviteId", inviteId);
+		if (name) signupParams.set("name", name);
+		if (isAdmin) signupParams.set("isAdmin", isAdmin);
+		if (isTester) signupParams.set("isTester", isTester);
 
-					// If succeeded, mark it
-					localStorage.setItem("emailLinkCompleted", "true");
+		const redirectUrl = `/SignUp?${signupParams.toString()}`;
 
-					navigate(`/SignUp?...`);
-				} catch (e) {
-					// If already used or expired
-					if (e.code === "auth/invalid-action-code") {
-						console.warn("Link expired, sending new one...");
-						const actionCodeSettings = {
-							url: `https://padel-hookups.web.app/SignUp?email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}&inviteId=${inviteId}&isAdmin=${isAdmin}&isTester=${isTester}`,
-							handleCodeInApp: true
-						};
-						await sendSignInLinkToEmail(auth, email, actionCodeSettings);
-						alert("Your link expired — a new one has been sent.");
-					}
-				}
+		// 🔥 Wait for Firebase session hydration
+		onAuthStateChanged(auth, async (user) => {
 
-				// Build redirect params
-				const signupParams = new URLSearchParams();
-				if (email) signupParams.set("email", email);
-				if (inviteId) signupParams.set("inviteId", inviteId);
-				if (name) signupParams.set("name", name);
-				if (isAdmin) signupParams.set("isAdmin", isAdmin);
-				if (isTester) signupParams.set("isTester", isTester);
-
-				navigate(`/SignUp?${signupParams}`, { replace: true });
-
-			} catch (err) {
-				console.error("Firebase email link login failed:", err);
+			// If already signed in — skip link handling & go straight forward
+			if (user) {
+				alert("User already authenticated — skipping verification");
+				console.log("User already authenticated — skipping verification");
+				navigate(redirectUrl, { replace: true });
+				return;
 			}
-		}
 
-		processSignin();
+			// 🔥 Validate link now
+			if (!isSignInWithEmailLink(auth, window.location.href)) {
+				alert("Invalid or expired login link.");
+				console.log("Not a Firebase email link");
+				navigate("/");
+				return;
+			}
+
+			// 🔥 Try sign-in
+			try {
+				await signInWithEmailLink(auth, email, window.location.href);
+				localStorage.removeItem("emailForSignIn");
+				localStorage.setItem("emailLinkCompleted", "true");
+
+				console.log("Magic link login success");
+				navigate(redirectUrl, { replace: true });
+
+			} catch (e) {
+				if (e.code === "auth/invalid-action-code") {
+					console.warn("Link expired — resending new one.");
+
+					await sendSignInLinkToEmail(auth, email, {
+						url: redirectUrl,
+						handleCodeInApp: true
+					});
+
+					alert("Your link expired — we emailed you a new one.");
+					navigate("/");
+				} else {
+					console.error("Magic link failed:", e);
+					//alert("Login validation failed. Please restart login.");
+					navigate("/");
+				}
+			}
+		});
 
 	}, [auth, navigate]);
 
