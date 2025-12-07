@@ -67,7 +67,7 @@ export default function VerifyEmail() {
 
 			// If already signed in — skip link handling & go straight forward
 			if (user) {
-				alert("User already authenticated — skipping verification");
+				//alert("User already authenticated — skipping verification");
 				console.log("User already authenticated — skipping verification");
 				navigate(redirectUrl, { replace: true });
 				return;
