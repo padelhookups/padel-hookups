@@ -254,7 +254,7 @@ function SignUp() {
 		<>
 			<Box
 				sx={{
-					minHeight: "100vh",
+					height: "100vh",
 					display: "flex",
 					flexDirection: "column",
 					alignItems: "center",
