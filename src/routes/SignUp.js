@@ -754,7 +754,8 @@ function SignUp() {
 												<Typography
 													variant='caption'
 													sx={{
-														color: "text.secondary"
+														color: "text.secondary",
+														width: '100%'
 													}}>
 													Password must match
 												</Typography>
