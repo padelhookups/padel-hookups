@@ -59,15 +59,18 @@ exports.sendInviteOnCreateUser = onDocumentCreated(
 			await auth.createUser({ email });
 		}
 
-		const actionCodeSettings = {
+		/* const actionCodeSettings = {
 			url: `https://padel-hookups.web.app/SignUp?email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}&inviteId=${snap.id}&isAdmin=${isAdmin}&isTester=${isTester}`,
 			handleCodeInApp: true
-		};
+		}; */
 
-		const link = await auth.generateSignInWithEmailLink(
+		/* const link = await auth.generateSignInWithEmailLink(
 			email,
 			actionCodeSettings
-		);
+		); */
+
+		const link = `https://padel-hookups.web.app/SignUp?email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}&inviteId=${snap.id}&isAdmin=${isAdmin}&isTester=${isTester}`;
+
 
 		logger.info("Link generated for email:", link);
 
