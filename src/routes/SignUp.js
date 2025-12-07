@@ -254,7 +254,7 @@ function SignUp() {
 		<>
 			<Box
 				sx={{
-					height: "100vh",
+					height: "Calc(100vh - 48px)",
 					display: "flex",
 					flexDirection: "column",
 					alignItems: "center",

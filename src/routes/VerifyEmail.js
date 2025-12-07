@@ -1,9 +1,11 @@
 import { getAuth, signInWithEmailLink, isSignInWithEmailLink, sendSignInLinkToEmail, onAuthStateChanged } from "firebase/auth";
+import { doc, getDoc, getFirestore } from "firebase/firestore";
 import { useNavigate } from "react-router";
 import { useEffect, useRef } from "react";
 
 export default function VerifyEmail() {
 	const auth = getAuth();
+	const db = getFirestore();
 	const navigate = useNavigate();
 
 	// Prevent running twice due to React strict mode
@@ -64,6 +66,24 @@ export default function VerifyEmail() {
 
 		// 🔥 Wait for Firebase session hydration
 		onAuthStateChanged(auth, async (user) => {
+
+			if (inviteId) {
+				const inviteRef = doc(db, "Invites", inviteId);
+				const inviteSnap = await getDoc(inviteRef);
+				if (inviteSnap.exists()) {
+					const inviteData = inviteSnap.data();
+
+					if (inviteData.Status === "Confirmed") {
+						console.log("Invite already confirmed — going to Home");
+						navigate("/Home", { replace: true });
+						return;
+					}
+				}
+			}else {
+				console.log("No inviteId present in link.");
+				alert("No inviteId present in link.");
+				return;
+			}
 
 			// If already signed in — skip link handling & go straight forward
 			if (user) {
