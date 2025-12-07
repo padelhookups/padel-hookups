@@ -256,8 +256,6 @@ function SignUp() {
 				sx={{
 					height: "Calc(100vh - 48px)",
 					display: "flex",
-					flexDirection: "column",
-					alignItems: "center",
 					justifyContent: "center",
 					py: 3,
 					px: 2
@@ -282,7 +280,12 @@ function SignUp() {
 										md: "50%", // 50% on medium
 										lg: "50%", // narrower on large screens
 										xl: "50%" // even narrower on extra large
-									}
+									},
+									height: "100%",
+									display: "flex",
+									flexDirection: "row",
+									flexWrap: "wrap",
+									justifyContent: "center",
 								}}>
 								<Box
 									sx={{
