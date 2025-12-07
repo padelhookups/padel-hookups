@@ -251,7 +251,7 @@ function SignUp() {
 
 	/** UI render unchanged */
 	return (
-		<Container fixed>
+		<>
 			<Box
 				sx={{
 					minHeight: "100vh",
@@ -259,7 +259,9 @@ function SignUp() {
 					display: "flex",
 					flexDirection: "column",
 					alignItems: "center",
-					justifyContent: "center"
+					justifyContent: "center",
+					py: 3,
+					px: 2
 				}}
 			>
 				{/* === UI stays unchanged === */}
@@ -880,7 +882,7 @@ function SignUp() {
 				_navigateTo="/Home"
 				_navigate={true}
 			/>
-		</Container>
+		</>
 	);
 }
 
