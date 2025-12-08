@@ -266,136 +266,142 @@ const Profile = () => {
     return "??";
   };
 
-  return (
-    <>
-      <Paper
-        sx={{
-          borderRadius: 0,
-          bgcolor: "white",
-          color: "b88f34",
-          textAlign: "center",
-          pt: "env(safe-area-inset-top, 0px)",
-        }}
-      >
-        <Box sx={{ py: 3, px: 2, position: "relative" }}>
-          <Box sx={{ position: "relative", display: "inline-block" }}>
-            {/* Loading Spinner */}
-            {user?.PhotoURL && imageLoading && !imageError && (
-              <Box
-                sx={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  zIndex: 1,
-                }}
-              >
-                <CircularProgress size={40} />
-              </Box>
-            )}
+	return (
+		<>
+			<Paper
+				sx={{
+					borderRadius: 0,
+					bgcolor: "white",
+					color: "b88f34",
+					textAlign: "center",
+					pt: "env(safe-area-inset-top, 0px)",
+				}}>
+				
+				{/* height less padding */}
+				<Box sx={{ py: 3, px: 2, position: 'relative', height: "Calc(200px - 48px)" }}>
+					<Box sx={{ position: 'relative', display: 'inline-block', height: '70%', }}>
+						{/* Loading Spinner */}
+						{user?.PhotoURL && imageLoading && !imageError && (
+							<Box
+								sx={{
+									position: 'absolute',
+									top: 0,
+									left: 0,
+									right: 0,
+									bottom: 0,
+									display: 'flex',
+									alignItems: 'center',
+									justifyContent: 'center',
+									zIndex: 1,									
+								}}>
+								<CircularProgress size={40} />
+							</Box>
+						)}
+						
+						{/* Avatar with fallback */}
+						<Avatar
+							src={user?.PhotoURL && !imageError ? user.PhotoURL : undefined}
+							sx={{
+								width: 100,
+								height: 100,
+								mx: "auto",
+								mb: 2,
+								fontSize: "2rem",
+								bgcolor: "primary.main",
+								border: '3px solid',
+								borderColor: 'primary.main',
+								opacity: imageLoading && user?.PhotoURL && !imageError ? 0 : 1,
+								transition: 'opacity 0.3s ease-in-out',
+							}}
+							imgProps={{
+								onLoad: () => setImageLoading(false),
+								onError: () => {
+									setImageLoading(false);
+									setImageError(true);
+								}
+							}}>
+							{user?.PhotoURL || getInitials()}
+						</Avatar>
+					</Box>
+					<Box sx={{ mt: 2 }}>
+						<Chip
+							icon={<VerifiedUser />}
+							label={
+								user?.emailVerified
+									? "Email Verified"
+									: "Email Not Verified"
+							}
+							color={user?.emailVerified ? "success" : "warning"}
+							variant='outlined'
+						/>
+					</Box>
+				</Box>
+			</Paper>
+			<Box
+				sx={{
+					p: 3,
+					height: "Calc(100vh - 308px)",
+					overflow: "auto",
+				}}>
 
-            {/* Avatar with fallback */}
-            <Avatar
-              src={user?.PhotoURL && !imageError ? user.PhotoURL : undefined}
-              sx={{
-                width: 100,
-                height: 100,
-                mx: "auto",
-                mb: 2,
-                fontSize: "2rem",
-                bgcolor: "primary.main",
-                border: "3px solid",
-                borderColor: "primary.main",
-                opacity: imageLoading && user?.PhotoURL && !imageError ? 0 : 1,
-                transition: "opacity 0.3s ease-in-out",
-              }}
-              imgProps={{
-                onLoad: () => setImageLoading(false),
-                onError: () => {
-                  setImageLoading(false);
-                  setImageError(true);
-                },
-              }}
-            >
-              {user?.PhotoURL || getInitials()}
-            </Avatar>
-          </Box>
-          <Box sx={{ mt: 2 }}>
-            <Chip
-              icon={<VerifiedUser />}
-              label={
-                user?.emailVerified ? "Email Verified" : "Email Not Verified"
-              }
-              color={user?.emailVerified ? "success" : "warning"}
-              variant="outlined"
-            />
-          </Box>
-        </Box>
-      </Paper>
-      <Box
-        sx={{
-          p: 3,
-          pb: 12,
-          height: "Calc(100vh - 308px)",
-          overflow: "auto",
-        }}
-      >
-        <Typography
-          variant="h5"
-          component="h2"
-          gutterBottom
-          sx={{ fontWeight: "bold" }}
-        >
-          Your Information
-        </Typography>
-        <Card sx={{ mb: 3 }}>
-          <List>
-            <ListItem>
-              <ListItemIcon>
-                <Person />
-              </ListItemIcon>
-              <ListItemText
-                primary="Display Name"
-                secondary={user?.displayName || "Not set"}
-              />
-            </ListItem>
-            <Divider />
-            <ListItem>
-              <ListItemIcon>
-                <Email />
-              </ListItemIcon>
-              <ListItemText primary="Email" secondary={user?.email} />
-            </ListItem>
-            <Divider />
-            <ListItem>
-              <ListItemIcon>
-                <Cake />
-              </ListItemIcon>
-              <ListItemText
-                primary="Date of Birth"
-                secondary={
-                  dateOfBirth ? dateOfBirth?.format("MM/DD/YYYY") : "Not set"
-                }
-              />
-            </ListItem>
-            <Divider />
-            <ListItem>
-              <ListItemIcon>
-                <CalendarToday />
-              </ListItemIcon>
-              <ListItemText
-                primary="Member Since"
-                secondary={
-                  user?.metadata?.creationTime
-                    ? new Date(user.metadata.creationTime).toLocaleDateString()
-                    : "Unknown"
-                }
-              />
-            </ListItem>
+				<Typography
+					variant='h5'
+					component='h2'
+					gutterBottom
+					sx={{ fontWeight: "bold" }}>
+					Your Information
+				</Typography>
+				<Card sx={{ mb: 3 }}>
+					<List>
+						<ListItem>
+							<ListItemIcon>
+								<Person />
+							</ListItemIcon>
+							<ListItemText
+								primary='Display Name'
+								secondary={user?.displayName || "Not set"}
+							/>
+						</ListItem>
+						<Divider />
+						<ListItem>
+							<ListItemIcon>
+								<Email />
+							</ListItemIcon>
+							<ListItemText
+								primary='Email'
+								secondary={user?.email}
+							/>
+						</ListItem>
+						<Divider />
+						<ListItem>
+							<ListItemIcon>
+								<Cake />
+							</ListItemIcon>
+							<ListItemText
+								primary='Date of Birth'
+								secondary={
+									dateOfBirth
+										? dateOfBirth?.format("MM/DD/YYYY")
+										: "Not set"
+								}
+							/>
+						</ListItem>
+						<Divider />
+						<ListItem>
+							<ListItemIcon>
+								<CalendarToday />
+							</ListItemIcon>
+							<ListItemText
+								primary='Member Since'
+								secondary={
+									user?.metadata?.creationTime
+										? new Date(
+											user.metadata.creationTime
+										).toLocaleDateString()
+										: "Unknown"
+								}
+							/>
+						</ListItem>
             <Divider />
             <ListItem>
               <ListItemIcon>
@@ -406,98 +412,93 @@ const Profile = () => {
                 secondary={user?.BestHand || "Not set"}
               />
             </ListItem>
-          </List>
-        </Card>
-        <Button
-          variant="contained"
-          size="large"
-          startIcon={<Edit />}
-          fullWidth
-          sx={{ mt: 2, color: "white" }}
-          onClick={() => setOpen(true)}
-        >
-          <Typography variant="button">Edit Profile</Typography>
-        </Button>
-        <Divider sx={{ my: 4 }} />
-        <Badges earnedBadges={earnedBadges} />
-      </Box>
-      <SwipeableDrawer
-        sx={{ zIndex: 1300 }}
-        anchor="bottom"
-        open={open}
-        onClose={() => setOpen(false)}
-        disableDiscovery
-        disableSwipeToOpen={true}
-        disableBackdropTransition={!iOS}
-        keepMounted
-      >
-        <Puller />
-        <StyledBox sx={{ px: 2, pb: 2, height: "100%", overflow: "auto" }}>
-          <Box
-            component="form"
-            sx={{
-              "& > :not(style)": { mt: 4 },
-              pt: 4,
-              pb: 2,
-              px: 2,
-            }}
-            onSubmit={(e) => {
-              // Let browser handle HTML5 validation first
-              if (!e.target.checkValidity()) {
-                return; // Let browser show validation messages
-              }
-              e.preventDefault();
-              handleUpdateProfile();
-            }}
-          >
-            {/* Photo Upload Section */}
-            <Box sx={{ width: "100%", textAlign: "center" }}>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                style={{ display: "none" }}
-                onChange={handlePhotoSelect}
-              />
-              <Box sx={{ position: "relative", display: "inline-block" }}>
-                <Avatar
-                  src={photoPreview || undefined}
-                  sx={{
-                    width: 120,
-                    height: 120,
-                    mx: "auto",
-                    fontSize: "2.5rem",
-                    bgcolor: "primary.main",
-                    border: "3px solid",
-                    borderColor: "primary.main",
-                  }}
-                >
-                  {!photoPreview && getInitials()}
-                </Avatar>
-                <IconButton
-                  sx={{
-                    position: "absolute",
-                    bottom: 0,
-                    right: 0,
-                    bgcolor: "primary.main",
-                    color: "white",
-                    "&:hover": {
-                      bgcolor: "primary.dark",
-                    },
-                  }}
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <PhotoCamera />
-                </IconButton>
-              </Box>
-              <Typography
-                variant="caption"
-                display="block"
-                sx={{ mt: 1, color: "text.secondary" }}
-              >
-                Click camera icon to upload and adjust photo
-              </Typography>
-            </Box>
+					</List>
+				</Card>
+				<Button
+					variant='contained'
+					size='large'
+					startIcon={<Edit />}
+					fullWidth
+					sx={{ mt: 2, color: "white" }}
+					onClick={() => setOpen(true)}>
+					<Typography variant='button'>Edit Profile</Typography>
+				</Button>
+				<Divider sx={{ my: 4 }} />
+				<Badges earnedBadges={earnedBadges} />
+
+			</Box>
+			<SwipeableDrawer
+				sx={{ zIndex: 1300 }}
+				anchor='bottom'
+				open={open}
+				onClose={() => setOpen(false)}
+				disableDiscovery
+				disableSwipeToOpen={true}
+				disableBackdropTransition={!iOS}
+				keepMounted>
+				<Puller />
+				<StyledBox
+					sx={{ px: 2, pb: 2, height: "100%", overflow: "auto" }}>
+
+					<Box
+						component='form'
+						sx={{
+							"& > :not(style)": { mt: 4 },
+							pt: 4,
+							pb: 2,
+							px: 2
+						}}
+						onSubmit={(e) => {
+							// Let browser handle HTML5 validation first
+							if (!e.target.checkValidity()) {
+								return; // Let browser show validation messages
+							}
+							e.preventDefault();
+							handleUpdateProfile();
+						}}>
+						
+						{/* Photo Upload Section */}
+						<Box sx={{ width: "100%", textAlign: 'center' }}>
+							<input
+								ref={fileInputRef}
+								type="file"
+								accept="image/*"
+								style={{ display: 'none' }}
+								onChange={handlePhotoSelect}
+							/>
+							<Box sx={{ position: 'relative', display: 'inline-block' }}>
+								<Avatar
+									src={photoPreview || undefined}
+									sx={{
+										width: 120,
+										height: 120,
+										mx: "auto",
+										fontSize: "2.5rem",
+										bgcolor: "primary.main",
+										border: '3px solid',
+										borderColor: 'primary.main'
+									}}>
+									{!photoPreview && getInitials()}
+								</Avatar>
+								<IconButton
+									sx={{
+										position: 'absolute',
+										bottom: 0,
+										right: 0,
+										bgcolor: 'primary.main',
+										color: 'white',
+										'&:hover': {
+											bgcolor: 'primary.dark',
+										}
+									}}
+									onClick={() => fileInputRef.current?.click()}>
+									<PhotoCamera />
+								</IconButton>
+							</Box>
+							<Typography variant='caption' display='block' sx={{ mt: 1, color: 'text.secondary' }}>
+								Click camera icon to upload and adjust photo
+							</Typography>
+						</Box>
 
             <Box sx={{ width: "100%" }}>
               <FormControl

@@ -39,6 +39,7 @@ exports.sendInviteOnCreateUser = onDocumentCreated(
 		const email = data.Email;
 		const name = data.Name;
 		const isAdmin = data.IsAdmin || false;
+		const isTester = data.IsTester || false;
 
 		if (!email) {
 			console.error("Email is missing from document.");
@@ -59,7 +60,7 @@ exports.sendInviteOnCreateUser = onDocumentCreated(
 		}
 
 		const actionCodeSettings = {
-			url: `https://padel-hookups.web.app/SignUp?email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}&inviteId=${snap.id}&isAdmin=${isAdmin}`,
+			url: `https://padel-hookups.web.app/SignUp?email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}&inviteId=${snap.id}&isAdmin=${isAdmin}&isTester=${isTester}`,
 			handleCodeInApp: true
 		};
 
@@ -67,6 +68,9 @@ exports.sendInviteOnCreateUser = onDocumentCreated(
 			email,
 			actionCodeSettings
 		);
+
+		/* const link = `https://padel-hookups.web.app/SignUp?email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}&inviteId=${snap.id}&isAdmin=${isAdmin}&isTester=${isTester}`; */
+
 
 		logger.info("Link generated for email:", link);
 

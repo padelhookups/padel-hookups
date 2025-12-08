@@ -93,6 +93,7 @@ const Settings = () => {
 					borderRadius: 0,
 					bgcolor: "#b88f34",
 					color: "white",
+					height: 150,
 					/* Push header below iOS notch */
 					pt: "env(safe-area-inset-top)"
 				}}>
@@ -112,8 +113,8 @@ const Settings = () => {
 			<Box
 				sx={{
 					p: 3,
-					/* Remove huge extra space; container already pads for bottom nav */
-					pb: 12
+					height: "Calc(100vh - 258px)",
+					overflow: "auto",
 				}}>
 				{/* Account Settings */}
 				<Typography
