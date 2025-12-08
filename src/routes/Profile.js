@@ -27,7 +27,12 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Tab
 } from "@mui/material";
+import TabContext from '@mui/lab/TabContext';
+import TabList from '@mui/lab/TabList';
+import TabPanel from '@mui/lab/TabPanel';
+
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 
 import dayjs from "dayjs";
@@ -49,6 +54,8 @@ import SuccessModal from "../components/SuccessModal";
 import ConfirmEditModal from "../components/ConfirmEditModal";
 import Badges from "../components/Badges";
 import PhotoEditor from "../components/PhotoEditor";
+import ProfileDetails from "../components/ProfileDetails";
+import Statistics from "../components/Statistics";
 import { useNavigate } from "react-router";
 
 const iOS =
@@ -94,12 +101,17 @@ const Profile = () => {
   const [originalPhoto, setOriginalPhoto] = useState(null);
   const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
+  const [activeTab, setActiveTab] = useState('0');
   const fileInputRef = useRef(null);
   // Sample earned badges - replace with actual data from Firestore
   const [earnedBadges, setEarnedBadges] = useState([
     "first_match",
     "social_player",
   ]);
+
+  // Add statistics state
+  const [matchesPlayed, setMatchesPlayed] = useState(0);
+  const [tournamentsPlayed, setTournamentsPlayed] = useState(0);
 
   const handleUpdateProfile = () => {
     setEditModalOpen(true);
@@ -342,106 +354,44 @@ const Profile = () => {
           </Box>
         </Box>
       </Paper>
-      <Box
-        sx={{
-          p: 3,
-          height: "Calc(100vh - 308px)",
-          overflow: "auto",
-        }}>
+      <TabContext value={activeTab}>
+        <TabList
+          onChange={(event, newValue) => setActiveTab(newValue)}
+          variant="fullWidth"
+          textColor="primary"
+          indicatorColor="primary"
+        >
+          <Tab label="Details" value="0" />
+          <Tab label="Statistics" value="1" />
+          <Tab label="Badges" value="2" />
+        </TabList>
+        <Box
+          sx={{
+            p: 3,
+            height: "Calc(100vh - 350px)",
+            overflow: "auto",
+          }}>
 
-        <Typography
-          variant='h5'
-          component='h2'
-          gutterBottom
-          sx={{ fontWeight: "bold" }}>
-          Your Information
-        </Typography>
-        <Card sx={{ mb: 3 }}>
-          <List>
-            <ListItem>
-              <ListItemIcon>
-                <Person />
-              </ListItemIcon>
-              <ListItemText
-                primary='Display Name'
-                secondary={user?.displayName || "Not set"}
-              />
-            </ListItem>
-            <Divider />
-            <ListItem>
-              <ListItemIcon>
-                <Email />
-              </ListItemIcon>
-              <ListItemText
-                primary='Email'
-                secondary={user?.email}
-              />
-            </ListItem>
-            <Divider />
-            <ListItem>
-              <ListItemIcon>
-                <Cake />
-              </ListItemIcon>
-              <ListItemText
-                primary='Date of Birth'
-                secondary={
-                  dateOfBirth
-                    ? dateOfBirth?.format("MM/DD/YYYY")
-                    : "Not set"
-                }
-              />
-            </ListItem>
-            <Divider />
-            <ListItem>
-              <ListItemIcon>
-                <CalendarToday />
-              </ListItemIcon>
-              <ListItemText
-                primary='Member Since'
-                secondary={
-                  user?.metadata?.creationTime
-                    ? new Date(
-                      user.metadata.creationTime
-                    ).toLocaleDateString()
-                    : "Unknown"
-                }
-              />
-            </ListItem>
-            <Divider />
-            <ListItem>
-              <ListItemIcon>
-                <WavingHand />
-              </ListItemIcon>
-              <ListItemText
-                primary="Best Hand"
-                secondary={user?.BestHand || "Not set"}
-              />
-            </ListItem>
-            <Divider />
-            <ListItem>
-              <ListItemIcon>
-                <ShowChart />
-              </ListItemIcon>
-              <ListItemText
-                primary="Player Level"
-                secondary={user?.PlayerLevel || "Not set"}
-              />
-            </ListItem>
-          </List>
-        </Card>
-        <Button
-          variant='contained'
-          size='large'
-          startIcon={<Edit />}
-          fullWidth
-          sx={{ mt: 2, color: "white" }}
-          onClick={() => setOpen(true)}>
-          <Typography variant='button'>Edit Profile</Typography>
-        </Button>
-        <Divider sx={{ my: 4 }} />
-        <Badges earnedBadges={earnedBadges} />
+          <TabPanel value="0">
+            <ProfileDetails 
+              user={user} 
+              dateOfBirth={dateOfBirth}
+              onEditClick={() => setOpen(true)} 
+            />
+          </TabPanel>
+          <TabPanel value="1">
+            <Statistics 
+              matchesPlayed={matchesPlayed} 
+              tournamentsPlayed={tournamentsPlayed} 
+            />
+          </TabPanel>
+          <TabPanel value="2">
+            <Badges earnedBadges={earnedBadges} />
+          </TabPanel>
 
-      </Box>
+
+        </Box>
+      </TabContext>
       <SwipeableDrawer
         sx={{ zIndex: 1300 }}
         anchor='bottom'
