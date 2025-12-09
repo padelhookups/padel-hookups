@@ -371,7 +371,6 @@ const Profile = () => {
             height: "Calc(100vh - 350px)",
             overflow: "auto",
           }}>
-
           <TabPanel value="0">
             <ProfileDetails 
               user={user} 
@@ -381,8 +380,7 @@ const Profile = () => {
           </TabPanel>
           <TabPanel value="1">
             <Statistics 
-              matchesPlayed={matchesPlayed} 
-              tournamentsPlayed={tournamentsPlayed} 
+              user={user}
             />
           </TabPanel>
           <TabPanel value="2">
