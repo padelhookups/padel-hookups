@@ -66,7 +66,9 @@ const EventRankings = ({ eventId, tournamentId, wonStatisticsUpdated }) => {
             (p) => p.id === finalRankings[0].id
           );
           console.log("Winning Pair:", pair);
-          await addWonEvent(eventId, pair);
+          if(pair.player1Id || pair.player2Id) {
+            await addWonEvent(eventId, pair);
+          }
         }
 
         setPairs(finalRankings);
