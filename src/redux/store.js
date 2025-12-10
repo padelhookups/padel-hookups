@@ -8,19 +8,21 @@ import storage from 'redux-persist/lib/storage'; // uses localStorage
 import benefitsReducer from './slices/benefitsSlice';
 import eventsReducer from './slices/eventsSlice';
 import usersReducer from './slices/usersSlice';
+import badgesReducer from './slices/badgesSlice';
 
 // 1️⃣ Combine reducers
 const rootReducer = combineReducers({
   benefits: benefitsReducer,
   events: eventsReducer,
   users: usersReducer,
+  badges: badgesReducer,
 });
 
 // 2️⃣ Persist configuration
 const persistConfig = {
   key: 'root',            // key for localStorage/IndexedDB
   storage,                // which storage engine to use
-  whitelist: ['benefits', 'events', 'users'], // persist only benefits (optional)
+  whitelist: ['benefits', 'events', 'users', 'badges'], // persist only these (optional)
   // blacklist: ['events'], // if you ever want to exclude something
 };
 
@@ -46,6 +48,7 @@ export const store = configureStore({
           'benefits/fetchBenefits/fulfilled',
           'events/fetchEvents/fulfilled',
           'users/fetchUsers/fulfilled',
+          'badges/fetchBadges/fulfilled',
         ],
         ignoredPaths: [
           'benefits.items', 
@@ -54,6 +57,8 @@ export const store = configureStore({
           'events.items.ModifiedAt',
           'users.items',
           'users.items.ModifiedAt',
+          'badges.items',
+          'badges.items.ModifiedAt',
         ],
       },
     }),
