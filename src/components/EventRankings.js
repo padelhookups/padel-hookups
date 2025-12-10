@@ -62,7 +62,11 @@ const EventRankings = ({ eventId, tournamentId, wonStatisticsUpdated }) => {
         
         // isFinished is null if stage is completed
         if (isFinished === null && !wonStatisticsUpdated) {
-          await addWonEvent(eventId, finalRankings[0]);
+          const pair = stageData.participant.find(
+            (p) => p.id === finalRankings[0].id
+          );
+          console.log("Winning Pair:", pair);
+          await addWonEvent(eventId, pair);
         }
 
         setPairs(finalRankings);
@@ -106,6 +110,8 @@ const EventRankings = ({ eventId, tournamentId, wonStatisticsUpdated }) => {
     }
 
     const allTeams = Object.values(stats);
+    console.log(allTeams);
+    
 
     // 2️⃣ Criar mini-tabela dos confrontos diretos
     function computeDirectMini(ids) {

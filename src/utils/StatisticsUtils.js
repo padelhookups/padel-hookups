@@ -23,6 +23,25 @@ const StatisticsActions = () => {
 
     const addWonEvent = (eventId, winnerPair) => {
         console.log('addWonEvent', eventId, winnerPair);
+        const eventRef = doc(db, 'Events', eventId);
+        const player1Ref = doc(db, 'Users', winnerPair.player1Id);
+        const player2Ref = doc(db, 'Users', winnerPair.player2Id);
+
+        const batch = writeBatch(db);
+        batch.update(player1Ref, {
+            MixsWon: increment(1),
+            LastModifiedAt: new Date() 
+        });
+        batch.update(player2Ref, {
+            MixsWon: increment(1),
+            LastModifiedAt: new Date() 
+        });
+        
+        batch.update(eventRef, {
+            WonStatisticsUpdated: true,
+            LastModifiedAt: new Date() 
+        });
+        return batch.commit();
     };
 
     return {

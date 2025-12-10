@@ -51,9 +51,13 @@ const useEventActions = () => {
     );
     const manager = new BracketsManager(adapter);
 
+    console.log('pairs', pairs);
+    
     const seeding = pairs.map((pair, i) => ({
       id: i + 1, // manager-side temporary ID
       name: pair.DisplayName, // display name
+      player1Id: pair.Player1Id,
+      player2Id: pair.Player2Id,
     }));
 
     // 4) create stage with seeding set to those participant ids
@@ -352,6 +356,7 @@ const useEventActions = () => {
       TournamentId: null,
       PairsCreated: false,
       TournamentStarted: false,
+      WonStatisticsUpdated: false
     });
   };
 
