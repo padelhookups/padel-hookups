@@ -32,7 +32,7 @@ const StatisticsActions = () => {
       const player1Ref = doc(db, "Users", winnerPair.player1Id);
       batch.update(player1Ref, {
         MixsWon: increment(1),
-        LastModifiedAt: new Date(),
+        ModifiedAt: new Date(),
       });
     }
 
@@ -40,13 +40,13 @@ const StatisticsActions = () => {
       const player2Ref = doc(db, "Users", winnerPair.player2Id);
       batch.update(player2Ref, {
         MixsWon: increment(1),
-        LastModifiedAt: new Date(),
+        ModifiedAt: new Date(),
       });
     }
 
     batch.update(eventRef, {
       WonStatisticsUpdated: true,
-      LastModifiedAt: new Date(),
+      ModifiedAt: new Date(),
     });
     return batch.commit();
   };
