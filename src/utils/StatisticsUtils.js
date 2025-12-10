@@ -21,14 +21,8 @@ const StatisticsActions = () => {
         await batch.commit();
     };
 
-    const addWonEvent = (stats, eventId) => {
-        if (!stats.wonEvents) {
-            stats.wonEvents = [];
-        }
-        if (!stats.wonEvents.includes(eventId)) {
-            stats.wonEvents.push(eventId);
-        }
-        return stats;
+    const addWonEvent = (eventId, winnerPair) => {
+        console.log('addWonEvent', eventId, winnerPair);
     };
 
     return {

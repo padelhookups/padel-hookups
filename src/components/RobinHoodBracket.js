@@ -14,8 +14,6 @@ const RobinHoodBracket = ({ eventId, tournamentId }) => {
   const { user } = useAuth();
 
   const [participants, setParticipants] = useState([]);
-  const [matches, setMatches] = useState([]);
-  const [stage, setStage] = useState(null);
   const [rounds, setRounds] = useState([]);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [emptyBrackets, setEmptyBrackets] = useState(false);
@@ -37,13 +35,13 @@ const RobinHoodBracket = ({ eventId, tournamentId }) => {
       setEmptyBrackets(true);
       return;
     }
-    setStage(stageData[0]); // assuming one stage for round-robin
+    //setStage(stageData[0]); // assuming one stage for round-robin
 
     const participantsData = await adapter.select("participant");
     setParticipants(participantsData);
 
     const matchesData = await adapter.select("match");
-    setMatches(matchesData);
+    //setMatches(matchesData);
 
     const groupedByRound = matchesData.reduce((acc, match) => {
       const roundId = match.round_id || `round-${match.id}`; // fallback if missing
@@ -60,11 +58,6 @@ const RobinHoodBracket = ({ eventId, tournamentId }) => {
     }));
 
     setRounds(tempRounds);
-
-    /* console.log(stageData[0]);
-        console.log(participantsData);
-        console.log(matchesData);
-        console.log(tempRounds); */
   };
 
   if (emptyBrackets) {
@@ -130,8 +123,8 @@ const RobinHoodBracket = ({ eventId, tournamentId }) => {
                   match.opponent1.result === "win"
                     ? match.opponent1.id
                     : match.opponent2.result === "win"
-                    ? match.opponent2.id
-                    : null;
+                      ? match.opponent2.id
+                      : null;
 
                 return (
                   <Paper
@@ -156,7 +149,7 @@ const RobinHoodBracket = ({ eventId, tournamentId }) => {
                       if (user?.IsAdmin) {
                         setSelectedMatch(match);
                         setUploadModalOpen(true);
-                      }else {
+                      } else {
                         alert("Only admins can update scores");
                       }
                     }}
@@ -221,17 +214,17 @@ const RobinHoodBracket = ({ eventId, tournamentId }) => {
                         status === 2
                           ? "Scheduled"
                           : status === 3
-                          ? "In Progress"
-                          : status === 4
-                          ? "Completed"
-                          : "Pending"
+                            ? "In Progress"
+                            : status === 4
+                              ? "Completed"
+                              : "Pending"
                       }
                       color={
                         status === 4
                           ? "success"
                           : status === 3
-                          ? "warning"
-                          : "default"
+                            ? "warning"
+                            : "default"
                       }
                       variant={status === 2 ? "outlined" : "filled"}
                       sx={{ alignSelf: "flex-start", mt: 2 }}

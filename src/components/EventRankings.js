@@ -3,12 +3,13 @@ import { BracketsManager } from "brackets-manager";
 
 import { getFirestore } from "firebase/firestore";
 import { FirestoreAdapter } from "../utils/FirestoreAdapter";
+import StatisticsActions from "../utils/StatisticsUtils";
 
 import { Chip, Container, Stack, Typography, Paper } from "@mui/material";
 
 import Loading from "./Loading";
 
-const EventRankings = ({ eventId, tournamentId }) => {
+const EventRankings = ({ eventId, tournamentId, wonStatisticsUpdated }) => {
   const db = getFirestore();
   const adapter = new FirestoreAdapter(
     db,
@@ -16,6 +17,8 @@ const EventRankings = ({ eventId, tournamentId }) => {
     tournamentId
   );
   const manager = new BracketsManager(adapter);
+
+  const { addWonEvent } = StatisticsActions();
 
   const [allMatches, setAllMatches] = useState([]);
   const [participants, setParticipants] = useState([]);
@@ -25,7 +28,7 @@ const EventRankings = ({ eventId, tournamentId }) => {
 
   useEffect(() => {
     let stageData = {};
-    let winsByParticipant = {};
+
     const fetchTournamentData = async () => {
       try {
         const tournamentData = await manager.get.tournamentData(1);
@@ -52,10 +55,22 @@ const EventRankings = ({ eventId, tournamentId }) => {
           return;
         }
 
+
+        const isFinished = await manager.get.currentStage();
+        console.log("isFinished", isFinished);
+        console.log("wonStatisticsUpdated", wonStatisticsUpdated);
+        
+        // isFinished is null if stage is completed
+        if (isFinished === null && !wonStatisticsUpdated) {
+          await addWonEvent(eventId, finalRankings[0]);
+        }
+
         setPairs(finalRankings);
         setLoading(false);
       } catch (error) {
         alert("Error getting the rankings");
+        console.error(error);
+        
       }
 
     };
