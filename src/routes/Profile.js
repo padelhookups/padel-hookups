@@ -369,7 +369,7 @@ const Profile = () => {
           indicatorColor="primary"
         >
           <Tab label="Details" value="0" />
-          <Tab label="Statistics" value="1" />~
+          <Tab label="Statistics" value="1" />
           {(ShowBadges || user?.IsAdmin) && <Tab label="Badges" value="2" />}
         </TabList>
         <Box
@@ -390,7 +390,7 @@ const Profile = () => {
             <Statistics user={user} />
           </TabPanel>
           <TabPanel value="2">
-            <Badges earnedBadges={user.Badges} ForceRefresh={ForceRefresh} />
+            <Badges earnedBadges={user?.Badges} ForceRefresh={ForceRefresh} />
           </TabPanel>
         </Box>
       </TabContext>

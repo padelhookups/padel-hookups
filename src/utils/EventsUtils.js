@@ -1,6 +1,7 @@
 import { BracketsManager } from "brackets-manager";
 import { FirestoreAdapter } from "./FirestoreAdapter";
 import StatisticsActions from './StatisticsUtils';
+import BadgesActions from "./BadgesUtils";
 
 import {
   addDoc,
@@ -27,6 +28,9 @@ const useEventActions = () => {
   const {
     addPlayedEvent
   } = StatisticsActions();
+  const {
+    addFirstMixPlayedBadge
+  } = BadgesActions();
 
   const createMatchsRobinHood = async (eventId) => {
     const db = getFirestore();
@@ -84,6 +88,7 @@ const useEventActions = () => {
     });
 
     await addPlayedEvent(players);
+    await addFirstMixPlayedBadge(players);
   };
 
   const createMatchsElimination = async (eventId) => {

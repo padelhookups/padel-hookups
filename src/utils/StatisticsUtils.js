@@ -11,10 +11,12 @@ const StatisticsActions = () => {
 
     playerRefs.forEach((playerRef) => {
       // Add the update to the batch
-      batch.update(playerRef, {
-        MixsPlayed: increment(1),
-        LastModifiedAt: new Date(),
-      });
+      if (playerRef.path.startsWith("Users/")) {
+        batch.update(playerRef, {
+          MixsPlayed: increment(1),
+          LastModifiedAt: new Date(),
+        });
+      }
     });
 
     // Commit all updates at once
@@ -26,7 +28,7 @@ const StatisticsActions = () => {
     const eventRef = doc(db, "Events", eventId);
 
     const batch = writeBatch(db);
-    if (winnerPair.player1Id) {
+    if (winnerPair.player1Id && !winnerPair.player1Id.startsWith("guest_")) {
       const player1Ref = doc(db, "Users", winnerPair.player1Id);
       batch.update(player1Ref, {
         MixsWon: increment(1),
@@ -34,7 +36,7 @@ const StatisticsActions = () => {
       });
     }
 
-    if (winnerPair.player2Id) {
+    if (winnerPair.player2Id && !winnerPair.player2Id.startsWith("guest_")) {
       const player2Ref = doc(db, "Users", winnerPair.player2Id);
       batch.update(player2Ref, {
         MixsWon: increment(1),

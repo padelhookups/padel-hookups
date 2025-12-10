@@ -18,6 +18,14 @@ import {
   Typography,
 } from "@mui/material";
 
+const colorsByCategory = {
+  Fun: "#F4C542",
+  Participation: "#10B981",
+  Performance: "#3B82F6",
+  // REGULARIDADE
+  // SOCIAIS
+};
+
 const resolveBadgeIcon = (icon) => {
   if (!icon) return MuiIcons.EmojiEvents;
   if (typeof icon === "string") {
@@ -35,7 +43,7 @@ const Badges = ({ earnedBadges = [], ForceRefresh }) => {
           width: 60,
           height: 60,
           borderRadius: "50%",
-          bgcolor: isEarned ? badge.color : "grey.300",
+          bgcolor: isEarned ? colorsByCategory[badge.Category] : "grey.300",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -121,7 +129,12 @@ const Badges = ({ earnedBadges = [], ForceRefresh }) => {
       <Grid container spacing={2} columns={{ xs: 4, sm: 9, md: 12 }}>
         {badgesByCategory &&
           Object.keys(badgesByCategory).map((category) => {
-			const earnedBadgesList = earnedBadges.filter(badge => badge.Category === category) || [];
+            const earnedBadgesIds = earnedBadges.map((badge) => badge.id);
+            const earnedBadgesForThisCategory = badges.filter(
+              (badge) =>
+                earnedBadgesIds.includes(badge.id) &&
+                badge.Category === category
+            );
 
             return (
               <Box key={category} sx={{ width: "100%", mb: 3 }}>
@@ -131,7 +144,7 @@ const Badges = ({ earnedBadges = [], ForceRefresh }) => {
                 >
                   {category}
                   <Chip
-                    label={`${earnedBadgesList.length}/${badgesByCategory[category].length}`}
+                    label={`${earnedBadgesForThisCategory.length}/${badgesByCategory[category].length}`}
                     color="primary"
                     size="small"
                     sx={{ color: "white", ml: "auto" }}
@@ -139,7 +152,7 @@ const Badges = ({ earnedBadges = [], ForceRefresh }) => {
                 </Typography>
                 <Grid container spacing={2} columns={{ xs: 4, sm: 9, md: 12 }}>
                   {badgesByCategory[category].map((badge) => {
-                    const isEarned = earnedBadges.includes(badge.id);
+                    const isEarned = earnedBadgesIds.includes(badge.id);
                     return (
                       <Grid
                         item
@@ -158,7 +171,7 @@ const Badges = ({ earnedBadges = [], ForceRefresh }) => {
                             p: 2,
                             opacity: isEarned ? 1 : 0.6,
                             border: isEarned
-                              ? `2px solid ${badge.color}`
+                              ? `2px solid ${colorsByCategory[badge.Category]}`
                               : "2px solid transparent",
                             transition: "all 0.3s ease",
                             "&:hover": {
@@ -206,7 +219,7 @@ const Badges = ({ earnedBadges = [], ForceRefresh }) => {
                               size="small"
                               sx={{
                                 mt: 1,
-                                bgcolor: badge.color,
+                                bgcolor: colorsByCategory[badge.Category],
                                 color: "white",
                                 fontSize: "0.65rem",
                                 height: 20,

@@ -55,18 +55,21 @@ const EventRankings = ({ eventId, tournamentId, wonStatisticsUpdated }) => {
           return;
         }
 
-
         const isFinished = await manager.get.currentStage();
         console.log("isFinished", isFinished);
         console.log("wonStatisticsUpdated", wonStatisticsUpdated);
-        
+
         // isFinished is null if stage is completed
         if (isFinished === null && !wonStatisticsUpdated) {
           const pair = stageData.participant.find(
             (p) => p.id === finalRankings[0].id
           );
           console.log("Winning Pair:", pair);
-          if(pair.player1Id || pair.player2Id) {
+          if (
+            (pair.player1Id || pair.player2Id) &&
+            (!pair.player1Id.startsWith("guest_") ||
+              !pair.player2Id.startsWith("guest_"))
+          ) {
             await addWonEvent(eventId, pair);
           }
         }
@@ -76,9 +79,7 @@ const EventRankings = ({ eventId, tournamentId, wonStatisticsUpdated }) => {
       } catch (error) {
         alert("Error getting the rankings");
         console.error(error);
-        
       }
-
     };
     fetchTournamentData();
   }, []);
@@ -113,7 +114,6 @@ const EventRankings = ({ eventId, tournamentId, wonStatisticsUpdated }) => {
 
     const allTeams = Object.values(stats);
     console.log(allTeams);
-    
 
     // 2️⃣ Criar mini-tabela dos confrontos diretos
     function computeDirectMini(ids) {
@@ -173,22 +173,18 @@ const EventRankings = ({ eventId, tournamentId, wonStatisticsUpdated }) => {
           if (match[0].scoreTeam1 !== match[0].scoreTeam2) {
             console.log("Confronto direto:", match[0]);
             if (match[0].scoreTeam1 > match[0].scoreTeam2) {
-              result.push(
-                {
-                  ...group.filter((i) => i.id === match[0].opponent1.id)[0],
-                  miniWins: 1
-                }
-              );
+              result.push({
+                ...group.filter((i) => i.id === match[0].opponent1.id)[0],
+                miniWins: 1,
+              });
               result.push(
                 group.filter((i) => i.id === match[0].opponent2.id)[0]
               );
             } else {
-              result.push(
-                {
-                  ...group.filter((i) => i.id === match[0].opponent2.id)[0],
-                  miniWins: 1
-                }
-              );
+              result.push({
+                ...group.filter((i) => i.id === match[0].opponent2.id)[0],
+                miniWins: 1,
+              });
               result.push(
                 group.filter((i) => i.id === match[0].opponent1.id)[0]
               );
@@ -320,7 +316,7 @@ const EventRankings = ({ eventId, tournamentId, wonStatisticsUpdated }) => {
                   label={`${pair.scoreDiff} Score Diff`}
                   title="Score Difference"
                   size="small"
-                  sx={{ minWidth: '100px' }}
+                  sx={{ minWidth: "100px" }}
                 />
                 {pair.miniWins !== undefined && pair.miniDiff !== undefined ? (
                   <>
