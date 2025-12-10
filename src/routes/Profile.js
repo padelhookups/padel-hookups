@@ -2,6 +2,8 @@ import { useEffect, useState, useRef, use } from "react";
 import { updateProfile } from "firebase/auth";
 import { doc, updateDoc, Timestamp } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { getRemoteConfig, getBoolean } from "firebase/remote-config";
+
 import { getAuth } from "firebase/auth";
 import firebase from "../firebase-config";
 import useAuth from "../utils/useAuth";
@@ -37,11 +39,8 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 
 import dayjs from "dayjs";
 import {
-  Email,
   Person,
   VerifiedUser,
-  CalendarToday,
-  Edit,
   Cake,
   PhotoCamera,
   WavingHand,
@@ -56,6 +55,7 @@ import Badges from "../components/Badges";
 import PhotoEditor from "../components/PhotoEditor";
 import ProfileDetails from "../components/ProfileDetails";
 import Statistics from "../components/Statistics";
+
 import { useNavigate } from "react-router";
 
 const iOS =
@@ -83,6 +83,7 @@ const Profile = () => {
   const db = firebase.db;
   const storage = firebase.storage;
   const auth = getAuth();
+  const remoteConfig = getRemoteConfig();
   const currentUser = auth.currentUser;
   const { user, refreshUser } = useAuth(); // Add refreshUser
   const navigate = useNavigate();
@@ -103,6 +104,11 @@ const Profile = () => {
   const [imageError, setImageError] = useState(false);
   const [activeTab, setActiveTab] = useState('0');
   const fileInputRef = useRef(null);
+
+  const ShowBadges = getBoolean(remoteConfig, "ShowBadges");
+  console.log('ShowBadges:', ShowBadges);
+  
+  
   // Sample earned badges - replace with actual data from Firestore
   const [earnedBadges, setEarnedBadges] = useState([
     "first_match",
@@ -362,8 +368,8 @@ const Profile = () => {
           indicatorColor="primary"
         >
           <Tab label="Details" value="0" />
-          <Tab label="Statistics" value="1" />
-          <Tab label="Badges" value="2" />
+          <Tab label="Statistics" value="1" />~
+		  {ShowBadges && <Tab label="Badges" value="2" /> }
         </TabList>
         <Box
           sx={{
@@ -384,7 +390,7 @@ const Profile = () => {
             />
           </TabPanel>
           <TabPanel value="2">
-            <Badges earnedBadges={earnedBadges} />
+			<Badges earnedBadges={earnedBadges} />
           </TabPanel>
 
 

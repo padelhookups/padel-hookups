@@ -33,6 +33,7 @@ console.log(process.env.NODE_ENV);
 
 if (process.env.NODE_ENV === "production") {
 	getPerformance(app);
+	remoteConfig.settings.minimumFetchIntervalMillis = 3600000;
 } else {
 	remoteConfig.settings.minimumFetchIntervalMillis = 0;
 	await fetchAndActivate(remoteConfig);
