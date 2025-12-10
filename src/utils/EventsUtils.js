@@ -1,5 +1,6 @@
 import { BracketsManager } from "brackets-manager";
 import { FirestoreAdapter } from "./FirestoreAdapter";
+import StatisticsActions from './StatisticsUtils';
 
 import {
   addDoc,
@@ -18,11 +19,14 @@ import {
   getDocs,
 } from "firebase/firestore";
 import useAuth from "../utils/useAuth";
-import { Tour } from "@mui/icons-material";
 
 const useEventActions = () => {
   const { user } = useAuth();
   const db = getFirestore();
+
+  const {
+    addPlayedEvent
+  } = StatisticsActions();
 
   const createMatchsRobinHood = async (eventId) => {
     const db = getFirestore();
@@ -37,6 +41,7 @@ const useEventActions = () => {
     // Get Event to get fresh pairs
     const eventSnap = await getDoc(doc(db, `Events/${eventId}`));
     const pairs = eventSnap.data().Pairs;
+    const players = eventSnap.data().PlayersIds;
 
     // 2️⃣ Create adapter and manager
     const adapter = new FirestoreAdapter(
@@ -46,9 +51,13 @@ const useEventActions = () => {
     );
     const manager = new BracketsManager(adapter);
 
+    console.log('pairs', pairs);
+    
     const seeding = pairs.map((pair, i) => ({
       id: i + 1, // manager-side temporary ID
       name: pair.DisplayName, // display name
+      player1Id: pair.Player1Id,
+      player2Id: pair.Player2Id,
     }));
 
     // 4) create stage with seeding set to those participant ids
@@ -73,6 +82,8 @@ const useEventActions = () => {
       PairsCreated: true,
       TournamentStarted: true,
     });
+
+    await addPlayedEvent(players);
   };
 
   const createMatchsElimination = async (eventId) => {
@@ -187,11 +198,11 @@ const useEventActions = () => {
       ),
       Guests: isGuest
         ? arrayUnion({
-            Name: selectedUser,
-            IsGuest: true,
-            CreatedAt: Timestamp.fromDate(new Date()),
-            UserId: finalUser,
-          })
+          Name: selectedUser,
+          IsGuest: true,
+          CreatedAt: Timestamp.fromDate(new Date()),
+          UserId: finalUser,
+        })
         : arrayRemove(null),
     });
 
@@ -345,6 +356,7 @@ const useEventActions = () => {
       TournamentId: null,
       PairsCreated: false,
       TournamentStarted: false,
+      WonStatisticsUpdated: false
     });
   };
 

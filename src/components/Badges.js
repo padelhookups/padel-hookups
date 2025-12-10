@@ -137,7 +137,7 @@ const Badges = ({ earnedBadges = [] }) => {
 							sx={{ display: "flex"}}>
 							<Card
 								sx={{
-									minHeight: 180,
+									height: 180,
                                     width: "100%",
 									display: "flex",
 									flexDirection: "column",

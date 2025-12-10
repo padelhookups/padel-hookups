@@ -923,7 +923,7 @@ const Event = () => {
           <TabPanel value={tab} index={2}>
             {event.TypeOfTournament === "SecretMix" ? (
               <RobinHoodBracket
-                eventId={event.id}
+                eventId={event.id}                
                 tournamentId={event.TournamentId}
               />
             ) : event.TypeOfTournament !== "SecretMix" ? (
@@ -938,6 +938,7 @@ const Event = () => {
             <EventRankings
               eventId={event.id}
               tournamentId={event.TournamentId}
+              wonStatisticsUpdated={event.WonStatisticsUpdated}
             />
           </TabPanel>
           <ConfirmationModal
