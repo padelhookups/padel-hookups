@@ -31,12 +31,17 @@ const remoteConfig = getRemoteConfig(app);
 const storage = getStorage(app);
 console.log(process.env.NODE_ENV);
 
+remoteConfig.settings = {
+	minimumFetchIntervalMillis:
+		process.env.NODE_ENV === "production" ? 3600000 : 0   // 1h prod, 0 dev
+};
+
+await fetchAndActivate(remoteConfig)
+	.then(() => console.log("Remote Config fetched & activated"))
+	.catch((err) => console.error("RC fetch error:", err));
+
 if (process.env.NODE_ENV === "production") {
 	getPerformance(app);
-	remoteConfig.settings.minimumFetchIntervalMillis = 3600000;
-} else {
-	remoteConfig.settings.minimumFetchIntervalMillis = 0;
-	await fetchAndActivate(remoteConfig);
 }
 
 // Dedup guards for token writes
