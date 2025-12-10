@@ -8,6 +8,7 @@ import { getFirestore, Timestamp } from "firebase/firestore";
 
 import useAuth from "../utils/useAuth";
 import useEventActions from "../utils/EventsUtils";
+import StatisticsActions from "../utils/StatisticsUtils";
 import RobinHoodBracket from "../components/RobinHoodBracket";
 import EliminationsBrackets from "../components/EliminationsBrackets";
 import EventRankings from "../components/EventRankings";
@@ -63,6 +64,12 @@ const Event = () => {
     deleteAllGamesForEvent,
     deletePairFromEvent
   } = useEventActions();
+
+  const {
+    removeMixPlayed
+  } = StatisticsActions();
+
+  
 
   const { eventId: paramEventId } = useParams();
   const eventId = state?.eventId ?? paramEventId;
@@ -242,7 +249,9 @@ const Event = () => {
     }
     // Delete all games logic here
     await deleteAllGamesForEvent(event.id);
-    alert("All games deleted.");
+    await removeMixPlayed(event.PlayersIds);
+    await
+      alert("All games deleted.");
     dispatch(fetchEvents({ db, forceRefresh: false }));
   };
 
@@ -760,7 +769,7 @@ const Event = () => {
                     {event.Pairs.map((pair, index) => {
                       const player1Name = pair.DisplayName.split(" & ")[0];
                       const player2Name = pair.DisplayName.split(" & ")[1];
-                      
+
                       const player1PhotoURL = users.find(
                         (u) =>
                           u.id === pair.Player1Id)?.PhotoURL;
@@ -835,7 +844,7 @@ const Event = () => {
                                   alignItems="center"
                                   spacing={1.25}
                                 >
-                                  
+
                                   <Avatar
                                     src={player1PhotoURL}
                                     sx={{
@@ -923,7 +932,7 @@ const Event = () => {
           <TabPanel value={tab} index={2}>
             {event.TypeOfTournament === "SecretMix" ? (
               <RobinHoodBracket
-                eventId={event.id}                
+                eventId={event.id}
                 tournamentId={event.TournamentId}
               />
             ) : event.TypeOfTournament !== "SecretMix" ? (
