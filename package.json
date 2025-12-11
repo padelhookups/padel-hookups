@@ -20,6 +20,7 @@
     "brackets-viewer": "^1.8.1",
     "dayjs": "^1.11.10",
     "firebase": "^12.0.0",
+    "prettier": "^3.7.4",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-easy-crop": "^5.5.6",

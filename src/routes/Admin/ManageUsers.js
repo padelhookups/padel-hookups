@@ -15,9 +15,11 @@ import ConfirmDeleteModal from "../../components/ConfirmDeleteModal";
 import ConfirmEditModal from "../../components/ConfirmEditModal";
 import SuccessModal from "../../components/SuccessModal";
 import AnimatedPadelIcon from "../../components/AnimatedPadelIcon";
+import AddBadges from "./AddBadges";
 
 import {
 	Box,
+	CircularProgress,
 	Typography,
 	Card,
 	CardContent,
@@ -47,11 +49,11 @@ import {
 	Search,
 	Settings,
 	Edit,
-	Delete
+	Delete,
+	MilitaryTech
 } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
 import { grey } from "@mui/material/colors";
-import CircularProgress from "@mui/material/CircularProgress";
 
 const Puller = styled(Box)(({ theme }) => ({
 	width: 30,
@@ -84,6 +86,7 @@ const ManageUsers = () => {
 	const [editModalOpen, setEditModalOpen] = useState(false);
 	const [selectedUser, setSelectedUser] = useState(null);
 	const [userToDelete, setUserToDelete] = useState(null);
+	const [openAddBadges, setOpenAddBadges] = useState(false);
 	const [successModalOpen, setSuccessModalOpen] = useState(false);
 	const [successModalData, setSuccessModalData] = useState({
 		title: "",
@@ -332,11 +335,24 @@ const ManageUsers = () => {
 													handleEditUser(user)
 												}
 												secondaryAction={
-													<IconButton
-														edge='end'
-														color='primary'>
-														<Settings />
-													</IconButton>
+													<>
+														<IconButton
+															onClick={(ev) => {
+																console.log('badge Action');
+																ev.stopPropagation();
+																ev.preventDefault();
+																setOpenAddBadges(true);
+															}}
+															edge='end'
+															color='primary'>
+															<MilitaryTech />
+														</IconButton>
+														{/* <IconButton
+															edge='end'
+															color='primary'>
+															<Settings />
+														</IconButton> */}
+													</>
 												}>
 												<Box sx={{ position: 'relative', mr: 2 }}>
 													{user.PhotoURL && loadingImages[user.id] && !imageErrors[user.id] && (
@@ -407,20 +423,25 @@ const ManageUsers = () => {
 							</CardContent>
 						</Card>
 					</>
-				)}
+				)
+				}
 
-				{users.length === 0 && (
-					<Alert severity='warning' color='primary' sx={{ mt: 2 }}>
-						No users found. Click the + button to add the first
-						user.
-					</Alert>
-				)}
+				{
+					users.length === 0 && (
+						<Alert severity='warning' color='primary' sx={{ mt: 2 }}>
+							No users found. Click the + button to add the first
+							user.
+						</Alert>
+					)
+				}
 
-				{users.length > 0 && filteredUsers.length === 0 && (
-					<Alert severity='warning' color='primary' sx={{ mt: 2 }}>
-						No users match your search criteria.
-					</Alert>
-				)}
+				{
+					users.length > 0 && filteredUsers.length === 0 && (
+						<Alert severity='warning' color='primary' sx={{ mt: 2 }}>
+							No users match your search criteria.
+						</Alert>
+					)
+				}
 
 				{/* Floating Action Button */}
 				<Fab
@@ -630,7 +651,7 @@ const ManageUsers = () => {
 										control={
 											<Switch
 												checked={newUser.IsTester}
-											 onChange={(e) =>
+												onChange={(e) =>
 													handleNewUserChange(
 														"IsTester",
 														e.target.checked
@@ -895,8 +916,10 @@ const ManageUsers = () => {
 					_description={successModalData.description}
 					_buttonText={successModalData.buttonText}
 				/>
-
-			</Box>
+				{
+					openAddBadges && (<AddBadges onClose={() => setOpenAddBadges(false)} open={openAddBadges} />)
+				}
+			</Box >
 		</>
 	);
 };
