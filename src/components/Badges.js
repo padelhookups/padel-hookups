@@ -18,7 +18,7 @@ import {
   Typography,
 } from "@mui/material";
 
-const colorsByCategory = {
+export const colorsByCategory = {
   Fun: "#F4C542",
   Participation: "#10B981",
   Performance: "#3B82F6",
@@ -26,16 +26,7 @@ const colorsByCategory = {
   // SOCIAIS
 };
 
-const resolveBadgeIcon = (icon) => {
-  if (!icon) return MuiIcons.EmojiEvents;
-  if (typeof icon === "string") {
-    return MuiIcons[icon] || MuiIcons.EmojiEvents;
-  }
-  return icon;
-};
-
-const Badges = ({ earnedBadges = [], ForceRefresh }) => {
-  const BadgeIcon = ({ badge, isEarned }) => {
+export const BadgeIcon = ({ badge, isEarned }) => {
     const IconComponent = resolveBadgeIcon(badge.Icon);
     return (
       <Box
@@ -62,6 +53,15 @@ const Badges = ({ earnedBadges = [], ForceRefresh }) => {
     );
   };
 
+const resolveBadgeIcon = (icon) => {
+  if (!icon) return MuiIcons.EmojiEvents;
+  if (typeof icon === "string") {
+    return MuiIcons[icon] || MuiIcons.EmojiEvents;
+  }
+  return icon;
+};
+
+const Badges = ({ earnedBadges = [], ForceRefresh }) => {
   const db = getFirestore();
   const dispatch = useDispatch();
 
