@@ -31,7 +31,7 @@ const Transition = React.forwardRef(function Transition(props, ref) {
     return <Slide direction="up" ref={ref} {...props} />;
 });
 
-const AddBadges = ({ open, onClose, playerIds }) => {
+const AddBadges = ({ open, onClose, selectedUser }) => {
     const db = getFirestore();
     const remoteConfig = getRemoteConfig();
     const { user } = useAuth();
@@ -42,7 +42,21 @@ const AddBadges = ({ open, onClose, playerIds }) => {
 
     const initialFetchDone = useRef(false);
     const [badgesByCategory, setBadgesByCategory] = useState({});
+    const [selectedBadges, setSelectedBadges] = useState([]);
+    const [existingBadges, setExistingBadges] = useState([]);
 
+
+    useEffect(() => {
+        // Initialize with user's existing badges
+        if (selectedUser && selectedUser.Badges) {
+            const existingBadgeIds = selectedUser.Badges.map(badgeRef => badgeRef.id);
+            setExistingBadges(existingBadgeIds);
+            setSelectedBadges(existingBadgeIds);
+        } else {
+            setExistingBadges([]);
+            setSelectedBadges([]);
+        }
+    }, [selectedUser]);
 
     useEffect(() => {
         console.log(initialFetchDone.current);
@@ -76,22 +90,36 @@ const AddBadges = ({ open, onClose, playerIds }) => {
         setBadgesByCategory(grouped);
     }, [badges]);
 
+    const handleBadgeClick = (badgeId) => {
+        setSelectedBadges((prev) => {
+            if (prev.includes(badgeId)) {
+                return prev.filter(id => id !== badgeId);
+            } else {
+                return [...prev, badgeId];
+            }
+        });
+    };
+
     return (
         <Dialog
             fullWidth={true}
             maxWidth="xl"
-            onClose={() => onClose()}
+            onClose={() => {
+                setSelectedBadges([]);
+                setExistingBadges([]);
+                onClose();
+            }}
             open={open}
             slots={{
                 transition: Transition,
             }}
             keepMounted
         >
-            <DialogTitle>
-                Select Badges to Add
+            <DialogTitle sx={{ textAlign: 'center' }}>
+                {selectedUser ? `Select Badges for ${selectedUser.Name}` : "Select Badges to Add"}
             </DialogTitle>
-            <DialogContent>
-                <Box sx={{ maxHeight: '75%', overflowY: 'auto' }}>
+            <DialogContent sx={{ px: 0 }}>
+                <Box sx={{ maxHeight: '75%', overflowY: 'auto', px: 3 }}>
                     {badgesByCategory &&
                         Object.keys(badgesByCategory).map((category) => {
                             return (
@@ -107,11 +135,12 @@ const AddBadges = ({ open, onClose, playerIds }) => {
                                             return (
                                                 <Grid
                                                     item
-                                                    size={{ xs: 2, sm: 3, md: 2, xl: 1 }}
+                                                    size={{ xs: 2, sm: 3, md: 2, xl: 2 }}
                                                     key={badge.id}
                                                     sx={{ display: "flex" }}
                                                 >
                                                     <Card
+                                                        onClick={() => handleBadgeClick(badge.id)}
                                                         sx={{
                                                             height: 180,
                                                             width: "100%",
@@ -120,15 +149,37 @@ const AddBadges = ({ open, onClose, playerIds }) => {
                                                             alignItems: "center",
                                                             justifyContent: "space-between",
                                                             p: 2,
-                                                            opacity: 1,
-                                                            border: `2px solid ${colorsByCategory[badge.Category]}`,
+                                                            opacity: selectedBadges.includes(badge.id) ? 1 : 0.5,
+                                                            border: selectedBadges.includes(badge.id)
+                                                                ? `3px solid ${colorsByCategory[badge.Category]}`
+                                                                : `2px solid ${colorsByCategory[badge.Category]}`,
                                                             transition: "all 0.3s ease",
+                                                            cursor: "pointer",
+                                                            backgroundColor: selectedBadges.includes(badge.id)
+                                                                ? `${colorsByCategory[badge.Category]}15`
+                                                                : "inherit",
+                                                            position: "relative",
                                                             "&:hover": {
                                                                 transform: "scale(1.05)",
                                                                 boxShadow: 4,
                                                             },
                                                         }}
                                                     >
+                                                        {existingBadges.includes(badge.id) && (
+                                                            <Chip
+                                                                label="Current"
+                                                                size="small"
+                                                                sx={{
+                                                                    position: "absolute",
+                                                                    top: 8,
+                                                                    right: 8,
+                                                                    backgroundColor: colorsByCategory[badge.Category],
+                                                                    color: "white",
+                                                                    fontWeight: "bold",
+                                                                    fontSize: "0.65rem",
+                                                                }}
+                                                            />
+                                                        )}
                                                         <Box
                                                             sx={{
                                                                 display: "flex",
@@ -176,6 +227,8 @@ const AddBadges = ({ open, onClose, playerIds }) => {
                 <Button
                     autoFocus
                     onClick={() => {
+                        setSelectedBadges([]);
+                        setExistingBadges([]);
                         onClose();
                     }}
                 >
@@ -183,11 +236,31 @@ const AddBadges = ({ open, onClose, playerIds }) => {
                 </Button>
                 <Button
                     autoFocus
+                    variant="contained"
+                    disabled={JSON.stringify(selectedBadges.sort()) === JSON.stringify(existingBadges.sort())}
                     onClick={() => {
-                        onClose();
+                        // Calculate badges to add and remove
+                        const badgesToAdd = selectedBadges.filter(id => !existingBadges.includes(id));
+                        const badgesToRemove = existingBadges.filter(id => !selectedBadges.includes(id));
+                        onClose(badgesToAdd, badgesToRemove);
+                        setSelectedBadges([]);
+                        setExistingBadges([]);
                     }}
                 >
-                    Add
+                    <Typography variant="button" sx={{color: '#fff'}}>
+                        Save Changes
+                        {(() => {
+                            const toAdd = selectedBadges.filter(id => !existingBadges.includes(id)).length;
+                            const toRemove = existingBadges.filter(id => !selectedBadges.includes(id)).length;
+                            if (toAdd > 0 || toRemove > 0) {
+                                const parts = [];
+                                if (toAdd > 0) parts.push(`+${toAdd}`);
+                                if (toRemove > 0) parts.push(`-${toRemove}`);
+                                return ` (${parts.join(', ')})`;
+                            }
+                            return '';
+                        })()}
+                    </Typography>
                 </Button>
             </DialogActions>
         </Dialog>

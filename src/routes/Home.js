@@ -655,7 +655,7 @@ const Home = () => {
                 onChange={(e) => setEvtType(e.target.value)}
               >
                 {/* , '📚 Training' */}
-                {["Masters", "SecretMix"].map((t) => (
+                {["Masters", "Mix"].map((t) => (
                   <MenuItem key={t} value={t}>
                     {t}
                   </MenuItem>
