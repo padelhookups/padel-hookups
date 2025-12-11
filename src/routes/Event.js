@@ -366,7 +366,7 @@ const Event = () => {
             <Tab label="Details" />
             <Tab label="Players" />
             <Tab label="Brackets" />
-            {event.TypeOfTournament === "SecretMix" && <Tab label="Rankings" />}
+            {event.TypeOfTournament === "Mix" && <Tab label="Rankings" />}
           </Tabs>
         </Box>
         <Box
@@ -423,11 +423,11 @@ const Event = () => {
                         "&:hover": { bgcolor: "white", color: "primary.main" },
                       }}
                       onClick={async () => {
-                        if (event.TypeOfTournament === "SecretMix") {
+                        if (event.TypeOfTournament === "Mix") {
                           //Register only it self
                           setConfirmation(true);
                           setType("joinGame");
-                        } else if (event.TypeOfTournament !== "SecretMix") {
+                        } else if (event.TypeOfTournament !== "Mix") {
                           // Register in pairs
                           setConfirmation(true);
                           setType("joinGameInPairs");
@@ -483,7 +483,7 @@ const Event = () => {
                   <>
                     <Divider />
                     <Stack spacing={2.5}>
-                      {event.TypeOfTournament === "SecretMix" && (
+                      {event.TypeOfTournament === "Mix" && (
                         <Button
                           variant="outlined"
                           startIcon={<Group />}
@@ -521,7 +521,7 @@ const Event = () => {
                             alert("No players available to create matches.");
                             return;
                           }
-                          if (event.TypeOfTournament === "SecretMix") {
+                          if (event.TypeOfTournament === "Mix") {
                             setConfirmationModalTitle("Create matches?");
                             setType("createMatchesRobinHood");
                             setConfirmation(true);
@@ -534,7 +534,7 @@ const Event = () => {
                           dispatch(fetchEvents({ db, forceRefresh: false }));
                         }}
                       >
-                        {event.TypeOfTournament === "SecretMix"
+                        {event.TypeOfTournament === "Mix"
                           ? "Create Matches"
                           : "Create Groups & Matches"}
                       </Button>
@@ -562,7 +562,7 @@ const Event = () => {
                 <Paper elevation={1}>
                   <Stack spacing={2} sx={{ p: 2 }} direction="column">
                     {/* BOX to drag players and form new pairs */}
-                    {event.TypeOfTournament === "SecretMix" || user?.IsAdmin ? (
+                    {event.TypeOfTournament === "Mix" || user?.IsAdmin ? (
                       <>
                         <Box
                           sx={{
@@ -930,12 +930,12 @@ const Event = () => {
           </TabPanel>
           {/* Brackets */}
           <TabPanel value={tab} index={2}>
-            {event.TypeOfTournament === "SecretMix" ? (
+            {event.TypeOfTournament === "Mix" ? (
               <RobinHoodBracket
                 eventId={event.id}
                 tournamentId={event.TournamentId}
               />
-            ) : event.TypeOfTournament !== "SecretMix" ? (
+            ) : event.TypeOfTournament !== "Mix" ? (
               <EliminationsBrackets
                 eventId={event.id}
                 tournamentId={event.TournamentId}

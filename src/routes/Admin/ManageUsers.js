@@ -7,7 +7,9 @@ import {
 	updateDoc,
 	deleteDoc,
 	doc,
-	Timestamp
+	Timestamp,
+	arrayUnion,
+	arrayRemove
 } from "firebase/firestore";
 import firebase from "../../firebase-config";
 import useAuth from "../../utils/useAuth";
@@ -251,6 +253,60 @@ const ManageUsers = () => {
 		setImageErrors(prev => ({ ...prev, [userId]: true }));
 	};
 
+	const addBadgesToPlayer = async (badgesToAdd, badgesToRemove) => {
+		if (!selectedUser || (!badgesToAdd?.length && !badgesToRemove?.length)) {
+			console.log("No badges to add/remove or no user selected");
+			return;
+		}
+
+		try {
+			// Create a reference to the Users/{selectedUser.id} document
+			const userRef = doc(db, "Users", selectedUser.id);
+			
+			const updates = {
+				LastModifiedAt: Timestamp.now()
+			};
+
+			// Add badges if any
+			if (badgesToAdd && badgesToAdd.length > 0) {
+				const badgeRefsToAdd = badgesToAdd.map(badgeId => doc(db, "Badges", badgeId));
+				updates.Badges = arrayUnion(...badgeRefsToAdd);
+			}
+
+			// Remove badges if any
+			if (badgesToRemove && badgesToRemove.length > 0) {
+				const badgeRefsToRemove = badgesToRemove.map(badgeId => doc(db, "Badges", badgeId));
+				// If we're also adding, we need to do this in two operations
+				if (badgesToAdd && badgesToAdd.length > 0) {
+					await updateDoc(userRef, updates);
+					updates.Badges = arrayRemove(...badgeRefsToRemove);
+				} else {
+					updates.Badges = arrayRemove(...badgeRefsToRemove);
+				}
+			}
+			
+			// Update the Badges array field
+			await updateDoc(userRef, updates);
+
+			const addCount = badgesToAdd?.length || 0;
+			const removeCount = badgesToRemove?.length || 0;
+			const message = [];
+			if (addCount > 0) message.push(`${addCount} badge(s) added`);
+			if (removeCount > 0) message.push(`${removeCount} badge(s) removed`);
+
+			console.log("Badges updated successfully for user:", selectedUser.Name);
+			setSuccessModalData({
+				title: "Badges Updated Successfully!",
+				description: `${message.join(' and ')} for ${selectedUser.Name}.`,
+				buttonText: "Continue"
+			});
+			setSuccessModalOpen(true);
+			fetchUsers();
+		} catch (error) {
+			console.error("Error updating badges for user:", error);
+		}
+	}
+
 	useEffect(() => {
 		// Initialize loading states for users with photos
 		if (users.length > 0) {
@@ -341,6 +397,7 @@ const ManageUsers = () => {
 																console.log('badge Action');
 																ev.stopPropagation();
 																ev.preventDefault();
+																setSelectedUser(user);
 																setOpenAddBadges(true);
 															}}
 															edge='end'
@@ -917,7 +974,19 @@ const ManageUsers = () => {
 					_buttonText={successModalData.buttonText}
 				/>
 				{
-					openAddBadges && (<AddBadges onClose={() => setOpenAddBadges(false)} open={openAddBadges} />)
+					openAddBadges && (
+						<AddBadges
+							onClose={async (badgesToAdd, badgesToRemove) => {
+								if ((badgesToAdd && badgesToAdd.length > 0) || (badgesToRemove && badgesToRemove.length > 0)) {
+									await addBadgesToPlayer(badgesToAdd, badgesToRemove);
+								}
+								setOpenAddBadges(false);
+								setSelectedUser(null);
+							}}
+							open={openAddBadges}
+							selectedUser={selectedUser}
+						/>
+					)
 				}
 			</Box >
 		</>
