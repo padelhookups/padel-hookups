@@ -31,12 +31,23 @@ const remoteConfig = getRemoteConfig(app);
 const storage = getStorage(app);
 console.log(process.env.NODE_ENV);
 
-remoteConfig.settings.minimumFetchIntervalMillis = process.env.NODE_ENV === "production" ? 3600000 : 0   // 1h prod, 0 dev
+remoteConfig.settings = {
+	minimumFetchIntervalMillis:
+		process.env.NODE_ENV === "production" ? 3600000 : 0,
+	fetchTimeoutMillis: 2000, // optional but recommended
+};
 
-await fetchAndActivate(remoteConfig)
-	.then(() => console.log("Remote Config fetched & activated"))
-	.catch((err) => console.error("RC fetch error:", err));
+remoteConfig.defaultConfig = {
+	ShowBadges: false,
+	ForceRefresh: 0,
+};
 
+try {
+	await fetchAndActivate(remoteConfig);
+	console.log("Remote Config fetched & activated");
+} catch (err) {
+	console.error("RC fetch error:", err);
+}
 
 if (process.env.NODE_ENV === "production") {
 	getPerformance(app);
