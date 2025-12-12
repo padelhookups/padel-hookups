@@ -19,7 +19,6 @@ import {
 } from "../redux/slices/eventsSlice";
 
 import {
-  Avatar,
   Box,
   Button,
   CircularProgress,
@@ -243,6 +242,7 @@ const Home = () => {
               bgcolor: "#b88f34",
               color: "white",
               textAlign: "start",
+              height: "125px",
               /* Push header below iOS notch */
               pt: "env(safe-area-inset-top)",
             }}
@@ -266,7 +266,7 @@ const Home = () => {
             sx={{
               px: 0,
               pt: 0,
-              height: "Calc(100vh - 228px)",
+              height: "Calc(100vh - 185px)",
               overflow: "auto",
             }}
           >
@@ -655,7 +655,7 @@ const Home = () => {
                 onChange={(e) => setEvtType(e.target.value)}
               >
                 {/* , '📚 Training' */}
-                {["Masters", "SecretMix"].map((t) => (
+                {["Masters", "Mix"].map((t) => (
                   <MenuItem key={t} value={t}>
                     {t}
                   </MenuItem>

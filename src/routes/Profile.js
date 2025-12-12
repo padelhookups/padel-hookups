@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { updateProfile } from "firebase/auth";
 import { doc, updateDoc, Timestamp } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { getRemoteConfig, getBoolean } from "firebase/remote-config";
+import { getRemoteConfig, getBoolean, getNumber } from "firebase/remote-config";
 
 import { getAuth } from "firebase/auth";
 import firebase from "../firebase-config";
@@ -29,15 +29,16 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Tab
+  Tab,
 } from "@mui/material";
-import TabContext from '@mui/lab/TabContext';
-import TabList from '@mui/lab/TabList';
-import TabPanel from '@mui/lab/TabPanel';
+import TabContext from "@mui/lab/TabContext";
+import TabList from "@mui/lab/TabList";
+import TabPanel from "@mui/lab/TabPanel";
 
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 
 import dayjs from "dayjs";
+import PullToRefresh from 'react-simple-pull-to-refresh';
 import {
   Person,
   VerifiedUser,
@@ -86,7 +87,6 @@ const Profile = () => {
   const remoteConfig = getRemoteConfig();
   const currentUser = auth.currentUser;
   const { user, refreshUser } = useAuth(); // Add refreshUser
-  const navigate = useNavigate();
 
   const [open, setOpen] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -102,23 +102,12 @@ const Profile = () => {
   const [originalPhoto, setOriginalPhoto] = useState(null);
   const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
-  const [activeTab, setActiveTab] = useState('0');
+  const [activeTab, setActiveTab] = useState("0");
   const fileInputRef = useRef(null);
   const imageTimeoutRef = useRef(null);
 
   const ShowBadges = getBoolean(remoteConfig, "ShowBadges");
-  console.log('ShowBadges:', ShowBadges);
-  
-  
-  // Sample earned badges - replace with actual data from Firestore
-  const [earnedBadges, setEarnedBadges] = useState([
-    "first_match",
-    "social_player",
-  ]);
-
-  // Add statistics state
-  const [matchesPlayed, setMatchesPlayed] = useState(0);
-  const [tournamentsPlayed, setTournamentsPlayed] = useState(0);
+  const ForceRefresh = getNumber(remoteConfig, "ForceRefresh");
 
   const handleUpdateProfile = () => {
     setEditModalOpen(true);
@@ -308,52 +297,37 @@ const Profile = () => {
     return "??";
   };
 
+  const onRefresh = async () => {
+    console.log("Pull to refresh triggered");
+    await refreshUser();
+  };
+
   return (
     <>
-      <Paper
-        sx={{
-          borderRadius: 0,
-          bgcolor: "white",
-          color: "b88f34",
-          textAlign: "center",
-          pt: "env(safe-area-inset-top, 0px)",
-        }}>
-
-        {/* height less padding */}
-        <Box sx={{ py: 3, px: 2, position: 'relative', height: "Calc(200px - 48px)" }}>
-          <Box sx={{ position: 'relative', display: 'inline-block', height: '70%', }}>
-            {/* Loading Spinner */}
-            {user?.PhotoURL && imageLoading && !imageError && (
-              <Box
-                sx={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  zIndex: 1,
-                }}>
-                <CircularProgress size={40} />
-              </Box>
-            )}
-
-            {/* Avatar with fallback */}
-            <Avatar
-              src={user?.PhotoURL && !imageError ? user.PhotoURL : undefined}
+      <PullToRefresh onRefresh={onRefresh}>
+        <Paper
+          sx={{
+            borderRadius: 0,
+            bgcolor: "white",
+            color: "b88f34",
+            textAlign: "center",
+            pt: "env(safe-area-inset-top, 0px)",
+          }}
+        >
+          {/* height less padding */}
+          <Box
+            sx={{
+              py: 3,
+              px: 2,
+              position: "relative",
+              height: "Calc(200px - 48px)",
+            }}
+          >
+            <Box
               sx={{
-                width: 100,
-                height: 100,
-                mx: "auto",
-                mb: 2,
-                fontSize: "2rem",
-                bgcolor: "primary.main",
-                border: '3px solid',
-                borderColor: 'primary.main',
-                opacity: imageLoading && user?.PhotoURL && !imageError ? 0 : 1,
-                transition: 'opacity 0.3s ease-in-out',
+                position: "relative",
+                display: "inline-block",
+                height: "70%",
               }}
               imgProps={{
                 onLoad: () => {
@@ -373,75 +347,61 @@ const Profile = () => {
               {!user?.PhotoURL || imageError ? getInitials() : null}
             </Avatar>
           </Box>
-          <Box sx={{ mt: 2 }}>
-            <Chip
-              icon={<VerifiedUser />}
-              label={
-                user?.emailVerified
-                  ? "Email Verified"
-                  : "Email Not Verified"
-              }
-              color={user?.emailVerified ? "success" : "warning"}
-              variant='outlined'
-            />
+        </Paper>
+        <TabContext value={activeTab}>
+          <TabList
+            onChange={(event, newValue) => setActiveTab(newValue)}
+            variant="fullWidth"
+            textColor="primary"
+            indicatorColor="primary"
+          >
+            <Tab label="Details" value="0" />
+            <Tab label="Statistics" value="1" />
+            {(ShowBadges || user?.IsAdmin) && <Tab label="Badges" value="2" />}
+          </TabList>
+          <Box
+            sx={{
+              p: 3,
+              height: "Calc(100vh - 350px)",
+              overflow: "auto",
+            }}
+          >
+            <TabPanel value="0">
+              <ProfileDetails
+                user={user}
+                dateOfBirth={dateOfBirth}
+                onEditClick={() => setOpen(true)}
+              />
+            </TabPanel>
+            <TabPanel value="1">
+              <Statistics user={user} />
+            </TabPanel>
+            <TabPanel value="2">
+              <Badges earnedBadges={user?.Badges} ForceRefresh={ForceRefresh} />
+            </TabPanel>
           </Box>
-        </Box>
-      </Paper>
-      <TabContext value={activeTab}>
-        <TabList
-          onChange={(event, newValue) => setActiveTab(newValue)}
-          variant="fullWidth"
-          textColor="primary"
-          indicatorColor="primary"
-        >
-          <Tab label="Details" value="0" />
-          <Tab label="Statistics" value="1" />~
-		  {ShowBadges && <Tab label="Badges" value="2" /> }
-        </TabList>
-        <Box
-          sx={{
-            p: 3,
-            height: "Calc(100vh - 350px)",
-            overflow: "auto",
-          }}>
-          <TabPanel value="0">
-            <ProfileDetails 
-              user={user} 
-              dateOfBirth={dateOfBirth}
-              onEditClick={() => setOpen(true)} 
-            />
-          </TabPanel>
-          <TabPanel value="1">
-            <Statistics 
-              user={user}
-            />
-          </TabPanel>
-          <TabPanel value="2">
-			<Badges earnedBadges={earnedBadges} />
-          </TabPanel>
-
-
-        </Box>
-      </TabContext>
+        </TabContext>
+      </PullToRefresh>
       <SwipeableDrawer
         sx={{ zIndex: 1300 }}
-        anchor='bottom'
+        anchor="bottom"
         open={open}
         onClose={() => setOpen(false)}
         disableDiscovery
         disableSwipeToOpen={true}
         disableBackdropTransition={!iOS}
-        keepMounted>
+        keepMounted
+      >
         <Puller />
         <StyledBox
           sx={{ px: 2, pb: 2, height: "100%", overflow: "auto" }}>
           <Box
-            component='form'
+            component="form"
             sx={{
               "& > :not(style)": { mt: 4 },
               pt: 4,
               pb: 2,
-              px: 2
+              px: 2,
             }}
             onSubmit={(e) => {
               // Let browser handle HTML5 validation first
@@ -450,18 +410,18 @@ const Profile = () => {
               }
               e.preventDefault();
               handleUpdateProfile();
-            }}>
-
+            }}
+          >
             {/* Photo Upload Section */}
-            <Box sx={{ width: "100%", textAlign: 'center' }}>
+            <Box sx={{ width: "100%", textAlign: "center" }}>
               <input
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
-                style={{ display: 'none' }}
+                style={{ display: "none" }}
                 onChange={handlePhotoSelect}
               />
-              <Box sx={{ position: 'relative', display: 'inline-block' }}>
+              <Box sx={{ position: "relative", display: "inline-block" }}>
                 <Avatar
                   src={photoPreview || undefined}
                   sx={{
@@ -470,27 +430,33 @@ const Profile = () => {
                     mx: "auto",
                     fontSize: "2.5rem",
                     bgcolor: "primary.main",
-                    border: '3px solid',
-                    borderColor: 'primary.main'
-                  }}>
+                    border: "3px solid",
+                    borderColor: "primary.main",
+                  }}
+                >
                   {!photoPreview && getInitials()}
                 </Avatar>
                 <IconButton
                   sx={{
-                    position: 'absolute',
+                    position: "absolute",
                     bottom: 0,
                     right: 0,
-                    bgcolor: 'primary.main',
-                    color: 'white',
-                    '&:hover': {
-                      bgcolor: 'primary.dark',
-                    }
+                    bgcolor: "primary.main",
+                    color: "white",
+                    "&:hover": {
+                      bgcolor: "primary.dark",
+                    },
                   }}
-                  onClick={() => fileInputRef.current?.click()}>
+                  onClick={() => fileInputRef.current?.click()}
+                >
                   <PhotoCamera />
                 </IconButton>
               </Box>
-              <Typography variant='caption' display='block' sx={{ mt: 1, color: 'text.secondary' }}>
+              <Typography
+                variant="caption"
+                display="block"
+                sx={{ mt: 1, color: "text.secondary" }}
+              >
                 Click camera icon to upload and adjust photo
               </Typography>
             </Box>

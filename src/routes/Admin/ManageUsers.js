@@ -7,7 +7,9 @@ import {
 	updateDoc,
 	deleteDoc,
 	doc,
-	Timestamp
+	Timestamp,
+	arrayUnion,
+	arrayRemove
 } from "firebase/firestore";
 import firebase from "../../firebase-config";
 import useAuth from "../../utils/useAuth";
@@ -15,9 +17,11 @@ import ConfirmDeleteModal from "../../components/ConfirmDeleteModal";
 import ConfirmEditModal from "../../components/ConfirmEditModal";
 import SuccessModal from "../../components/SuccessModal";
 import AnimatedPadelIcon from "../../components/AnimatedPadelIcon";
+import AddBadges from "./AddBadges";
 
 import {
 	Box,
+	CircularProgress,
 	Typography,
 	Card,
 	CardContent,
@@ -47,11 +51,11 @@ import {
 	Search,
 	Settings,
 	Edit,
-	Delete
+	Delete,
+	MilitaryTech
 } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
 import { grey } from "@mui/material/colors";
-import CircularProgress from "@mui/material/CircularProgress";
 
 const Puller = styled(Box)(({ theme }) => ({
 	width: 30,
@@ -84,6 +88,7 @@ const ManageUsers = () => {
 	const [editModalOpen, setEditModalOpen] = useState(false);
 	const [selectedUser, setSelectedUser] = useState(null);
 	const [userToDelete, setUserToDelete] = useState(null);
+	const [openAddBadges, setOpenAddBadges] = useState(false);
 	const [successModalOpen, setSuccessModalOpen] = useState(false);
 	const [successModalData, setSuccessModalData] = useState({
 		title: "",
@@ -257,6 +262,60 @@ const ManageUsers = () => {
 		setImageErrors(prev => ({ ...prev, [userId]: true }));
 	};
 
+	const addBadgesToPlayer = async (badgesToAdd, badgesToRemove) => {
+		if (!selectedUser || (!badgesToAdd?.length && !badgesToRemove?.length)) {
+			console.log("No badges to add/remove or no user selected");
+			return;
+		}
+
+		try {
+			// Create a reference to the Users/{selectedUser.id} document
+			const userRef = doc(db, "Users", selectedUser.id);
+			
+			const updates = {
+				LastModifiedAt: Timestamp.now()
+			};
+
+			// Add badges if any
+			if (badgesToAdd && badgesToAdd.length > 0) {
+				const badgeRefsToAdd = badgesToAdd.map(badgeId => doc(db, "Badges", badgeId));
+				updates.Badges = arrayUnion(...badgeRefsToAdd);
+			}
+
+			// Remove badges if any
+			if (badgesToRemove && badgesToRemove.length > 0) {
+				const badgeRefsToRemove = badgesToRemove.map(badgeId => doc(db, "Badges", badgeId));
+				// If we're also adding, we need to do this in two operations
+				if (badgesToAdd && badgesToAdd.length > 0) {
+					await updateDoc(userRef, updates);
+					updates.Badges = arrayRemove(...badgeRefsToRemove);
+				} else {
+					updates.Badges = arrayRemove(...badgeRefsToRemove);
+				}
+			}
+			
+			// Update the Badges array field
+			await updateDoc(userRef, updates);
+
+			const addCount = badgesToAdd?.length || 0;
+			const removeCount = badgesToRemove?.length || 0;
+			const message = [];
+			if (addCount > 0) message.push(`${addCount} badge(s) added`);
+			if (removeCount > 0) message.push(`${removeCount} badge(s) removed`);
+
+			console.log("Badges updated successfully for user:", selectedUser.Name);
+			setSuccessModalData({
+				title: "Badges Updated Successfully!",
+				description: `${message.join(' and ')} for ${selectedUser.Name}.`,
+				buttonText: "Continue"
+			});
+			setSuccessModalOpen(true);
+			fetchUsers();
+		} catch (error) {
+			console.error("Error updating badges for user:", error);
+		}
+	}
+
 	useEffect(() => {
 		// Initialize loading states for users with photos
 		if (users.length > 0) {
@@ -355,11 +414,25 @@ const ManageUsers = () => {
 													handleEditUser(user)
 												}
 												secondaryAction={
-													<IconButton
-														edge='end'
-														color='primary'>
-														<Settings />
-													</IconButton>
+													<>
+														<IconButton
+															onClick={(ev) => {
+																console.log('badge Action');
+																ev.stopPropagation();
+																ev.preventDefault();
+																setSelectedUser(user);
+																setOpenAddBadges(true);
+															}}
+															edge='end'
+															color='primary'>
+															<MilitaryTech />
+														</IconButton>
+														{/* <IconButton
+															edge='end'
+															color='primary'>
+															<Settings />
+														</IconButton> */}
+													</>
 												}>
 												<Box sx={{ position: 'relative', mr: 2 }}>
 													{user.PhotoURL && loadingImages[user.id] && !imageErrors[user.id] && (
@@ -430,20 +503,25 @@ const ManageUsers = () => {
 							</CardContent>
 						</Card>
 					</>
-				)}
+				)
+				}
 
-				{users.length === 0 && (
-					<Alert severity='warning' color='primary' sx={{ mt: 2 }}>
-						No users found. Click the + button to add the first
-						user.
-					</Alert>
-				)}
+				{
+					users.length === 0 && (
+						<Alert severity='warning' color='primary' sx={{ mt: 2 }}>
+							No users found. Click the + button to add the first
+							user.
+						</Alert>
+					)
+				}
 
-				{users.length > 0 && filteredUsers.length === 0 && (
-					<Alert severity='warning' color='primary' sx={{ mt: 2 }}>
-						No users match your search criteria.
-					</Alert>
-				)}
+				{
+					users.length > 0 && filteredUsers.length === 0 && (
+						<Alert severity='warning' color='primary' sx={{ mt: 2 }}>
+							No users match your search criteria.
+						</Alert>
+					)
+				}
 
 				{/* Floating Action Button */}
 				<Fab
@@ -653,7 +731,7 @@ const ManageUsers = () => {
 										control={
 											<Switch
 												checked={newUser.IsTester}
-											 onChange={(e) =>
+												onChange={(e) =>
 													handleNewUserChange(
 														"IsTester",
 														e.target.checked
@@ -918,8 +996,22 @@ const ManageUsers = () => {
 					_description={successModalData.description}
 					_buttonText={successModalData.buttonText}
 				/>
-
-			</Box>
+				{
+					openAddBadges && (
+						<AddBadges
+							onClose={async (badgesToAdd, badgesToRemove) => {
+								if ((badgesToAdd && badgesToAdd.length > 0) || (badgesToRemove && badgesToRemove.length > 0)) {
+									await addBadgesToPlayer(badgesToAdd, badgesToRemove);
+								}
+								setOpenAddBadges(false);
+								setSelectedUser(null);
+							}}
+							open={openAddBadges}
+							selectedUser={selectedUser}
+						/>
+					)
+				}
+			</Box >
 		</>
 	);
 };

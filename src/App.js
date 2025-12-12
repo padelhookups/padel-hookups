@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route } from "react-router";
 
 import firebase from "./firebase-config";
+import { initRemoteConfig } from "./firebase-config";
 import useAuth from "./utils/useAuth";
 import ProtectedRoute from "./utils/ProtectedRoute";
 import { usePWAInstallOrOpen } from "./utils/UsePWAInstallOrOpen";
@@ -61,6 +62,7 @@ function App() {
 			})();
 			el.innerText = (ev.error && ev.error.stack) || ev.message || JSON.stringify(ev); */
 		});
+		initRemoteConfig();
 	}, []);
 
 	useEffect(() => {
