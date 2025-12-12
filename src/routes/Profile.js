@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, use } from "react";
 import { updateProfile } from "firebase/auth";
 import { doc, updateDoc, Timestamp } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -103,8 +103,8 @@ const Profile = () => {
   const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
   const [activeTab, setActiveTab] = useState("0");
+  const [imageKey, setImageKey] = useState(0);
   const fileInputRef = useRef(null);
-  const imageTimeoutRef = useRef(null);
 
   const ShowBadges = getBoolean(remoteConfig, "ShowBadges");
   const ForceRefresh = getNumber(remoteConfig, "ForceRefresh");
@@ -121,22 +121,10 @@ const Profile = () => {
       setBestHand(user?.BestHand || "");
       setPlayerLevel(user?.PlayerLevel || "");
 
-      // Reset image states when user changes
-      if (user?.PhotoURL) {
-        setImageLoading(true);
-        setImageError(false);
-        
-        // Set timeout fallback
-        if (imageTimeoutRef.current) {
-          clearTimeout(imageTimeoutRef.current);
-        }
-        imageTimeoutRef.current = setTimeout(() => {
-          setImageLoading(false);
-          setImageError(true);
-        }, 5000); // 5 second timeout
-      } else {
-        setImageLoading(false);
-      }
+      // Reset image states when user changes or photoURL changes
+      setImageLoading(!!user?.PhotoURL);
+      setImageError(false);
+      setImageKey(prev => prev + 1); // Force Avatar re-render
 
       let dob = null;
       const rawDob = user.DateOfBirth;
@@ -162,14 +150,7 @@ const Profile = () => {
 
       setDateOfBirth(dob);
     }
-
-    // Cleanup timeout on unmount
-    return () => {
-      if (imageTimeoutRef.current) {
-        clearTimeout(imageTimeoutRef.current);
-      }
-    };
-  }, [user]);
+  }, [user, user?.PhotoURL]);
 
   const handlePhotoSelect = (event) => {
     const file = event.target.files?.[0];
@@ -299,7 +280,13 @@ const Profile = () => {
 
   const onRefresh = async () => {
     console.log("Pull to refresh triggered");
-    await refreshUser();
+    try {
+      setImageLoading(true); // Show loading immediately
+      await refreshUser();
+    } catch (error) {
+      console.error("Error refreshing user:", error);
+      setImageLoading(false);
+    }
   };
 
   return (
@@ -329,23 +316,66 @@ const Profile = () => {
                 display: "inline-block",
                 height: "70%",
               }}
-              imgProps={{
-                onLoad: () => {
-                  if (imageTimeoutRef.current) {
-                    clearTimeout(imageTimeoutRef.current);
-                  }
-                  setImageLoading(false);
-                },
-                onError: () => {
-                  if (imageTimeoutRef.current) {
-                    clearTimeout(imageTimeoutRef.current);
-                  }
-                  setImageLoading(false);
-                  setImageError(true);
+            >
+              {/* Loading Spinner */}
+              {user?.PhotoURL && imageLoading && !imageError && (
+                <Box
+                  sx={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    zIndex: 1,
+                  }}
+                >
+                  <CircularProgress size={40} />
+                </Box>
+              )}
+              <Avatar
+                key={imageKey}
+                src={user?.PhotoURL && !imageError ? `${user.PhotoURL}?t=${imageKey}` : undefined}
+                sx={{
+                  width: 100,
+                  height: 100,
+                  mx: "auto",
+                  mb: 2,
+                  fontSize: "2rem",
+                  bgcolor: "primary.main",
+                  border: "3px solid",
+                  borderColor: "primary.main",
+                  opacity: imageLoading && user?.PhotoURL && !imageError ? 0 : 1,
+                  transition: "opacity 0.3s ease-in-out",
+                }}
+                imgProps={{
+                  onLoad: () => {
+                    console.log("Image loaded successfully");
+                    setImageLoading(false);
+                  },
+                  onError: () => {
+                    console.log("Image failed to load");
+                    setImageLoading(false);
+                    setImageError(true);
+                  },
+                }}
+              >
+                {(!user?.PhotoURL || imageError) && getInitials()}
+              </Avatar>
+
+            </Box>
+            <Box sx={{ mt: 2 }}>
+              <Chip
+                icon={<VerifiedUser />}
+                label={
+                  user?.emailVerified ? "Email Verified" : "Email Not Verified"
                 }
-              }}>
-              {!user?.PhotoURL || imageError ? getInitials() : null}
-            </Avatar>
+                color={user?.emailVerified ? "success" : "warning"}
+                variant="outlined"
+              />
+            </Box>
           </Box>
         </Paper>
         <TabContext value={activeTab}>
@@ -393,8 +423,7 @@ const Profile = () => {
         keepMounted
       >
         <Puller />
-        <StyledBox
-          sx={{ px: 2, pb: 2, height: "100%", overflow: "auto" }}>
+        <StyledBox sx={{ px: 2, pb: 2, height: "100%", overflow: "auto" }}>
           <Box
             component="form"
             sx={{
