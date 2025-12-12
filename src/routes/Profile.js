@@ -429,9 +429,9 @@ const Profile = () => {
               <Chip
                 icon={<VerifiedUser />}
                 label={
-                  user?.emailVerified ? "Email Verified" : "Email Not Verified"
+                  user?.EmailVerified ? "Email Verified" : "Email Not Verified"
                 }
-                color={user?.emailVerified ? "success" : "warning"}
+                color={user?.EmailVerified ? "success" : "warning"}
                 variant="outlined"
               />
             </Box>

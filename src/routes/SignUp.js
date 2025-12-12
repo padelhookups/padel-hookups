@@ -228,6 +228,7 @@ function SignUp() {
 				await setDoc(docRef, {
 					Name: name,
 					Email: email,
+					EmailVerified: true,
 					DateOfBirth: dateOfBirth ? dateOfBirth.toISOString() : null,
 					InviteId: inviteId,
 					CreatedAt: new Date(),
