@@ -26,7 +26,7 @@ const ProfileDetails = ({ user, dateOfBirth, onEditClick }) => {
         component='h2'
         gutterBottom
         sx={{ fontWeight: "bold" }}>
-        Your Information
+        {onEditClick ? "Your Information" : "Player Information"}
       </Typography>
       <Card sx={{ mb: 3 }}>
         <List>
@@ -101,15 +101,17 @@ const ProfileDetails = ({ user, dateOfBirth, onEditClick }) => {
           </ListItem>
         </List>
       </Card>
-      <Button
-        variant='contained'
-        size='large'
-        startIcon={<Edit />}
-        fullWidth
-        sx={{ mt: 2, color: "white" }}
-        onClick={onEditClick}>
-        <Typography variant='button'>Edit Profile</Typography>
-      </Button>
+      {onEditClick && (
+        <Button
+          variant='contained'
+          size='large'
+          startIcon={<Edit />}
+          fullWidth
+          sx={{ mt: 2, color: "white" }}
+          onClick={onEditClick}>
+          <Typography variant='button'>Edit Profile</Typography>
+        </Button>
+      )}
     </>
   );
 };

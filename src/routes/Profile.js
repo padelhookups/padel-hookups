@@ -1,6 +1,7 @@
-import { useEffect, useState, useRef, use } from "react";
+import { useEffect, useState, useRef } from "react";
+import { useParams } from "react-router";
 import { updateProfile } from "firebase/auth";
-import { doc, updateDoc, Timestamp } from "firebase/firestore";
+import { doc, updateDoc, Timestamp, getDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { getRemoteConfig, getBoolean, getNumber } from "firebase/remote-config";
 
@@ -10,15 +11,9 @@ import useAuth from "../utils/useAuth";
 import {
   Box,
   Typography,
-  Card,
   Button,
   Avatar,
   Chip,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
-  Divider,
   SwipeableDrawer,
   TextField,
   FormControl,
@@ -57,8 +52,6 @@ import PhotoEditor from "../components/PhotoEditor";
 import ProfileDetails from "../components/ProfileDetails";
 import Statistics from "../components/Statistics";
 
-import { useNavigate } from "react-router";
-
 const iOS =
   typeof navigator !== "undefined" &&
   /iPad|iPhone|iPod/.test(navigator.userAgent);
@@ -81,13 +74,16 @@ const StyledBox = styled("div")(({ theme }) => ({
 }));
 
 const Profile = () => {
+  const { userId } = useParams();
   const db = firebase.db;
   const storage = firebase.storage;
   const auth = getAuth();
   const remoteConfig = getRemoteConfig();
   const currentUser = auth.currentUser;
-  const { user, refreshUser } = useAuth(); // Add refreshUser
+  const { user: currentUserData, refreshUser } = useAuth(); // Add refreshUser
 
+  const [profileUser, setProfileUser] = useState(null);
+  const [loadingProfile, setLoadingProfile] = useState(false);
   const [open, setOpen] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -109,9 +105,43 @@ const Profile = () => {
   const ShowBadges = getBoolean(remoteConfig, "ShowBadges");
   const ForceRefresh = getNumber(remoteConfig, "ForceRefresh");
 
+  // Determine if viewing own profile or another user's
+  const isOwnProfile = !userId || userId === currentUserData?.uid;
+  const user = isOwnProfile ? currentUserData : profileUser;
+
   const handleUpdateProfile = () => {
     setEditModalOpen(true);
   };
+
+  // Fetch other user's profile if userId is provided
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (!userId || userId === currentUserData?.uid) {
+        setProfileUser(null);
+        return;
+      }
+
+      setLoadingProfile(true);
+      try {
+        const userRef = doc(db, "Users", userId);
+        const userDoc = await getDoc(userRef);
+        
+        if (userDoc.exists()) {
+          setProfileUser({ uid: userId, ...userDoc.data() });
+        } else {
+          console.error("User not found");
+          setProfileUser(null);
+        }
+      } catch (error) {
+        console.error("Error fetching user profile:", error);
+        setProfileUser(null);
+      } finally {
+        setLoadingProfile(false);
+      }
+    };
+
+    fetchUserProfile();
+  }, [userId, currentUserData?.uid, db]);
 
   useEffect(() => {
     if (user) {
@@ -282,12 +312,41 @@ const Profile = () => {
     console.log("Pull to refresh triggered");
     try {
       setImageLoading(true); // Show loading immediately
-      await refreshUser();
+      if (isOwnProfile) {
+        await refreshUser();
+      } else {
+        // Re-fetch the profile user
+        const userRef = doc(db, "Users", userId);
+        const userDoc = await getDoc(userRef);
+        if (userDoc.exists()) {
+          setProfileUser({ uid: userId, ...userDoc.data() });
+        }
+        setImageLoading(false);
+      }
     } catch (error) {
       console.error("Error refreshing user:", error);
       setImageLoading(false);
     }
   };
+
+  // Show loading state while fetching other user's profile
+  if (loadingProfile) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  // Show error if user not found
+  if (!isOwnProfile && !profileUser) {
+    return (
+      <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100vh', p: 3 }}>
+        <Typography variant="h6" color="error">User not found</Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>The profile you're looking for doesn't exist.</Typography>
+      </Box>
+    );
+  }
 
   return (
     <>
@@ -400,7 +459,7 @@ const Profile = () => {
               <ProfileDetails
                 user={user}
                 dateOfBirth={dateOfBirth}
-                onEditClick={() => setOpen(true)}
+                onEditClick={isOwnProfile ? () => setOpen(true) : undefined}
               />
             </TabPanel>
             <TabPanel value="1">

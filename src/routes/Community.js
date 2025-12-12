@@ -189,7 +189,16 @@ const Community = () => {
 
                                             return (
                                                 <React.Fragment key={filteredUser.id}>
-                                                    <ListItem sx={{ py: 2 }}>
+                                                    <ListItem 
+                                                        sx={{ 
+                                                            py: 2,
+                                                            cursor: 'pointer',
+                                                            '&:hover': {
+                                                                bgcolor: 'action.hover',
+                                                            }
+                                                        }}
+                                                        onClick={() => navigate(`/Profile/${filteredUser.id}`)}
+                                                    >
                                                         <Box sx={{ position: "relative", mr: 2 }}>
                                                             {/* Image loading spinner */}
                                                             {filteredUser.PhotoURL &&
