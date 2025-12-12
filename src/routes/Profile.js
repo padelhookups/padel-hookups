@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, use } from "react";
+import { useEffect, useState, useRef } from "react";
 import { updateProfile } from "firebase/auth";
 import { doc, updateDoc, Timestamp } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -104,6 +104,7 @@ const Profile = () => {
   const [imageError, setImageError] = useState(false);
   const [activeTab, setActiveTab] = useState("0");
   const fileInputRef = useRef(null);
+  const imageTimeoutRef = useRef(null);
 
   const ShowBadges = getBoolean(remoteConfig, "ShowBadges");
   const ForceRefresh = getNumber(remoteConfig, "ForceRefresh");
@@ -124,6 +125,17 @@ const Profile = () => {
       if (user?.PhotoURL) {
         setImageLoading(true);
         setImageError(false);
+        
+        // Set timeout fallback
+        if (imageTimeoutRef.current) {
+          clearTimeout(imageTimeoutRef.current);
+        }
+        imageTimeoutRef.current = setTimeout(() => {
+          setImageLoading(false);
+          setImageError(true);
+        }, 5000); // 5 second timeout
+      } else {
+        setImageLoading(false);
       }
 
       let dob = null;
@@ -150,6 +162,13 @@ const Profile = () => {
 
       setDateOfBirth(dob);
     }
+
+    // Cleanup timeout on unmount
+    return () => {
+      if (imageTimeoutRef.current) {
+        clearTimeout(imageTimeoutRef.current);
+      }
+    };
   }, [user]);
 
   const handlePhotoSelect = (event) => {
@@ -310,62 +329,23 @@ const Profile = () => {
                 display: "inline-block",
                 height: "70%",
               }}
-            >
-              {/* Loading Spinner */}
-              {user?.PhotoURL && imageLoading && !imageError && (
-                <Box
-                  sx={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    zIndex: 1,
-                  }}
-                >
-                  <CircularProgress size={40} />
-                </Box>
-              )}
-
-              {/* Avatar with fallback */}
-              <Avatar
-                src={user?.PhotoURL && !imageError ? user.PhotoURL : undefined}
-                sx={{
-                  width: 100,
-                  height: 100,
-                  mx: "auto",
-                  mb: 2,
-                  fontSize: "2rem",
-                  bgcolor: "primary.main",
-                  border: "3px solid",
-                  borderColor: "primary.main",
-                  opacity: imageLoading && user?.PhotoURL && !imageError ? 0 : 1,
-                  transition: "opacity 0.3s ease-in-out",
-                }}
-                imgProps={{
-                  onLoad: () => setImageLoading(false),
-                  onError: () => {
-                    setImageLoading(false);
-                    setImageError(true);
-                  },
-                }}
-              >
-                {user?.PhotoURL || getInitials()}
-              </Avatar>
-            </Box>
-            <Box sx={{ mt: 2 }}>
-              <Chip
-                icon={<VerifiedUser />}
-                label={
-                  user?.emailVerified ? "Email Verified" : "Email Not Verified"
+              imgProps={{
+                onLoad: () => {
+                  if (imageTimeoutRef.current) {
+                    clearTimeout(imageTimeoutRef.current);
+                  }
+                  setImageLoading(false);
+                },
+                onError: () => {
+                  if (imageTimeoutRef.current) {
+                    clearTimeout(imageTimeoutRef.current);
+                  }
+                  setImageLoading(false);
+                  setImageError(true);
                 }
-                color={user?.emailVerified ? "success" : "warning"}
-                variant="outlined"
-              />
-            </Box>
+              }}>
+              {!user?.PhotoURL || imageError ? getInitials() : null}
+            </Avatar>
           </Box>
         </Paper>
         <TabContext value={activeTab}>
@@ -413,7 +393,8 @@ const Profile = () => {
         keepMounted
       >
         <Puller />
-        <StyledBox sx={{ px: 2, pb: 2, height: "100%", overflow: "auto" }}>
+        <StyledBox
+          sx={{ px: 2, pb: 2, height: "100%", overflow: "auto" }}>
           <Box
             component="form"
             sx={{

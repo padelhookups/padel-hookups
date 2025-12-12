@@ -3,12 +3,12 @@ import { useDispatch, useSelector } from "react-redux";
 import firebase from "../firebase-config";
 import useAuth from "../utils/useAuth";
 import { collection, addDoc, doc, updateDoc, serverTimestamp } from "firebase/firestore";
-import { 
-  fetchBenefits, 
-  selectBenefits, 
-  selectBenefitsLoading, 
-  selectBenefitsError,
-  invalidateCache 
+import {
+	fetchBenefits,
+	selectBenefits,
+	selectBenefitsLoading,
+	selectBenefitsError,
+	invalidateCache
 } from "../redux/slices/benefitsSlice";
 
 import {
@@ -98,7 +98,7 @@ const Benefits = () => {
 		if (showSuccess) {
 			// Invalidate cache and fetch fresh data
 			console.log("Invalidate cache and fetch fresh benefits data");
-			
+
 			dispatch(invalidateCache());
 			dispatch(fetchBenefits({ db, forceRefresh: true }));
 		}
@@ -106,7 +106,7 @@ const Benefits = () => {
 
 	const handleSubmit = async (e) => {
 		e.preventDefault();
-		
+
 		const newBenefit = {
 			Name: name,
 			Description: description,
@@ -125,7 +125,7 @@ const Benefits = () => {
 				await updateDoc(benefitRef, newBenefit);
 			}
 			console.log("Benefit operation completed:", newBenefit);
-			
+
 			// Clear form fields
 			setName("");
 			setDescription("");
@@ -160,12 +160,13 @@ const Benefits = () => {
 					borderRadius: 0,
 					bgcolor: "#b88f34",
 					color: "white",
+					height: 150,
 					/* Push header below iOS notch */
 					pt: "env(safe-area-inset-top)"
 				}}>
-				<Box sx={{ py: 3, px: 4 }}>
+				<Box sx={{ p: 0 }}>
 					<CardContent
-						sx={{ textAlign: "left", pt: 0, px: 0, pb: 0 }}>
+						sx={{ textAlign: "left", py: 2, px: 3 }}>
 						<Box
 							sx={{
 								display: "flex",
@@ -192,7 +193,7 @@ const Benefits = () => {
 							Save money while improving your padel game with our
 							partner network
 						</Typography>
-						<Box>
+						{/* <Box>
 							<Card
 								sx={{
 									color: "white",
@@ -209,7 +210,7 @@ const Benefits = () => {
 									</Typography>
 								</CardContent>
 							</Card>
-						</Box>
+						</Box> */}
 					</CardContent>
 				</Box>
 			</Paper>
@@ -217,10 +218,10 @@ const Benefits = () => {
 				sx={{
 					px: 0,
 					/* Remove huge extra space; container already pads for bottom nav */
-					maxHeight: 'Calc(100vh - 365px)',
+					height: 'Calc(100vh - 210px)',
 					overflowY: 'auto'
 				}}>
-				<Box sx={{ px: 4, pt: 4, pb: "40px" }}>
+				<Box sx={{ px: 4, pt: 0 }}>
 					{error && (
 						<Box sx={{ mb: 2, p: 2, bgcolor: 'error.light', borderRadius: 1 }}>
 							<Typography color="error">
@@ -228,8 +229,8 @@ const Benefits = () => {
 							</Typography>
 						</Box>
 					)}
-					
-					<Grid container spacing={3}>
+
+					<Grid container spacing={3} sx={{ py: 3 }}>
 						{benefits.map((benefit, index) => (
 							<Grid
 								item

@@ -16,6 +16,7 @@ import Login from "./routes/Login";
 import SignUp from "./routes/SignUp";
 import VerifyEmail from "./routes/VerifyEmail";
 import Home from "./routes/Home";
+import Community from "./routes/Community";
 import Event from "./routes/Event";
 import Profile from "./routes/Profile";
 import Settings from "./routes/Settings";
@@ -132,6 +133,14 @@ function App() {
 							element={
 								<ProtectedRoute user={user}>
 									<Home />
+								</ProtectedRoute>
+							}
+						/>
+						<Route
+							path='/Community'
+							element={
+								<ProtectedRoute user={user}>
+									<Community />
 								</ProtectedRoute>
 							}
 						/>
