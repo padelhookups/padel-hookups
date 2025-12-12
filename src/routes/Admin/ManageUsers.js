@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { updateProfile } from "firebase/auth";
 import {
 	collection,
@@ -105,6 +105,7 @@ const ManageUsers = () => {
 	});
 	const [loadingImages, setLoadingImages] = useState({});
 	const [imageErrors, setImageErrors] = useState({});
+	const loadingTimeoutsRef = useRef({});
 
 	const fetchUsers = useCallback(async () => {
 		try {
@@ -240,10 +241,18 @@ const ManageUsers = () => {
 	};
 
 	const handleImageLoad = (userId) => {
+		if (loadingTimeoutsRef.current[userId]) {
+			clearTimeout(loadingTimeoutsRef.current[userId]);
+			delete loadingTimeoutsRef.current[userId];
+		}
 		setLoadingImages(prev => ({ ...prev, [userId]: false }));
 	};
 
 	const handleImageError = (userId) => {
+		if (loadingTimeoutsRef.current[userId]) {
+			clearTimeout(loadingTimeoutsRef.current[userId]);
+			delete loadingTimeoutsRef.current[userId];
+		}
 		setLoadingImages(prev => ({ ...prev, [userId]: false }));
 		setImageErrors(prev => ({ ...prev, [userId]: true }));
 	};
@@ -251,14 +260,28 @@ const ManageUsers = () => {
 	useEffect(() => {
 		// Initialize loading states for users with photos
 		if (users.length > 0) {
+			// Clear existing timeouts
+			Object.values(loadingTimeoutsRef.current).forEach(timeout => clearTimeout(timeout));
+			loadingTimeoutsRef.current = {};
+
 			const initialLoadingState = {};
 			users.forEach(user => {
 				if (user.PhotoURL) {
 					initialLoadingState[user.id] = true;
+					// Set timeout fallback
+					loadingTimeoutsRef.current[user.id] = setTimeout(() => {
+						setLoadingImages(prev => ({ ...prev, [user.id]: false }));
+						setImageErrors(prev => ({ ...prev, [user.id]: true }));
+					}, 5000);
 				}
 			});
 			setLoadingImages(initialLoadingState);
 		}
+
+		// Cleanup on unmount
+		return () => {
+			Object.values(loadingTimeoutsRef.current).forEach(timeout => clearTimeout(timeout));
+		};
 	}, [users]);
 
 	// Filter users based on search query

@@ -1,7 +1,7 @@
 import React from "react";
 import { useLocation, useNavigate } from "react-router";
 import { BottomNavigation, BottomNavigationAction, Paper } from "@mui/material";
-import { Home, Person, Settings, LocalOffer } from "@mui/icons-material";
+import { Home, Person, Settings, Group } from "@mui/icons-material";
 
 const BottomBar = () => {
 	const location = useLocation();
@@ -14,9 +14,9 @@ const BottomBar = () => {
 			label: "Home"
 		},
 		{
-			path: "/Benefits",
-			icon: <LocalOffer />,
-			label: "Benefits"
+			path: "/Community",
+			icon: <Group />,
+			label: "Community"
 		},
 		{
 			path: "/Profile",

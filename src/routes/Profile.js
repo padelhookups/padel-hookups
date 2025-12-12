@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, use } from "react";
+import { useEffect, useState, useRef } from "react";
 import { updateProfile } from "firebase/auth";
 import { doc, updateDoc, Timestamp } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -104,6 +104,7 @@ const Profile = () => {
   const [imageError, setImageError] = useState(false);
   const [activeTab, setActiveTab] = useState('0');
   const fileInputRef = useRef(null);
+  const imageTimeoutRef = useRef(null);
 
   const ShowBadges = getBoolean(remoteConfig, "ShowBadges");
   console.log('ShowBadges:', ShowBadges);
@@ -135,6 +136,17 @@ const Profile = () => {
       if (user?.PhotoURL) {
         setImageLoading(true);
         setImageError(false);
+        
+        // Set timeout fallback
+        if (imageTimeoutRef.current) {
+          clearTimeout(imageTimeoutRef.current);
+        }
+        imageTimeoutRef.current = setTimeout(() => {
+          setImageLoading(false);
+          setImageError(true);
+        }, 5000); // 5 second timeout
+      } else {
+        setImageLoading(false);
       }
 
       let dob = null;
@@ -161,6 +173,13 @@ const Profile = () => {
 
       setDateOfBirth(dob);
     }
+
+    // Cleanup timeout on unmount
+    return () => {
+      if (imageTimeoutRef.current) {
+        clearTimeout(imageTimeoutRef.current);
+      }
+    };
   }, [user]);
 
   const handlePhotoSelect = (event) => {
@@ -337,13 +356,21 @@ const Profile = () => {
                 transition: 'opacity 0.3s ease-in-out',
               }}
               imgProps={{
-                onLoad: () => setImageLoading(false),
+                onLoad: () => {
+                  if (imageTimeoutRef.current) {
+                    clearTimeout(imageTimeoutRef.current);
+                  }
+                  setImageLoading(false);
+                },
                 onError: () => {
+                  if (imageTimeoutRef.current) {
+                    clearTimeout(imageTimeoutRef.current);
+                  }
                   setImageLoading(false);
                   setImageError(true);
                 }
               }}>
-              {user?.PhotoURL || getInitials()}
+              {!user?.PhotoURL || imageError ? getInitials() : null}
             </Avatar>
           </Box>
           <Box sx={{ mt: 2 }}>
@@ -408,7 +435,6 @@ const Profile = () => {
         <Puller />
         <StyledBox
           sx={{ px: 2, pb: 2, height: "100%", overflow: "auto" }}>
-
           <Box
             component='form'
             sx={{
