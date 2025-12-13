@@ -8,6 +8,7 @@ import {
 } from "../redux/slices/usersSlice";
 import useAuth from "../utils/useAuth";
 import { doc, getFirestore, collection, addDoc, increment, getDocs, query, orderBy, updateDoc, serverTimestamp, arrayUnion, arrayRemove } from "firebase/firestore";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 import {
     Avatar,
@@ -102,11 +103,18 @@ const Community = () => {
     // Admin post creation
     const [openPostDialog, setOpenPostDialog] = useState(false);
     const [newPost, setNewPost] = useState({ content: "", image: "" });
+    const [selectedImage, setSelectedImage] = useState(null);
+    const [imagePreview, setImagePreview] = useState(null);
+    const [uploadingPost, setUploadingPost] = useState(false);
     const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
 
     // News feed data
     const [newsItems, setNewsItems] = useState([]);
     const [loadingNews, setLoadingNews] = useState(true);
+
+    // Likes dialog
+    const [likesDialogOpen, setLikesDialogOpen] = useState(false);
+    const [selectedPostLikes, setSelectedPostLikes] = useState([]);
 
     /** -----------------------------
      *  FETCH USERS ONCE
@@ -203,6 +211,34 @@ const Community = () => {
     };
 
     /** -----------------------------
+     *  IMAGE FILE HANDLING
+     *  ----------------------------- */
+    const handleImageSelect = (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                setSnackbar({ open: true, message: "Please select an image file", severity: "error" });
+                return;
+            }
+
+            setSelectedImage(file);
+
+            // Create preview
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImagePreview(reader.result);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleRemoveImage = () => {
+        setSelectedImage(null);
+        setImagePreview(null);
+    };
+
+    /** -----------------------------
      *  ADMIN - CREATE NEWS POST
      *  ----------------------------- */
     const handleCreatePost = async () => {
@@ -211,19 +247,37 @@ const Community = () => {
             return;
         }
 
-        try {
-            const newsData = {
-                author: user?.Name || "Admin",
-                authorId: user?.uid || "",
-                authorAvatar: user?.PhotoURL || "",
-                content: newPost.content,
-                image: newPost.image || "",
-                CreatedDate: serverTimestamp(),
-                LikedBy: [], // Initialize empty array for user IDs who liked the post
-                comments: 0,
-            };
+        setUploadingPost(true);
 
-            await addDoc(collection(db, "News"), newsData);
+        try {
+            let imageUrl = "";
+
+            // Create a temporary document to get the ID
+            const tempNewsRef = await addDoc(collection(db, "News"), {
+                Author: doc(db, "Users", user.uid),
+                Body: newPost.content,
+                Image: "",
+                CreatedDate: new Date(),
+                LikedBy: [],
+                Likes: 0,
+                Comments: 0,
+            });
+
+            const newPostId = tempNewsRef.id;
+
+            // Upload image if selected
+            if (selectedImage) {
+                const storage = getStorage();
+                const imageRef = ref(storage, `News/${newPostId}/${selectedImage.name}`);
+                
+                await uploadBytes(imageRef, selectedImage);
+                imageUrl = await getDownloadURL(imageRef);
+
+                // Update the document with the image URL
+                await updateDoc(tempNewsRef, {
+                    Image: imageUrl
+                });
+            }
 
             // Refresh news list
             const newsQuery = query(
@@ -268,9 +322,13 @@ const Community = () => {
             setSnackbar({ open: true, message: "News posted successfully!", severity: "success" });
             setOpenPostDialog(false);
             setNewPost({ content: "", image: "" });
+            setSelectedImage(null);
+            setImagePreview(null);
         } catch (error) {
             console.error("Error creating post:", error);
             setSnackbar({ open: true, message: "Failed to create post", severity: "error" });
+        } finally {
+            setUploadingPost(false);
         }
     };
 
@@ -310,6 +368,20 @@ const Community = () => {
             console.error("Error updating likes:", error);
             setSnackbar({ open: true, message: "Failed to update like", severity: "error" });
         }
+    };
+
+    const handleShowLikes = (likedByIds) => {
+        if (!likedByIds || likedByIds.length === 0) {
+            return;
+        }
+
+        // Map user IDs to user objects
+        const likedByUsers = likedByIds
+            .map(userId => users.find(u => u.id === userId))
+            .filter(user => user); // Filter out undefined
+
+        setSelectedPostLikes(likedByUsers);
+        setLikesDialogOpen(true);
     };
 
     return (
@@ -527,7 +599,15 @@ const Community = () => {
                                                 color={isLiked ? "primary" : "default"}>
                                                 <FavoriteBorder />
                                             </IconButton>
-                                            <Typography variant="body2" color="text.secondary">
+                                            <Typography 
+                                                variant="body2" 
+                                                color="text.secondary"
+                                                onClick={() => handleShowLikes(item.LikedBy)}
+                                                sx={{ 
+                                                    cursor: item.Likes > 0 ? 'pointer' : 'default',
+                                                    '&:hover': item.Likes > 0 ? { textDecoration: 'underline' } : {}
+                                                }}
+                                            >
                                                 {item.Likes}
                                             </Typography>
                                             {/* <IconButton aria-label="comment" sx={{ ml: 2 }}>
@@ -570,7 +650,14 @@ const Community = () => {
             {/* Create Post Dialog */}
             <Dialog
                 open={openPostDialog}
-                onClose={() => setOpenPostDialog(false)}
+                onClose={() => {
+                    if (!uploadingPost) {
+                        setOpenPostDialog(false);
+                        setNewPost({ content: "", image: "" });
+                        setSelectedImage(null);
+                        setImagePreview(null);
+                    }
+                }}
                 maxWidth="sm"
                 fullWidth
             >
@@ -586,23 +673,134 @@ const Community = () => {
                         variant="outlined"
                         value={newPost.content}
                         onChange={(e) => setNewPost({ ...newPost, content: e.target.value })}
+                        disabled={uploadingPost}
                         sx={{ mt: 2 }}
                     />
-                    <TextField
-                        margin="dense"
-                        label="Image URL (optional)"
-                        fullWidth
-                        variant="outlined"
-                        value={newPost.image}
-                        onChange={(e) => setNewPost({ ...newPost, image: e.target.value })}
-                        sx={{ mt: 2 }}
-                    />
+                    
+                    <Box sx={{ mt: 2 }}>
+                        <input
+                            accept="image/*"
+                            style={{ display: 'none' }}
+                            id="post-image-upload"
+                            type="file"
+                            onChange={handleImageSelect}
+                            disabled={uploadingPost}
+                        />
+                        <label htmlFor="post-image-upload">
+                            <Button
+                                variant="outlined"
+                                component="span"
+                                disabled={uploadingPost}
+                                fullWidth
+                            >
+                                {selectedImage ? "Change Image" : "Upload Image (Optional)"}
+                            </Button>
+                        </label>
+                    </Box>
+
+                    {imagePreview && (
+                        <Box sx={{ mt: 2, position: 'relative' }}>
+                            <CardMedia
+                                component="img"
+                                height="200"
+                                image={imagePreview}
+                                alt="Preview"
+                                sx={{ borderRadius: 1 }}
+                            />
+                            {!uploadingPost && (
+                                <IconButton
+                                    sx={{
+                                        position: 'absolute',
+                                        top: 8,
+                                        right: 8,
+                                        bgcolor: 'rgba(0, 0, 0, 0.6)',
+                                        '&:hover': {
+                                            bgcolor: 'rgba(0, 0, 0, 0.8)',
+                                        },
+                                    }}
+                                    onClick={handleRemoveImage}
+                                >
+                                    <Typography color="white" sx={{ fontSize: 20 }}>×</Typography>
+                                </IconButton>
+                            )}
+                        </Box>
+                    )}
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setOpenPostDialog(false)}>Cancel</Button>
-                    <Button onClick={handleCreatePost} variant="contained" sx={{ bgcolor: "#b88f34" }}>
-                        Post
+                    <Button onClick={() => {
+                        setOpenPostDialog(false);
+                        setNewPost({ content: "", image: "" });
+                        setSelectedImage(null);
+                        setImagePreview(null);
+                    }} disabled={uploadingPost}>
+                        Cancel
                     </Button>
+                    <Button 
+                        onClick={handleCreatePost} 
+                        variant="contained" 
+                        sx={{ bgcolor: "#b88f34" }}
+                        disabled={uploadingPost}
+                    >
+                        {uploadingPost ? (
+                            <CircularProgress size={24} color="inherit" />
+                        ) : (
+                            <Typography variant="button" color="white">Post</Typography>
+                        )}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Likes Dialog */}
+            <Dialog
+                open={likesDialogOpen}
+                onClose={() => setLikesDialogOpen(false)}
+                maxWidth="xs"
+                fullWidth
+            >
+                <DialogTitle>Liked by</DialogTitle>
+                <DialogContent>
+                    {selectedPostLikes.length === 0 ? (
+                        <Typography color="text.secondary" align="center">
+                            No likes yet
+                        </Typography>
+                    ) : (
+                        <List sx={{ pt: 0 }}>
+                            {selectedPostLikes.map((likedUser, index) => (
+                                <React.Fragment key={likedUser.id}>
+                                    <ListItem
+                                        sx={{
+                                            cursor: 'pointer',
+                                            '&:hover': {
+                                                bgcolor: 'action.hover',
+                                            }
+                                        }}
+                                        onClick={() => {
+                                            setLikesDialogOpen(false);
+                                            navigate(`/Profile/${likedUser.id}`);
+                                        }}
+                                    >
+                                        <Avatar
+                                            src={likedUser.PhotoURL || undefined}
+                                            sx={{ bgcolor: "#b88f34", mr: 2 }}
+                                        >
+                                            {!likedUser.PhotoURL && <Person />}
+                                        </Avatar>
+                                        <ListItemText
+                                            primary={
+                                                <Typography variant="body1" fontWeight="bold">
+                                                    {likedUser.Name || "Unknown User"}
+                                                </Typography>
+                                            }
+                                        />
+                                    </ListItem>
+                                    {index < selectedPostLikes.length - 1 && <Divider />}
+                                </React.Fragment>
+                            ))}
+                        </List>
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setLikesDialogOpen(false)}>Close</Button>
                 </DialogActions>
             </Dialog>
 
