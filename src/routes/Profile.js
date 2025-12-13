@@ -33,6 +33,9 @@ import TabPanel from "@mui/lab/TabPanel";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 
 import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
+
 import PullToRefresh from 'react-simple-pull-to-refresh';
 import {
   Person,
@@ -51,6 +54,10 @@ import Badges from "../components/Badges";
 import PhotoEditor from "../components/PhotoEditor";
 import ProfileDetails from "../components/ProfileDetails";
 import Statistics from "../components/Statistics";
+
+// Configure dayjs plugins
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 const iOS =
   typeof navigator !== "undefined" &&
@@ -163,15 +170,15 @@ const Profile = () => {
         try {
           // If it's a Firestore Timestamp
           if (typeof rawDob.toDate === "function") {
-            dob = dayjs(rawDob.toDate());
+            dob = dayjs(rawDob.toDate()).local();
           }
           // If it's a Firestore Timestamp-like object
           else if (rawDob.seconds) {
-            dob = dayjs(new Date(rawDob.seconds * 1000));
+            dob = dayjs(new Date(rawDob.seconds * 1000)).local();
           }
           // If it's a string (ISO or MM/DD/YYYY)
           else if (typeof rawDob === "string") {
-            dob = dayjs(rawDob);
+            dob = dayjs(rawDob).local();
           }
         } catch (err) {
           console.error("Invalid DateOfBirth:", err);
