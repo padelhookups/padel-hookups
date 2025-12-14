@@ -36,17 +36,7 @@ const ProfileDetails = ({ user, dateOfBirth, onEditClick }) => {
             </ListItemIcon>
             <ListItemText
               primary='Display Name'
-              secondary={user?.displayName || "Not set"}
-            />
-          </ListItem>
-          <Divider />
-          <ListItem>
-            <ListItemIcon>
-              <Email />
-            </ListItemIcon>
-            <ListItemText
-              primary='Email'
-              secondary={user?.email}
+              secondary={user?.Name || "Not set"}
             />
           </ListItem>
           <Divider />
@@ -58,7 +48,7 @@ const ProfileDetails = ({ user, dateOfBirth, onEditClick }) => {
               primary='Date of Birth'
               secondary={
                 dateOfBirth
-                  ? dateOfBirth?.format("MM/DD/YYYY")
+                  ? (dateOfBirth?.toDate?.() || dateOfBirth)?.toLocaleDateString()
                   : "Not set"
               }
             />
