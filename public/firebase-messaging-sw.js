@@ -36,8 +36,8 @@ messaging.onBackgroundMessage((payload) => {
   const notificationOptions = {
     body: payload.data?.body || "",
     // Use provided icon (data.icon) or a valid default. Ensure this file exists in /public.
-    icon: payload.data?.icon || "/android-chrome-192x192.png",
-    badge: payload.data?.badge || "/android-chrome-192x192.png",
+    icon: "/android-chrome-192x192.png",
+    badge: "/android-chrome-96x96.png",
   };
 
   self.registration.showNotification(notificationTitle, notificationOptions);
