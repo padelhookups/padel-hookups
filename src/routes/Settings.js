@@ -54,6 +54,8 @@ const Settings = () => {
 				if (snap.exists()) {
 					const devices = snap.data().Devices || [];
 					Object.values(devices).forEach((device) => {
+						alert("Checking device:", device);
+						alert("Current messagingToken:", messagingToken);
 						if (device.Token === messagingToken) {
 							setNotificationsChecked(
 								Boolean(device.SendNotifications)
