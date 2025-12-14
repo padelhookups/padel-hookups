@@ -73,7 +73,7 @@ const Settings = () => {
 			if (user) {
 				const userRef = doc(db, "Users", user.uid);
 				const tokenToDelete = localStorage.getItem("messagingToken");
-				
+
 				if (tokenToDelete) {
 					const snap = await getDoc(userRef);
 					if (snap.exists()) {
@@ -102,6 +102,10 @@ const Settings = () => {
 	const handleMyDevices = () => {
 		navigate("/MyDevices");
 	};
+
+	const goToNotificationPreferences = () => {
+		navigate("/NotificationPreferences");
+	}
 
 	return (
 		<>
@@ -211,9 +215,22 @@ const Settings = () => {
 								}}
 							/>
 						</ListItem>
-
 						<Divider />
-
+						<ListItem>
+							<ListItemText
+								sx={{ width: "95%", flex: "unset !important" }}
+								primary='Type of Notifications'
+								secondary='View and manage which notifications you receive'
+							/>
+							<Button
+								sx={{ ml: "auto" }}
+								variant='outlined'
+								startIcon={<Devices />}
+								onClick={goToNotificationPreferences}>
+								Open
+							</Button>
+						</ListItem>
+						<Divider />
 						<ListItem>
 							<ListItemText
 								sx={{ width: "95%", flex: "unset !important" }}

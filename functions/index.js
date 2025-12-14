@@ -144,6 +144,14 @@ exports.sendBirthdayNotifications = onSchedule(
 		const tokenRefs = []; // keep references for cleanup
 
 		for (const userDoc of snapshot.docs) {
+			const userData = userDoc.data();
+			const birthdayEnabled = userData.NotificationPrefs?.Birthdays || false;
+
+			// 🚫 User opted out
+			if (!birthdayEnabled) {
+				continue;
+			}
+
 			const devices = userDoc.data()?.Devices || {};
 
 			for (const [deviceId, device] of Object.entries(devices)) {
@@ -196,12 +204,131 @@ exports.sendBirthdayNotifications = onSchedule(
 						`Deleting invalid token for user ${userId}, device ${deviceId}`
 					);
 
-					const deviceRef = db
-						.collection("Users")
-						.doc(userId)
-						.update({
+					batch.update(
+						db.collection("Users").doc(userId),
+						{
 							[`Devices.${deviceId}`]: FieldValue.delete(),
-						});
+						}
+					);
+
+					deletedCount++;
+				}
+			}
+		});
+
+		if (deletedCount > 0) {
+			await batch.commit();
+			console.log(`Deleted ${deletedCount} invalid tokens`);
+		} else {
+			console.log("No invalid tokens found");
+		}
+
+		console.log(
+			`${response.successCount} messages sent successfully`
+		);
+	}
+);
+
+exports.sendNewsNotifications = onDocumentCreated(
+	{ region: "europe-west1", document: "/News/{newsId}" },
+	async (event) => {
+		const snap = event.data;
+		if (!snap) {
+			console.error("No data in document.");
+			return;
+		}
+
+		const newsData = snap.data();
+		const title = newsData.Title || "New Post!";
+		const body = newsData.Description || "Check out the latest news!";
+
+		console.log(`New news item created: ${title}`);
+
+		const db = getFirestore();
+		const messaging = getMessaging();
+
+		// Get all users
+		const usersSnapshot = await db.collection("Users").get();
+
+		if (usersSnapshot.empty) {
+			console.log("No users found.");
+			return;
+		}
+
+		const messages = [];
+		const tokenRefs = []; // keep references for cleanup
+
+		for (const userDoc of usersSnapshot.docs) {
+			const userData = userDoc.data();
+			const newsEnabled = userData.NotificationPrefs?.Community_News || false;
+
+			// 🚫 User opted out
+			if (!newsEnabled) {
+				continue;
+			}
+
+			const devices = userDoc.data()?.Devices || {};
+
+			for (const [deviceId, device] of Object.entries(devices)) {
+				if (device?.Token && device?.SendNotifications) {
+					messages.push({
+						token: device.Token,
+						data: {
+							title: title,
+							body: body,
+							click_action: "/Community",
+						},
+						webpush: {
+							headers: {
+								Urgency: "high",
+							},
+							fcmOptions: {
+								link: "https://padel-hookups.web.app/Community",
+							},
+						},
+					});
+
+					tokenRefs.push({
+						userId: userDoc.id,
+						deviceId,
+						token: device.Token,
+					});
+				}
+			}
+		}
+
+		if (messages.length === 0) {
+			console.log("No messages to send.");
+			return;
+		}
+
+		console.log(`Sending ${messages.length} news notifications`);
+
+		const response = await messaging.sendEach(messages);
+
+		const batch = db.batch();
+		let deletedCount = 0;
+
+		response.responses.forEach((res, index) => {
+			if (!res.success) {
+				const errorCode = res.error?.code;
+
+				if (
+					errorCode === "messaging/registration-token-not-registered" ||
+					errorCode === "messaging/invalid-registration-token"
+				) {
+					const { userId, deviceId } = tokenRefs[index];
+
+					console.log(
+						`Deleting invalid token for user ${userId}, device ${deviceId}`
+					);
+
+					batch.update(
+						db.collection("Users").doc(userId),
+						{
+							[`Devices.${deviceId}`]: FieldValue.delete(),
+						}
+					);
 
 					deletedCount++;
 				}

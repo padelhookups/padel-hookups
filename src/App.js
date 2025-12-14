@@ -25,6 +25,7 @@ import Admin from "./routes/Admin";
 import ManageUsers from "./routes/Admin/ManageUsers";
 import ChangePassword from "./routes/ChangePassword";
 import MyDevices from "./routes/MyDevices";
+import NotificationPreferences from "./routes/NotificationPreferences";
 import NotificationPermissionModal from "./components/NotificationPermissionModal";
 
 import logo from "./images/LogoWhite.svg";
@@ -205,6 +206,14 @@ function App() {
 							element={
 								<ProtectedRoute user={user}>
 									<MyDevices />
+								</ProtectedRoute>
+							}
+						/>
+						<Route
+							path='/NotificationPreferences'
+							element={
+								<ProtectedRoute user={user}>
+									<NotificationPreferences />
 								</ProtectedRoute>
 							}
 						/>
