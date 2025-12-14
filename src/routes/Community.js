@@ -513,6 +513,7 @@ const Community = () => {
                     color: "white",
                     textAlign: "start",
                     height: 80,
+                    pb: "env(safe-area-inset-top)"
                 }}>
                 <Box
                     sx={{
