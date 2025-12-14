@@ -244,7 +244,7 @@ const Home = () => {
             sx={{
               px: 0,
               pt: 0,
-              height: "Calc(100vh - 185px)",
+              height: "Calc(100vh - 185px - env(safe-area-inset-bottom))",
               overflow: "auto",
             }}
           >

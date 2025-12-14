@@ -218,7 +218,7 @@ const Benefits = () => {
 				sx={{
 					px: 0,
 					/* Remove huge extra space; container already pads for bottom nav */
-					height: 'Calc(100vh - 210px)',
+					height: 'Calc(100vh - 210px - env(safe-area-inset-bottom))',
 					overflowY: 'auto'
 				}}>
 				<Box sx={{ px: 4, pt: 0 }}>
