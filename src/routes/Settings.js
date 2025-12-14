@@ -42,6 +42,7 @@ const Settings = () => {
 	);
 
 	useEffect(() => {
+		const messagingToken = localStorage.getItem("messagingToken");
 		console.log("Messaging Token:", messagingToken);
 
 		if (!user) return;
