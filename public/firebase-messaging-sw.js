@@ -38,6 +38,9 @@ messaging.onBackgroundMessage((payload) => {
     // Use provided icon (data.icon) or a valid default. Ensure this file exists in /public.
     icon: "/android-chrome-192x192.png",
     badge: "/android-chrome-96x96.png",
+    data: {
+      url: payload.data?.click_action || "/",
+    },
   };
 
   self.registration.showNotification(notificationTitle, notificationOptions);
@@ -45,6 +48,8 @@ messaging.onBackgroundMessage((payload) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
+
+  const targetUrl = event.notification.data?.url || "/";
 
   event.waitUntil(
     clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
@@ -54,7 +59,7 @@ self.addEventListener("notificationclick", (event) => {
         }
       }
       if (clients.openWindow) {
-        return clients.openWindow("/");
+        return clients.openWindow(targetUrl);
       }
     })
   );
