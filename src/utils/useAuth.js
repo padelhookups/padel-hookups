@@ -46,14 +46,18 @@ export default function useAuth() {
 
 	useEffect(() => {
 		const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+			console.log("Auth state changed:", firebaseUser);
+			
 			if (firebaseUser) {
 				await fetchUserData(firebaseUser);
-
+				console.log("messagingToken", localStorage.getItem("messagingToken"));
+				console.log("messagingTokenPending", localStorage.getItem("messagingTokenPending"));
+				
 				if (
 					!localStorage.getItem("messagingToken") &&
 					!localStorage.getItem("messagingTokenPending")
 				) {
-					alert(
+					console.log(
 						"No messaging token found. Starting notification flow..."
 					);
 					localStorage.setItem("messagingTokenPending", true);

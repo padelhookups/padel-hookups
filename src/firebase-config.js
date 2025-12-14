@@ -32,12 +32,11 @@ const storage = getStorage(app);
 console.log(process.env.NODE_ENV);
 
 export async function initRemoteConfig() {
-  try {
-    await fetchAndActivate(remoteConfig);
-    console.log("Remote Config fetched & activated");
-  } catch (err) {
-    console.error("RC fetch error:", err);
-  }
+	try {
+		await fetchAndActivate(remoteConfig);
+	} catch (err) {
+		console.error("RC fetch error:", err);
+	}
 }
 
 remoteConfig.settings = {
@@ -91,8 +90,8 @@ async function saveFcmToken(currentToken) {
 						[currentToken]: {
 							SendNotifications: true,
 							Token: currentToken,
-							UserAgent: navigator.userAgent,
-							UpdatedAt: serverTimestamp()
+							Platform: navigator.platform,
+							UpdatedAt: new Date()
 						}
 					}
 				},
@@ -213,14 +212,18 @@ async function startNotificationsFlow() {
 	}
 }
 
-function _getToken() {
+async function _getToken() {
+	const registration = await navigator.serviceWorker.ready;
+
 	getToken(messaging, {
 		vapidKey:
-			"BHYKZ38EX_HHlSbVXMlG74Kob1miCVrD4tl5UdPWTTOwCYfZIAFiKcxKqzkc8a_KVjHusQaEsqhi__pEOI3LD24"
+			"BHYKZ38EX_HHlSbVXMlG74Kob1miCVrD4tl5UdPWTTOwCYfZIAFiKcxKqzkc8a_KVjHusQaEsqhi__pEOI3LD24",
+		serviceWorkerRegistration: registration,
 	})
 		.then(async (currentToken) => {
 			if (currentToken) {
 				alert("Current token for client: " + currentToken);
+				console.log("Current token for client: " + currentToken);
 				await saveFcmToken(currentToken);
 			} else {
 				console.log(

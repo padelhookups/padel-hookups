@@ -87,8 +87,7 @@ const Profile = () => {
   const auth = getAuth();
   const remoteConfig = getRemoteConfig();
   const currentUser = auth.currentUser;
-  const { user: currentUserData, refreshUser } = useAuth(); // Add refreshUser
-
+  const { user: currentUserData, refreshUser } = useAuth();
   const [profileUser, setProfileUser] = useState(null);
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [open, setOpen] = useState(false);

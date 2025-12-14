@@ -6,7 +6,7 @@ const { getAuth } = require("firebase-admin/auth");
 
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { onDocumentCreated } = require("firebase-functions/v2/firestore");
-const { getFirestore } = require("firebase-admin/firestore");
+const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 const { getMessaging } = require("firebase-admin/messaging");
 
 // The Firebase Admin SDK to access Firestore.
@@ -116,61 +116,107 @@ exports.sendInviteOnCreateUser = onDocumentCreated(
 exports.sendBirthdayNotifications = onSchedule(
 	{
 		schedule: "every day 10:00",
-		timeZone: "Europe/Lisbon", // pick the right timezone for europe-west1
-		region: "europe-west1"
+		timeZone: "Europe/Lisbon",
+		region: "europe-west1",
 	},
-	async (event) => {
+	async () => {
 		const db = getFirestore();
+		const messaging = getMessaging();
 
 		const today = new Date();
-		const month = today.getMonth() + 1; // JS months are 0-based
+		const month = today.getMonth() + 1;
 		const day = today.getDate();
+
 		console.log(`Today's date is: ${day}/${month}`);
 
-		const messages = [];
-
-		const userRef = db.collection("Users");
-		const snapshot = await userRef
+		const snapshot = await db
+			.collection("Users")
 			.where("BirthdayMonth", "==", month)
 			.where("BirthdayDay", "==", day)
 			.get();
 
 		if (snapshot.empty) {
-			console.log("No Users have a birthday today.");
+			console.log("No users have a birthday today.");
 			return;
 		}
 
-		console.log(snapshot.size);
+		const messages = [];
+		const tokenRefs = []; // keep references for cleanup
 
-		snapshot.forEach(async (userDoc) => {
-			const devices = userDoc.data()?.Devices;
-			Object.values(devices || {}).forEach(async (device) => {
-				console.log(`Checking device: ${JSON.stringify(device)}`);
+		for (const userDoc of snapshot.docs) {
+			const devices = userDoc.data()?.Devices || {};
 
-				const token = device.Token;
-				if (token && device.SendNotifications) {
+			for (const [deviceId, device] of Object.entries(devices)) {
+				if (device?.Token && device?.SendNotifications) {
 					messages.push({
-						notification: {
-							title: "Happy Birthday!",
-							body: ""
+						token: device.Token,
+						data: {
+							title: "Happy Birthday! 🎉",
+							body: "The whole padel community wishes you a great day!",
 						},
-						token: token
+						webpush: {
+							headers: {
+								Urgency: "high",
+							},
+						},
+					});
+
+					tokenRefs.push({
+						userId: userDoc.id,
+						deviceId,
+						token: device.Token,
 					});
 				}
-			});
-		});
-		console.log(`Messages to be sent: ${JSON.stringify(messages)}`);
+			}
+		}
+
 		if (messages.length === 0) {
 			console.log("No messages to send.");
 			return;
 		}
 
-		getMessaging()
-			.sendEach(messages)
-			.then((response) => {
-				console.log(
-					response.successCount + " messages were sent successfully"
-				);
-			});
+		console.log(`Sending ${messages.length} birthday notifications`);
+
+		const response = await messaging.sendEach(messages);
+
+		const batch = db.batch();
+		let deletedCount = 0;
+
+		response.responses.forEach((res, index) => {
+			if (!res.success) {
+				const errorCode = res.error?.code;
+
+				if (
+					errorCode === "messaging/registration-token-not-registered" ||
+					errorCode === "messaging/invalid-registration-token"
+				) {
+					const { userId, deviceId } = tokenRefs[index];
+
+					console.log(
+						`Deleting invalid token for user ${userId}, device ${deviceId}`
+					);
+
+					const deviceRef = db
+						.collection("Users")
+						.doc(userId)
+						.update({
+							[`Devices.${deviceId}`]: FieldValue.delete(),
+						});
+
+					deletedCount++;
+				}
+			}
+		});
+
+		if (deletedCount > 0) {
+			await batch.commit();
+			console.log(`Deleted ${deletedCount} invalid tokens`);
+		} else {
+			console.log("No invalid tokens found");
+		}
+
+		console.log(
+			`${response.successCount} messages sent successfully`
+		);
 	}
 );
