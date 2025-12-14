@@ -25,7 +25,7 @@ import {
 	Typography,
 	Paper
 } from "@mui/material";
-import { Lock, Logout, Security, Devices } from "@mui/icons-material";
+import { Lock, Logout, Security, Devices, Notifications } from "@mui/icons-material";
 
 import NotificationPermissionModal from "../components/NotificationPermissionModal";
 
@@ -225,7 +225,7 @@ const Settings = () => {
 							<Button
 								sx={{ ml: "auto" }}
 								variant='outlined'
-								startIcon={<Devices />}
+								startIcon={<Notifications />}
 								onClick={goToNotificationPreferences}>
 								Open
 							</Button>

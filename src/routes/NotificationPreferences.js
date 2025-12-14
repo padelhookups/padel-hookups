@@ -121,7 +121,7 @@ const NotificationPreferences = () => {
 										flex: "unset !important"
 									}}
 									primary='Birthday Notifications'
-									secondary='Get notified on your birthday'
+									secondary='Get notified on birthdays'
 								/>
 								<Switch
 									sx={{ ml: "auto" }}
