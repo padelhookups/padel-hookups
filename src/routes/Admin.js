@@ -49,7 +49,7 @@ const Admin = () => {
 	);
 
 	return (
-		<Box sx={{ height: 'calc(100vh - 58px)', display: 'flex', flexDirection: 'column' }}>
+		<Box sx={{ height: 'calc(100vh - 58px - env(safe-area-inset-bottom))', display: 'flex', flexDirection: 'column' }}>
 			<Paper sx={{ borderRadius: 0, bgcolor: "#b88f34", color: "white" }}>
 				<Box sx={{ py: 3, px: 2 }}>
 					<Typography

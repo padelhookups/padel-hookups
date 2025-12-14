@@ -130,7 +130,7 @@ const Settings = () => {
 			<Box
 				sx={{
 					p: 3,
-					height: "Calc(100vh - 258px)",
+					height: "Calc(100vh - 258px - env(safe-area-inset-bottom))",
 					overflow: "auto",
 				}}>
 				{/* Account Settings */}

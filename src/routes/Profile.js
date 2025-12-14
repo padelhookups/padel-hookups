@@ -457,7 +457,7 @@ const Profile = () => {
           <Box
             sx={{
               p: 3,
-              height: "Calc(100vh - 350px)",
+              height: "Calc(100vh - 350px - env(safe-area-inset-bottom))",
               overflow: "auto",
             }}
           >
