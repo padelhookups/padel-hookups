@@ -107,12 +107,10 @@ const Home = () => {
 
   const NewHomeForEveryOne = getBoolean(remoteConfig, "NewHomeForEveryOne");
   const ForceRefresh = getNumber(remoteConfig, "ForceRefresh");
-  console.log(ForceRefresh);
 
   useEffect(() => {
     // Only fetch if we haven't done initial fetch and don't have benefits
     if (!initialFetchDone.current) {
-      console.log("Fetch events using Redux with caching");
       initialFetchDone.current = true;
       if (ForceRefresh > Number(localStorage.getItem("ForceRefresh"))) {
         dispatch(fetchEvents({ db, forceRefresh: true }));
@@ -123,32 +121,12 @@ const Home = () => {
     }
   }, [dispatch, db, events.length]); // include dispatch
 
-  useEffect(() => {
-    console.log("user", user);
-  }, [user]);
-
-  useEffect(() => {
-    console.log("NewHomeForEveryOne", NewHomeForEveryOne);
-  }, [NewHomeForEveryOne]);
-
   const onRefresh = async () => {
-    console.log("Pull to refresh triggered");
     await dispatch(fetchEvents({ db, forceRefresh: true }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // Placeholder: implement Firestore add here later
-    console.log("Submit event form", {
-      evtName,
-      evtClass,
-      evtType,
-      evtDate,
-      evtLocation,
-      hasPrices,
-      hasWelcomeKit,
-      recordGames,
-    });
 
     // add event to Firestore
     const eventsCollection = collection(db, "Events");

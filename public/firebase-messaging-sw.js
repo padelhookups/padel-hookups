@@ -17,39 +17,6 @@ firebase.initializeApp({
 // Retrieve an instance of Firebase Messaging
 const messaging = firebase.messaging();
 
-/*
-To control the icon when using notification payloads (auto-displayed by FCM in the background),
-set it in the server payload:
-
-HTTP v1:
-{
-  "message": {
-    "token": "<device-token>",
-    "webpush": {
-      "notification": {
-        "title": "Title",
-        "body": "Body",
-        "icon": "/android-chrome-192x192.png",
-        "badge": "/android-chrome-192x192.png"
-      }
-    }
-  }
-}
-
-Legacy HTTP:
-{
-  "to": "<device-token>",
-  "notification": {
-    "title": "Title",
-    "body": "Body",
-    "icon": "/android-chrome-192x192.png",
-    "badge": "/android-chrome-192x192.png"
-  }
-}
-
-For data-only messages, this SW sets the icon from payload.data.icon or falls back to /android-chrome-192x192.png.
-*/
-
 // Handle background push messages
 messaging.onBackgroundMessage((payload) => {
   console.log("[firebase-messaging-sw.js] Received background message", payload);
@@ -74,4 +41,21 @@ messaging.onBackgroundMessage((payload) => {
   };
 
   self.registration.showNotification(notificationTitle, notificationOptions);
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+
+  event.waitUntil(
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if (client.url.includes("/") && "focus" in client) {
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) {
+        return clients.openWindow("/");
+      }
+    })
+  );
 });

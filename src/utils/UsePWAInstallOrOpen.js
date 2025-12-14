@@ -9,7 +9,7 @@ export function usePWAInstallOrOpen(appProtocolUrl) {
 	// Detect if installed
 	useEffect(() => {
 		async function checkInstalled() {
-			console.log("Checking if PWA is installed...");
+			/* console.log("Checking if PWA is installed..."); */
 			/* console.log(
 				window.matchMedia("(display-mode: standalone)").matches
 			);

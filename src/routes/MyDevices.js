@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useState, useEffect } from "react";
 import {
   Box,
   Paper,
@@ -7,26 +7,68 @@ import {
   List,
   ListItem,
   ListItemText,
-  Divider
+  Divider,
+  CircularProgress,
+  IconButton
 } from "@mui/material";
-import { Devices } from "@mui/icons-material";
+import { Delete } from "@mui/icons-material";
+import useAuth from "../utils/useAuth";
+import { doc, getDoc, getFirestore, updateDoc } from "firebase/firestore";
 
 const MyDevices = () => {
-  const ua = useMemo(() => {
-    try {
-      return navigator.userAgent || "Unknown device";
-    } catch {
-      return "Unknown device";
-    }
-  }, []);
+  const db = getFirestore();
+  const { user } = useAuth();
+  const [devices, setDevices] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    const fetchDevices = async () => {
+      console.log('fetchDevices');
+      
+      if (!user) {
+        return;
+      }
 
-  const platform = useMemo(() => {
+      try {
+        const userDoc = await getDoc(doc(db, "Users", user.uid));
+        if (userDoc.exists()) {
+          const devicesData = userDoc.data().Devices || {};
+          console.log(devicesData[Object.keys(devicesData)[0]].UpdatedAt);
+          
+          // Convert object to array of entries
+          setDevices(Object.entries(devicesData).map(([key, value]) => ({ id: key, ...value })));
+        }
+      } catch (error) {
+        console.error("Error fetching devices:", error);
+        setDevices([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDevices();
+  }, [user]);
+
+  const handleDeleteDevice = async (deviceId) => {
+    if (!user) return;
+
     try {
-      return navigator.platform || "Unknown platform";
-    } catch {
-      return "Unknown platform";
+      const userDocRef = doc(db, "Users", user.uid);
+      const userDoc = await getDoc(userDocRef);
+      
+      if (userDoc.exists()) {
+        const devicesData = userDoc.data().Devices || {};
+        delete devicesData[deviceId];
+        
+        await updateDoc(userDocRef, { Devices: devicesData });
+        
+        // Update local state
+        setDevices(devices.filter(device => device.id !== deviceId));
+      }
+    } catch (error) {
+      console.error("Error deleting device:", error);
     }
-  }, []);
+  };
 
   return (
     <>
@@ -49,24 +91,42 @@ const MyDevices = () => {
       </Paper>
 
       <Box sx={{ p: 3, pb: 3 }}>
-        <Card>
-          <List>
-            <ListItem>
-              <ListItemText
-                primary="This device"
-                secondary={`${platform} • ${ua}`}
-              />
-              <Devices color="action" />
-            </ListItem>
-            <Divider />
-            <ListItem>
-              <ListItemText
-                primary="Other devices"
-                secondary="No other devices detected"
-              />
-            </ListItem>
-          </List>
-        </Card>
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+            <CircularProgress />
+          </Box>
+        ) : (
+          <Card>
+            <List>
+              {devices.length > 0 ? (
+                devices.map((device, index) => (
+                  <div key={device.id || index}>
+                    <ListItem
+                      secondaryAction={
+                        <IconButton edge="end" onClick={() => handleDeleteDevice(device.id)}>
+                          <Delete />
+                        </IconButton>
+                      }
+                    >
+                      <ListItemText
+                        primary={device.name || `Device ${index + 1}`}
+                        secondary={`${device.Platform || 'Unknown'} • Last active: ${device.UpdatedAt ? device.UpdatedAt.toDate().toLocaleDateString() : 'Unknown'}`}
+                      />
+                    </ListItem>
+                    {index < devices.length - 1 && <Divider />}
+                  </div>
+                ))
+              ) : (
+                <ListItem>
+                  <ListItemText
+                    primary="Other devices"
+                    secondary="No other devices detected"
+                  />
+                </ListItem>
+              )}
+            </List>
+          </Card>
+        )}
       </Box>
     </>
   );

@@ -6,7 +6,8 @@ import {
 	doc,
 	getDoc,
 	setDoc,
-	Timestamp
+	Timestamp,
+	updateDoc
 } from "firebase/firestore";
 import firebase from "../firebase-config";
 import useAuth from "../utils/useAuth";
@@ -68,6 +69,21 @@ const Settings = () => {
 
 	const handleSignOut = async () => {
 		try {
+			if (user) {
+				const userRef = doc(db, "Users", user.uid);
+				const tokenToDelete = localStorage.getItem("messagingToken");
+				
+				if (tokenToDelete) {
+					const snap = await getDoc(userRef);
+					if (snap.exists()) {
+						const devices = snap.data().Devices || {};
+						delete devices[tokenToDelete];
+						await updateDoc(userRef, { Devices: devices });
+					}
+				}
+			}
+			localStorage.removeItem("messagingToken");
+			localStorage.removeItem("messagingTokenPending");
 			await signOut(auth);
 		} catch (error) {
 			console.error("Error signing out:", error);
