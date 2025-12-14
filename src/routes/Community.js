@@ -513,6 +513,7 @@ const Community = () => {
                     color: "white",
                     textAlign: "start",
                     height: 80,
+                    pt: "env(safe-area-inset-top)"
                 }}>
                 <Box
                     sx={{
@@ -546,7 +547,7 @@ const Community = () => {
                 sx={{
                     px: 0,
                     pt: 0,
-                    height: "Calc(100vh - 140px)",
+                    height: "calc(100vh - 140px - env(safe-area-inset-bottom))",
                     overflow: "auto"
                 }}>
                 {showResults ? (
