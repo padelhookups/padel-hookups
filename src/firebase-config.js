@@ -71,7 +71,7 @@ function getCurrentUser() {
 // Save token to Firestore without overwriting other devices
 async function saveFcmToken(currentToken) {
 	if (!currentToken) return;
-	if (isSavingToken || lastSavedToken === currentToken) return;
+	if (isSavingToken || localStorage.getItem("messagingToken") === currentToken) return;
 	isSavingToken = true;
 	try {
 		const user = await getCurrentUser();
