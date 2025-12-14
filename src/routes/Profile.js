@@ -152,7 +152,7 @@ const Profile = () => {
   useEffect(() => {
     if (user) {
       console.log("User data:", user);
-      setDisplayName(user?.displayName || "");
+      setDisplayName(user?.Name || "");
       setPhotoPreview(user?.PhotoURL || null);
       setBestHand(user?.BestHand || "");
       setPlayerLevel(user?.PlayerLevel || "");
@@ -305,8 +305,8 @@ const Profile = () => {
   };
 
   const getInitials = () => {
-    if (user?.displayName) {
-      return user.displayName
+    if (user?.Name) {
+      return user.Name
         .split(" ")
         .map((word) => word.charAt(0))
         .join("");
