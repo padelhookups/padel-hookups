@@ -118,16 +118,12 @@ async function saveFcmToken(currentToken) {
 
 // Try to open browser/site notification settings where possible
 function openNotificationSettings() {
-	alert("Opening notification settings...");
-	alert(typeof window);
-
 	if (typeof window === "undefined") return;
 	const ua = navigator.userAgent;
 	const origin = window.location.origin;
 
 	// Chrome/Edge (may be blocked by the browser, but worth attempting)
 	if (/Chrome|Chromium|Edg\//.test(ua)) {
-		alert("Opening Chrome/Edge notification settings...");
 		window.open(
 			`chrome://settings/content/siteDetails?site=${encodeURIComponent(origin)}`,
 			"_blank"
@@ -137,7 +133,6 @@ function openNotificationSettings() {
 
 	// Firefox
 	if (/Firefox\//.test(ua)) {
-		alert("Opening Firefox notification settings...");
 		window.open("about:preferences#privacy", "_blank");
 		return;
 	}
