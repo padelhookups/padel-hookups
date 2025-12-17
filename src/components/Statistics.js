@@ -46,7 +46,7 @@ const Statistics = ({user}) => {
                             variant='h4'
                             component='div'
                             sx={{ fontWeight: "bold", mb: 1 }}>
-                            0
+                            {user?.TourEventsPlayed || 0}
                         </Typography>
                         <Typography
                             variant='body2'
@@ -81,7 +81,7 @@ const Statistics = ({user}) => {
                             variant='h4'
                             component='div'
                             sx={{ fontWeight: "bold", mb: 1 }}>
-                            0
+                            {user?.TourEventsWon || 0}
                         </Typography>
                         <Typography
                             variant='body2'

@@ -143,7 +143,7 @@ const useEventActions = () => {
     });
     
     await addPlayedEvent(players, 'Tour');
-    await addFirstMixPlayedBadge(players);
+    await addFirstTourEventPlayedBadge(players);
   };
 
   const createBracketsElimination = async (eventId, tournamentId, pairs) => {
