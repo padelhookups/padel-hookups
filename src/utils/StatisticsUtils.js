@@ -5,15 +5,23 @@ import { doc, increment, getFirestore, writeBatch,  } from "firebase/firestore";
 const StatisticsActions = () => {
   const db = getFirestore();
 
-  const addPlayedEvent = async (playerRefs) => {
+  const addPlayedEvent = async (playerRefs, type) => {
     // Update each player's MixsPlayed count in Firestore
     const batch = writeBatch(db);
+
+    let typeOfGame = "";
+
+    if (type === 'Mix') {
+      typeOfGame = 'MixsPlayed';
+    }else {
+      typeOfGame = 'TourEventsPlayed';
+    }
 
     playerRefs.forEach((playerRef) => {
       // Add the update to the batch
       if (playerRef.path.startsWith("Users/")) {
         batch.update(playerRef, {
-          MixsPlayed: increment(1),
+          [typeOfGame]: increment(1),
           LastModifiedAt: new Date(),
         });
       }

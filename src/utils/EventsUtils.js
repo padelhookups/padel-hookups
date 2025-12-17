@@ -29,7 +29,8 @@ const useEventActions = () => {
     addPlayedEvent
   } = StatisticsActions();
   const {
-    addFirstMixPlayedBadge
+    addFirstMixPlayedBadge,
+    addFirstTourEventPlayedBadge
   } = BadgesActions();
 
   const createMatchsRobinHood = async (eventId) => {
@@ -87,7 +88,7 @@ const useEventActions = () => {
       TournamentStarted: true,
     });
 
-    await addPlayedEvent(players);
+    await addPlayedEvent(players, 'Mix');
     await addFirstMixPlayedBadge(players);
   };
 
@@ -98,6 +99,7 @@ const useEventActions = () => {
     const eventDocRef = doc(db, `Events/${eventId}`);
     const eventSnap = await getDoc(eventDocRef);
     const pairs = eventSnap.data().Pairs;
+    const players = eventSnap.data().PlayersIds;
 
     // 1️⃣ Create a "TournamentData" document for this event
     const tournamentCol = collection(db, `Events/${eventId}/TournamentData`);
@@ -139,6 +141,9 @@ const useEventActions = () => {
       },
       seeding: seeding,
     });
+    
+    await addPlayedEvent(players, 'Tour');
+    await addFirstMixPlayedBadge(players);
   };
 
   const createBracketsElimination = async (eventId, tournamentId, pairs) => {

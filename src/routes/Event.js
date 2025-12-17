@@ -69,7 +69,7 @@ const Event = () => {
     removeMixPlayed
   } = StatisticsActions();
 
-  
+
 
   const { eventId: paramEventId } = useParams();
   const eventId = state?.eventId ?? paramEventId;
@@ -526,10 +526,9 @@ const Event = () => {
                             setType("createMatchesRobinHood");
                             setConfirmation(true);
                           } else {
-                            await createMatchsElimination(eventId);
-                            alert(
-                              "Groups created successfully. Navigate to the Brackets tab to view them."
-                            );
+                            setConfirmationModalTitle("Create Groups?");
+                            setType("createMasters");
+                            setConfirmation(true);
                           }
                           dispatch(fetchEvents({ db, forceRefresh: false }));
                         }}
@@ -974,6 +973,15 @@ const Event = () => {
                 setSuccessTitle("Matches Created!");
                 setSuccessDescription(
                   "Check out the Brackets tab to see the matchups."
+                );
+                setShowCustomSuccess((prev) => {
+                  return true;
+                });
+              } else if (type === "createMasters") {
+                await createMatchsElimination(eventId);
+                setSuccessTitle("Groups Created!");
+                setSuccessDescription(
+                  "Groups created successfully. Navigate to the Brackets tab to view them."
                 );
                 setShowCustomSuccess((prev) => {
                   return true;
