@@ -6,7 +6,7 @@ import { FirestoreAdapter } from "../utils/FirestoreAdapter";
 import useEventActions from "../utils/EventsUtils";
 import useAuth from "../utils/useAuth";
 
-import { Button } from "@mui/material";
+import { Button, Container, Paper, Stack, Typography } from "@mui/material";
 
 import UploadScoreModal from "./UploadScoreModal";
 
@@ -28,6 +28,7 @@ const EliminationsBrackets = ({ eventId, tournamentId }) => {
   const [finalStandings, setFinalStandings] = React.useState({});
   const [stageId, setStageId] = React.useState("");
   const [uploadModalOpen, setUploadModalOpen] = React.useState(false);
+  const [noDataToShow, setNoDataToShow] = React.useState(false);
   const [showEliminationStageButton, setShowEliminationStageButton] =
     React.useState(true);
 
@@ -84,6 +85,7 @@ const EliminationsBrackets = ({ eventId, tournamentId }) => {
     const tournamentData = await manager.get.tournamentData(tournamentId);
 
     if (tournamentData.stage.length === 0) {
+      setNoDataToShow(true);
       return;
     }
     tournamentData.stage = tournamentData.stage.sort((a, b) => {
@@ -309,6 +311,24 @@ const EliminationsBrackets = ({ eventId, tournamentId }) => {
   useEffect(() => {
     render();
   }, []);
+
+  if (noDataToShow) {
+    return (
+      <Container maxWidth="sm" sx={{ py: 3, flex: 1 }}>
+        <Paper elevation={1} sx={{ p: 2.5 }}>
+          <Stack spacing={1.25}>
+            <Typography
+              variant="body1"
+              color="text.secondary"
+              textAlign="center"
+            >
+              No groups available<br /> Create the pairs and then generate the tournament groups in details page
+            </Typography>
+          </Stack>
+        </Paper>
+      </Container>
+    )
+  }
 
   return (
     <div style={{ width: "100%", height: "100vh" }}>
