@@ -111,6 +111,7 @@ const useEventActions = () => {
 
     await updateDoc(eventDocRef, {
       PairsCreated: true,
+      TournamentStarted: true,
       ModifiedAt: Timestamp.fromDate(new Date()),
       TournamentId: tournamentId,
     });
