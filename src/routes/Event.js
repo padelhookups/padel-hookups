@@ -92,8 +92,10 @@ const Event = () => {
   const [successTitle, setSuccessTitle] = useState("");
   const [successDescription, setSuccessDescription] = useState("");
   const [draggedPlayerId, setDraggedPlayerId] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   const initialFetchDone = useRef(false);
+  const listRef = useRef(null);
 
   const filteredUsers = [...users, ...(event?.Guests || [])]
     .filter(
@@ -167,6 +169,13 @@ const Event = () => {
 
   const touchStartHandler = (ev, playerId) => {
     setDraggedPlayerId(playerId);
+    setIsDragging(true);
+  };
+
+  const handleTouchMove = (e) => {
+    if (isDragging) {
+      e.preventDefault();
+    }
   };
 
   const touchEndHandler = (ev, slot) => {
@@ -178,6 +187,7 @@ const Event = () => {
       }
       setDraggedPlayerId(null);
     }
+    setIsDragging(false);
   };
 
   const removeFromPair = (slot) => {
@@ -689,67 +699,69 @@ const Event = () => {
                           Single players registered
                         </Typography>
                         <Divider />
-                        <List
-                          sx={{
-                            margin: "0 !important",
-                            padding: "0 !important",
-                          }}
-                        >
-                          {filteredUsers.map((player, index) => (
-                            <React.Fragment key={player.id || player.Name}>
-                              <ListItem
-                                draggable="true"
-                                onDragStart={(e) => dragstartHandler(e)}
-                                onTouchStart={(e) =>
-                                  touchStartHandler(e, player.id || player.Name)
-                                }
-                                sx={{ py: 2, cursor: "grab", touchAction: 'none' }}
-                                secondaryAction={
-                                  <IconButton
-                                    edge="end"
-                                    aria-label="delete"
-                                    onClick={async () => {
-                                      await unregisterFromEvent(
-                                        event.id,
-                                        player.id || player.UserId,
-                                        player.IsGuest
-                                      );
-                                      dispatch(
-                                        fetchEvents({ db, forceRefresh: false })
-                                      );
-                                    }}
-                                  >
-                                    <DeleteIcon color="error" />
-                                  </IconButton>
-                                }
-                              >
-                                <Avatar
-                                  sx={{
-                                    mr: 2,
-                                    bgcolor: "primary.main",
-                                  }}
-                                >
-                                  <Person />
-                                </Avatar>
-                                <ListItemText
-                                  primary={
-                                    <Typography
-                                      id={player.id || player.Name}
-                                      variant="h6"
-                                      sx={{
-                                        fontWeight: "bold",
+                        <div ref={listRef}>
+                          <List
+                            sx={{
+                              margin: "0 !important",
+                              padding: "0 !important",
+                            }}
+                          >
+                            {filteredUsers.map((player, index) => (
+                              <React.Fragment key={player.id || player.Name}>
+                                <ListItem
+                                  draggable="true"
+                                  onDragStart={(e) => dragstartHandler(e)}
+                                  onTouchStart={(e) =>
+                                    touchStartHandler(e, player.id || player.Name)
+                                  }
+                                  sx={{ py: 2, cursor: "grab" }}
+                                  secondaryAction={
+                                    <IconButton
+                                      edge="end"
+                                      aria-label="delete"
+                                      onClick={async () => {
+                                        await unregisterFromEvent(
+                                          event.id,
+                                          player.id || player.UserId,
+                                          player.IsGuest
+                                        );
+                                        dispatch(
+                                          fetchEvents({ db, forceRefresh: false })
+                                        );
                                       }}
                                     >
-                                      {player.Name || "No Name"}
-                                    </Typography>
+                                      <DeleteIcon color="error" />
+                                    </IconButton>
                                   }
-                                />
-                                {/* FUTURE -- add inscription date */}
-                              </ListItem>
-                              {index < filteredUsers.length - 1 && <Divider />}
-                            </React.Fragment>
-                          ))}
-                        </List>
+                                >
+                                  <Avatar
+                                    sx={{
+                                      mr: 2,
+                                      bgcolor: "primary.main",
+                                    }}
+                                  >
+                                    <Person />
+                                  </Avatar>
+                                  <ListItemText
+                                    primary={
+                                      <Typography
+                                        id={player.id || player.Name}
+                                        variant="h6"
+                                        sx={{
+                                          fontWeight: "bold",
+                                        }}
+                                      >
+                                        {player.Name || "No Name"}
+                                      </Typography>
+                                    }
+                                  />
+                                  {/* FUTURE -- add inscription date */}
+                                </ListItem>
+                                {index < filteredUsers.length - 1 && <Divider />}
+                              </React.Fragment>
+                            ))}
+                          </List>
+                        </div>
                       </>
                     ) : null}
                   </Stack>
