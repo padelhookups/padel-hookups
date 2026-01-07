@@ -96,10 +96,11 @@ const Event = () => {
 
   const initialFetchDone = useRef(false);
 
-  // refs to keep handlers and previous touchAction for immediate cleanup
-  const prevTouchActionRef = useRef("");
-  const onTouchMoveRef = useRef(null);
-  const onTouchEndRef = useRef(null);
+  // refs to store previous body styles and scroll position for restoring
+  const prevBodyStyleRef = useRef({});
+  const scrollYRef = useRef(0);
+  const touchMoveListenerRef = useRef(null);
+  const globalTouchEndRef = useRef(null);
 
   const filteredUsers = [...users, ...(event?.Guests || [])]
     .filter(
@@ -171,50 +172,72 @@ const Event = () => {
     }
   };
 
-  const removeTouchListeners = () => {
-    if (onTouchMoveRef.current) {
-      document.removeEventListener("touchmove", onTouchMoveRef.current);
-      onTouchMoveRef.current = null;
+  const removeTouchFreeze = () => {
+    // restore body styles
+    const prev = prevBodyStyleRef.current || {};
+    if (prev.position !== undefined) document.body.style.position = prev.position;
+    if (prev.top !== undefined) document.body.style.top = prev.top;
+    if (prev.left !== undefined) document.body.style.left = prev.left;
+    if (prev.right !== undefined) document.body.style.right = prev.right;
+    if (prev.width !== undefined) document.body.style.width = prev.width;
+    if (prev.overflow !== undefined) document.body.style.overflow = prev.overflow;
+    // restore scroll position
+    if (scrollYRef.current !== undefined) window.scrollTo(0, scrollYRef.current);
+
+    // remove listeners
+    if (touchMoveListenerRef.current) {
+      document.removeEventListener("touchmove", touchMoveListenerRef.current, { passive: false });
+      touchMoveListenerRef.current = null;
     }
-    if (onTouchEndRef.current) {
-      document.removeEventListener("touchend", onTouchEndRef.current);
-      document.removeEventListener("touchcancel", onTouchEndRef.current);
-      onTouchEndRef.current = null;
-    }
-    if (prevTouchActionRef.current !== undefined) {
-      document.body.style.touchAction = prevTouchActionRef.current;
-      prevTouchActionRef.current = "";
+    if (globalTouchEndRef.current) {
+      document.removeEventListener("touchend", globalTouchEndRef.current);
+      document.removeEventListener("touchcancel", globalTouchEndRef.current);
+      globalTouchEndRef.current = null;
     }
   };
 
   const touchStartHandler = (ev, playerId) => {
-    // prevent default immediately and install document listeners immediately
-    try { ev.preventDefault(); } catch (e) {}
-    setDraggedPlayerId(playerId);
-    setIsDragging(true);
+    // store scroll position and previous body styles
+    scrollYRef.current = window.scrollY || window.pageYOffset || 0;
+    prevBodyStyleRef.current = {
+      position: document.body.style.position || "",
+      top: document.body.style.top || "",
+      left: document.body.style.left || "",
+      right: document.body.style.right || "",
+      width: document.body.style.width || "",
+      overflow: document.body.style.overflow || "",
+    };
 
-    // save and disable native touch actions so the page won't scroll
-    prevTouchActionRef.current = document.body.style.touchAction || "";
-    document.body.style.touchAction = "none";
+    // freeze page scroll by fixing body
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollYRef.current}px`;
+    document.body.style.left = "0";
+    document.body.style.right = "0";
+    document.body.style.width = "100%";
+    document.body.style.overflow = "hidden";
 
-    onTouchMoveRef.current = (e) => {
-      // while dragging, prevent scroll
+    // install non-passive touchmove to prevent scrolling while dragging
+    touchMoveListenerRef.current = (e) => {
       e.preventDefault();
     };
-    onTouchEndRef.current = () => {
-      // ended outside a valid drop target — just stop dragging and cleanup
+    document.addEventListener("touchmove", touchMoveListenerRef.current, { passive: false });
+
+    // global touchend to cleanup if touch ends outside drop targets
+    globalTouchEndRef.current = () => {
       setIsDragging(false);
       setDraggedPlayerId(null);
-      removeTouchListeners();
+      removeTouchFreeze();
     };
+    document.addEventListener("touchend", globalTouchEndRef.current);
+    document.addEventListener("touchcancel", globalTouchEndRef.current);
 
-    document.addEventListener("touchmove", onTouchMoveRef.current, { passive: false });
-    document.addEventListener("touchend", onTouchEndRef.current);
-    document.addEventListener("touchcancel", onTouchEndRef.current);
+    // set drag state
+    setDraggedPlayerId(playerId);
+    setIsDragging(true);
   };
 
   const touchEndHandler = (ev, slot) => {
-    // when dropping on a slot, perform pairing then cleanup listeners
+    // perform drop on slot (if any), then cleanup
     if (draggedPlayerId) {
       const player = users.find((u) => u.id === draggedPlayerId) || event?.Guests?.find((g) => g.Name === draggedPlayerId);
       if (player) {
@@ -224,7 +247,7 @@ const Event = () => {
       setDraggedPlayerId(null);
     }
     setIsDragging(false);
-    removeTouchListeners();
+    removeTouchFreeze();
   };
 
   const removeFromPair = (slot) => {
@@ -1006,4 +1029,98 @@ const Event = () => {
                 await unregisterFromEvent(event.id);
                 setShowExitSuccess(true);
               } else if (type === "joinGame") {
-                if
+                if (type === "joinGameInPairs") {
+                  setOpenSearchPlayer(true);
+                } else {
+                  await registerFromEvent(event.id);
+                  setShowJoinSuccess(true);
+                }
+              } else if (type === "createMatchesRobinHood") {
+                await createMatchsRobinHood(eventId);
+                setSuccessTitle("Matches Created!");
+                setSuccessDescription(
+                  "Check out the Brackets tab to see the matchups."
+                );
+                setShowCustomSuccess((prev) => {
+                  return true;
+                });
+              } else if (type === "createMasters") {
+                await createMatchsElimination(eventId);
+                setSuccessTitle("Groups Created!");
+                setSuccessDescription(
+                  "Groups created successfully. Navigate to the Brackets tab to view them."
+                );
+                setShowCustomSuccess((prev) => {
+                  return true;
+                });
+              }
+              dispatch(fetchEvents({ db, forceRefresh: false }));
+            }}
+          />
+          <SuccessModal
+            open={showJoinSuccess}
+            onClose={() => setShowJoinSuccess(false)}
+            _title="You're in!"
+            _description="You've successfully joined the event. See you on the court!"
+            _buttonText="Awesome"
+          />
+          <SuccessModal
+            open={showExitSuccess}
+            onClose={() => setShowExitSuccess(false)}
+            _title="You're out!"
+            _description="You've successfully left the event."
+            _buttonText="Got it"
+          />
+          <SuccessModal
+            open={showCustomSuccess}
+            onClose={() => setShowCustomSuccess(false)}
+            _title={successTitle}
+            _description={successDescription}
+            _buttonText="Got it"
+          />
+          <SearchPlayer
+            open={openSearchPlayer}
+            playersIds={event.PlayersIds}
+            mode={modeToSearchPlayer}
+            onClose={async (selectedPlayer, pairMode) => {
+              setOpenSearchPlayer(false);
+              if (selectedPlayer && typeof selectedPlayer === "object") {
+                if (!pairMode) {
+                  await registerFromEvent(
+                    event.id,
+                    selectedPlayer.id,
+                    false,
+                    false
+                  );
+                } else {
+                  //register it self as well as a pair
+                  await registerFromEvent(
+                    event.id,
+                    selectedPlayer.id,
+                    false,
+                    true
+                  );
+                }
+              } else if (selectedPlayer && typeof selectedPlayer === "string") {
+                if (!pairMode) {
+                  await registerFromEvent(
+                    event.id,
+                    selectedPlayer,
+                    true,
+                    false
+                  );
+                } else {
+                  //register it self as well as a pair
+                  await registerFromEvent(event.id, selectedPlayer, true, true);
+                }
+              }
+              dispatch(fetchEvents({ db, forceRefresh: false }));
+            }}
+          />
+        </Box>
+      </Paper>
+    </>
+  );
+};
+
+export default Event;
