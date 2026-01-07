@@ -91,18 +91,7 @@ const Event = () => {
   const [confirmationModalTitle, setConfirmationModalTitle] = useState("");
   const [successTitle, setSuccessTitle] = useState("");
   const [successDescription, setSuccessDescription] = useState("");
-  const [draggedPlayerId, setDraggedPlayerId] = useState(null);
-  const [isDragging, setIsDragging] = useState(false);
-
   const initialFetchDone = useRef(false);
-
-  // refs to store touch listeners and long-press state
-  const touchMoveListenerRef = useRef(null);
-  const globalTouchEndRef = useRef(null);
-  const longPressTimerRef = useRef(null);
-  const touchStartPosRef = useRef({ x: 0, y: 0 });
-  const LONG_PRESS_MS = 180;
-  const MOVE_CANCEL_THRESHOLD = 8; // px
 
   const filteredUsers = [...users, ...(event?.Guests || [])]
     .filter(
@@ -150,109 +139,23 @@ const Event = () => {
 
   const alreadyRegistered = event?.PlayersIds.includes(user?.uid);
 
-  const dragstartHandler = (ev) => {
-    const playerId = ev.target.childNodes[1].childNodes[0].id;
-    ev.dataTransfer.setData("dropInfo", playerId);
-    setDraggedPlayerId(playerId);
-  };
+  // click assign: add clicked player to first available slot (player1 then player2)
+  const handleListItemClick = (player) => {
+    const id = player.id || player.UserId || player.Name;
+    // ignore if already assigned
+    if (usersBeingPairedIds.includes(id)) return;
 
-  const dragoverHandler = (ev) => {
-    ev.preventDefault();
-  };
-
-  const dropHandler = (ev, slot) => {
-    ev.preventDefault();
-    const playerId = ev.dataTransfer.getData("dropInfo") || draggedPlayerId;
-    const player =
-      users.find((u) => u.id === playerId) ||
-      event.Guests.find((g) => g.Name === playerId);
-
-    if (player) {
-      setPairSlots((prev) => ({ ...prev, [slot]: player }));
-      setUsersBeingPairedIds((prev) => [...prev, playerId]);
-      setDraggedPlayerId(null);
-    }
-  };
-
-  const removeTouchFreeze = () => {
-    // remove non-passive touchmove listener and global end handlers
-    if (touchMoveListenerRef.current) {
-      document.removeEventListener("touchmove", touchMoveListenerRef.current, { passive: false });
-      touchMoveListenerRef.current = null;
-    }
-    if (globalTouchEndRef.current) {
-      document.removeEventListener("touchend", globalTouchEndRef.current);
-      document.removeEventListener("touchcancel", globalTouchEndRef.current);
-      globalTouchEndRef.current = null;
-    }
-  };
-
-  const touchStartHandler = (ev, playerId) => {
-    // record initial touch point
-    const touch = ev.touches && ev.touches[0];
-    if (touch) touchStartPosRef.current = { x: touch.clientX, y: touch.clientY };
-
-    // start long-press timer; only when it fires we enter drag mode
-    longPressTimerRef.current = setTimeout(() => {
-      // attach non-passive touchmove to prevent native scrolling while dragging
-      touchMoveListenerRef.current = (e) => e.preventDefault();
-      document.addEventListener("touchmove", touchMoveListenerRef.current, { passive: false });
-
-      // cleanup if touch ends outside any drop target
-      globalTouchEndRef.current = () => {
-        setIsDragging(false);
-        setDraggedPlayerId(null);
-        removeTouchFreeze();
-      };
-      document.addEventListener("touchend", globalTouchEndRef.current);
-      document.addEventListener("touchcancel", globalTouchEndRef.current);
-
-      // enter dragging state
-      setDraggedPlayerId(playerId);
-      setIsDragging(true);
-      longPressTimerRef.current = null;
-    }, LONG_PRESS_MS);
-  };
-
-  const touchMoveDuringStart = (ev) => {
-    // if user moves before long-press fires, cancel long-press so scrolling is preserved
-    if (!longPressTimerRef.current) return;
-    const touch = ev.touches && ev.touches[0];
-    if (!touch) return;
-    const dx = Math.abs(touch.clientX - touchStartPosRef.current.x);
-    const dy = Math.abs(touch.clientY - touchStartPosRef.current.y);
-    if (dx > MOVE_CANCEL_THRESHOLD || dy > MOVE_CANCEL_THRESHOLD) {
-      clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = null;
-    }
-  };
-
-  const touchEndDuringStart = () => {
-    if (longPressTimerRef.current) {
-      clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = null;
-    }
-  };
-
-  const touchEndHandler = (ev, slot) => {
-    // if long-press timer still running, cancel and do not treat as drop
-    if (longPressTimerRef.current) {
-      clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = null;
-      return;
-    }
-
-    // perform drop on slot (if any), then cleanup listeners (do not alter scroll/body)
-    if (draggedPlayerId) {
-      const player = users.find((u) => u.id === draggedPlayerId) || event?.Guests?.find((g) => g.Name === draggedPlayerId);
-      if (player) {
-        setPairSlots((prev) => ({ ...prev, [slot]: player }));
-        setUsersBeingPairedIds((prev) => [...prev, draggedPlayerId]);
+    setPairSlots((prev) => {
+      if (!prev.player1) {
+        return { ...prev, player1: player };
       }
-      setDraggedPlayerId(null);
-    }
-    setIsDragging(false);
-    removeTouchFreeze();
+      if (!prev.player2) {
+        return { ...prev, player2: player };
+      }
+      // if both filled, replace player2
+      return { ...prev, player2: player };
+    });
+    setUsersBeingPairedIds((prev) => [...prev, id]);
   };
 
   const removeFromPair = (slot) => {
@@ -631,7 +534,6 @@ const Event = () => {
               {!event.PairsCreated && user?.IsAdmin && (
                 <Paper elevation={1}>
                   <Stack spacing={2} sx={{ p: 2 }} direction="column">
-                    {/* BOX to drag players and form new pairs */}
                     {event.TypeOfTournament === "Mix" || user?.IsAdmin ? (
                       <>
                         <Box
@@ -656,9 +558,6 @@ const Event = () => {
                               paddingX: "2 !important",
                               cursor: "pointer",
                             }}
-                            onDrop={(e) => dropHandler(e, "player1")}
-                            onDragOver={(e) => dragoverHandler(e)}
-                            onTouchEnd={(e) => touchEndHandler(e, "player1")}
                             onClick={() => removeFromPair("player1")}
                           >
                             {pairSlots.player1 ? (
@@ -706,9 +605,6 @@ const Event = () => {
                               paddingX: "2 !important",
                               cursor: "pointer",
                             }}
-                            onDrop={(e) => dropHandler(e, "player2")}
-                            onDragOver={(e) => dragoverHandler(e)}
-                            onTouchEnd={(e) => touchEndHandler(e, "player2")}
                             onClick={() => removeFromPair("player2")}
                           >
                             {pairSlots.player2 ? (
@@ -774,14 +670,8 @@ const Event = () => {
                             {filteredUsers.map((player, index) => (
                               <React.Fragment key={player.id || player.Name}>
                                 <ListItem
-                                  draggable="true"
-                                  onDragStart={(e) => dragstartHandler(e)}
-                                  onTouchStart={(e) =>
-                                    touchStartHandler(e, player.id || player.Name)
-                                  }
-                                  onTouchMove={(e) => touchMoveDuringStart(e)}
-                                  onTouchEnd={() => touchEndDuringStart()}
-                                  sx={{ py: 2, cursor: "grab", WebkitUserSelect: "none", userSelect: "none" }}
+                                  onClick={() => handleListItemClick(player)}
+                                  sx={{ py: 2, cursor: "pointer", WebkitUserSelect: "none", userSelect: "none" }}
                                    secondaryAction={
                                      <IconButton
                                        edge="end"
