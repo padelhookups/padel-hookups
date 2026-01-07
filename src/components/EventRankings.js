@@ -166,7 +166,7 @@ const EventRankings = ({ eventId, tournamentId, wonStatisticsUpdated }) => {
           );
           console.log(match);
 
-          if (match[0].scoreTeam1 !== match[0].scoreTeam2) {
+          if (match[0]?.scoreTeam1 !== match[0]?.scoreTeam2) {
             console.log("Confronto direto:", match[0]);
             if (match[0].scoreTeam1 > match[0].scoreTeam2) {
               result.push({
