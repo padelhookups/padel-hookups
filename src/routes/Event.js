@@ -96,11 +96,13 @@ const Event = () => {
 
   const initialFetchDone = useRef(false);
 
-  // refs to store previous body styles and scroll position for restoring
-  const prevBodyStyleRef = useRef({});
-  const scrollYRef = useRef(0);
+  // refs to store touch listeners and long-press state
   const touchMoveListenerRef = useRef(null);
   const globalTouchEndRef = useRef(null);
+  const longPressTimerRef = useRef(null);
+  const touchStartPosRef = useRef({ x: 0, y: 0 });
+  const LONG_PRESS_MS = 180;
+  const MOVE_CANCEL_THRESHOLD = 8; // px
 
   const filteredUsers = [...users, ...(event?.Guests || [])]
     .filter(
@@ -173,18 +175,7 @@ const Event = () => {
   };
 
   const removeTouchFreeze = () => {
-    // restore body styles
-    const prev = prevBodyStyleRef.current || {};
-    if (prev.position !== undefined) document.body.style.position = prev.position;
-    if (prev.top !== undefined) document.body.style.top = prev.top;
-    if (prev.left !== undefined) document.body.style.left = prev.left;
-    if (prev.right !== undefined) document.body.style.right = prev.right;
-    if (prev.width !== undefined) document.body.style.width = prev.width;
-    if (prev.overflow !== undefined) document.body.style.overflow = prev.overflow;
-    // restore scroll position
-    if (scrollYRef.current !== undefined) window.scrollTo(0, scrollYRef.current);
-
-    // remove listeners
+    // remove non-passive touchmove listener and global end handlers
     if (touchMoveListenerRef.current) {
       document.removeEventListener("touchmove", touchMoveListenerRef.current, { passive: false });
       touchMoveListenerRef.current = null;
@@ -197,47 +188,61 @@ const Event = () => {
   };
 
   const touchStartHandler = (ev, playerId) => {
-    // store scroll position and previous body styles
-    scrollYRef.current = window.scrollY || window.pageYOffset || 0;
-    prevBodyStyleRef.current = {
-      position: document.body.style.position || "",
-      top: document.body.style.top || "",
-      left: document.body.style.left || "",
-      right: document.body.style.right || "",
-      width: document.body.style.width || "",
-      overflow: document.body.style.overflow || "",
-    };
+    // record initial touch point
+    const touch = ev.touches && ev.touches[0];
+    if (touch) touchStartPosRef.current = { x: touch.clientX, y: touch.clientY };
 
-    // freeze page scroll by fixing body
-    document.body.style.position = "fixed";
-    document.body.style.top = `-${scrollYRef.current}px`;
-    document.body.style.left = "0";
-    document.body.style.right = "0";
-    document.body.style.width = "100%";
-    document.body.style.overflow = "hidden";
+    // start long-press timer; only when it fires we enter drag mode
+    longPressTimerRef.current = setTimeout(() => {
+      // attach non-passive touchmove to prevent native scrolling while dragging
+      touchMoveListenerRef.current = (e) => e.preventDefault();
+      document.addEventListener("touchmove", touchMoveListenerRef.current, { passive: false });
 
-    // install non-passive touchmove to prevent scrolling while dragging
-    touchMoveListenerRef.current = (e) => {
-      e.preventDefault();
-    };
-    document.addEventListener("touchmove", touchMoveListenerRef.current, { passive: false });
+      // cleanup if touch ends outside any drop target
+      globalTouchEndRef.current = () => {
+        setIsDragging(false);
+        setDraggedPlayerId(null);
+        removeTouchFreeze();
+      };
+      document.addEventListener("touchend", globalTouchEndRef.current);
+      document.addEventListener("touchcancel", globalTouchEndRef.current);
 
-    // global touchend to cleanup if touch ends outside drop targets
-    globalTouchEndRef.current = () => {
-      setIsDragging(false);
-      setDraggedPlayerId(null);
-      removeTouchFreeze();
-    };
-    document.addEventListener("touchend", globalTouchEndRef.current);
-    document.addEventListener("touchcancel", globalTouchEndRef.current);
+      // enter dragging state
+      setDraggedPlayerId(playerId);
+      setIsDragging(true);
+      longPressTimerRef.current = null;
+    }, LONG_PRESS_MS);
+  };
 
-    // set drag state
-    setDraggedPlayerId(playerId);
-    setIsDragging(true);
+  const touchMoveDuringStart = (ev) => {
+    // if user moves before long-press fires, cancel long-press so scrolling is preserved
+    if (!longPressTimerRef.current) return;
+    const touch = ev.touches && ev.touches[0];
+    if (!touch) return;
+    const dx = Math.abs(touch.clientX - touchStartPosRef.current.x);
+    const dy = Math.abs(touch.clientY - touchStartPosRef.current.y);
+    if (dx > MOVE_CANCEL_THRESHOLD || dy > MOVE_CANCEL_THRESHOLD) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  };
+
+  const touchEndDuringStart = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
   };
 
   const touchEndHandler = (ev, slot) => {
-    // perform drop on slot (if any), then cleanup
+    // if long-press timer still running, cancel and do not treat as drop
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+      return;
+    }
+
+    // perform drop on slot (if any), then cleanup listeners (do not alter scroll/body)
     if (draggedPlayerId) {
       const player = users.find((u) => u.id === draggedPlayerId) || event?.Guests?.find((g) => g.Name === draggedPlayerId);
       if (player) {
@@ -774,26 +779,28 @@ const Event = () => {
                                   onTouchStart={(e) =>
                                     touchStartHandler(e, player.id || player.Name)
                                   }
-                                  sx={{ py: 2, cursor: "grab" }}
-                                  secondaryAction={
-                                    <IconButton
-                                      edge="end"
-                                      aria-label="delete"
-                                      onClick={async () => {
-                                        await unregisterFromEvent(
-                                          event.id,
-                                          player.id || player.UserId,
-                                          player.IsGuest
-                                        );
-                                        dispatch(
-                                          fetchEvents({ db, forceRefresh: false })
-                                        );
-                                      }}
-                                    >
-                                      <DeleteIcon color="error" />
-                                    </IconButton>
-                                  }
-                                >
+                                  onTouchMove={(e) => touchMoveDuringStart(e)}
+                                  onTouchEnd={() => touchEndDuringStart()}
+                                  sx={{ py: 2, cursor: "grab", WebkitUserSelect: "none", userSelect: "none" }}
+                                   secondaryAction={
+                                     <IconButton
+                                       edge="end"
+                                       aria-label="delete"
+                                       onClick={async () => {
+                                         await unregisterFromEvent(
+                                           event.id,
+                                           player.id || player.UserId,
+                                           player.IsGuest
+                                         );
+                                         dispatch(
+                                           fetchEvents({ db, forceRefresh: false })
+                                         );
+                                       }}
+                                     >
+                                       <DeleteIcon color="error" />
+                                     </IconButton>
+                                   }
+                                 >
                                   <Avatar
                                     sx={{
                                       mr: 2,
