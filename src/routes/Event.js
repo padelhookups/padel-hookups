@@ -95,7 +95,6 @@ const Event = () => {
   const [isDragging, setIsDragging] = useState(false);
 
   const initialFetchDone = useRef(false);
-  const listRef = useRef(null);
 
   const filteredUsers = [...users, ...(event?.Guests || [])]
     .filter(
@@ -699,7 +698,7 @@ const Event = () => {
                           Single players registered
                         </Typography>
                         <Divider />
-                        <div ref={listRef}>
+                        <div>
                           <List
                             sx={{
                               margin: "0 !important",
