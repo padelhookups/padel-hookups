@@ -405,7 +405,8 @@ const useEventActions = () => {
       ModifiedAt: Timestamp.fromDate(new Date()),
       Pairs: pairsToKeep,
       PlayersIds: arrayRemove(player1Id, player2Id),
-      PlayersWithPairsIds: arrayRemove(docPlayer1Ref, docPlayer2Ref),
+      // remove the raw player IDs from PlayersWithPairsIds (stored as IDs)
+      PlayersWithPairsIds: arrayRemove(player1Id, player2Id),
     });
   };
 

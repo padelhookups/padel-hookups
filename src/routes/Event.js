@@ -141,21 +141,20 @@ const Event = () => {
 
   // click assign: add clicked player to first available slot (player1 then player2)
   const handleListItemClick = (player) => {
-    const id = player.id || player.UserId || player.Name;
-    // ignore if already assigned
-    if (usersBeingPairedIds.includes(id)) return;
+    // gather all possible identifiers for this player
+    const ids = [player.id, player.UserId, player.Name].filter(Boolean);
+    // ignore if any identifier already assigned
+    if (ids.some((i) => usersBeingPairedIds.includes(i))) return;
 
     setPairSlots((prev) => {
-      if (!prev.player1) {
-        return { ...prev, player1: player };
-      }
-      if (!prev.player2) {
-        return { ...prev, player2: player };
-      }
-      // if both filled, replace player2
+      if (!prev.player1) return { ...prev, player1: player };
+      if (!prev.player2) return { ...prev, player2: player };
       return { ...prev, player2: player };
     });
-    setUsersBeingPairedIds((prev) => [...prev, id]);
+    setUsersBeingPairedIds((prev) => {
+      const toAdd = ids.filter((i) => !prev.includes(i));
+      return toAdd.length ? [...prev, ...toAdd] : prev;
+    });
   };
 
   const removeFromPair = (slot) => {
@@ -163,7 +162,12 @@ const Event = () => {
     if (player) {
       setPairSlots((prev) => ({ ...prev, [slot]: null }));
       setUsersBeingPairedIds((prev) =>
-        prev.filter((id) => id !== player.id && !player.IsGuest)
+        prev.filter(
+          (id) =>
+            id !== player.id &&
+            id !== player.UserId &&
+            id !== player.Name
+        )
       );
     }
   };
@@ -660,65 +664,63 @@ const Event = () => {
                           Single players registered
                         </Typography>
                         <Divider />
-                        <div>
-                          <List
-                            sx={{
-                              margin: "0 !important",
-                              padding: "0 !important",
-                            }}
-                          >
-                            {filteredUsers.map((player, index) => (
-                              <React.Fragment key={player.id || player.Name}>
-                                <ListItem
-                                  onClick={() => handleListItemClick(player)}
-                                  sx={{ py: 2, cursor: "pointer", WebkitUserSelect: "none", userSelect: "none" }}
-                                   secondaryAction={
-                                     <IconButton
-                                       edge="end"
-                                       aria-label="delete"
-                                       onClick={async () => {
-                                         await unregisterFromEvent(
-                                           event.id,
-                                           player.id || player.UserId,
-                                           player.IsGuest
-                                         );
-                                         dispatch(
-                                           fetchEvents({ db, forceRefresh: false })
-                                         );
-                                       }}
-                                     >
-                                       <DeleteIcon color="error" />
-                                     </IconButton>
-                                   }
-                                 >
-                                  <Avatar
-                                    sx={{
-                                      mr: 2,
-                                      bgcolor: "primary.main",
+                        <List
+                          sx={{
+                            margin: "0 !important",
+                            padding: "0 !important",
+                          }}
+                        >
+                          {filteredUsers.map((player, index) => (
+                            <React.Fragment key={player.id || player.Name}>
+                              <ListItem
+                                onClick={() => handleListItemClick(player)}
+                                sx={{ py: 2, cursor: "pointer", WebkitUserSelect: "none", userSelect: "none" }}
+                                secondaryAction={
+                                  <IconButton
+                                    edge="end"
+                                    aria-label="delete"
+                                    onClick={async () => {
+                                      await unregisterFromEvent(
+                                        event.id,
+                                        player.id || player.UserId,
+                                        player.IsGuest
+                                      );
+                                      dispatch(
+                                        fetchEvents({ db, forceRefresh: false })
+                                      );
                                     }}
                                   >
-                                    <Person />
-                                  </Avatar>
-                                  <ListItemText
-                                    primary={
-                                      <Typography
-                                        id={player.id || player.Name}
-                                        variant="h6"
-                                        sx={{
-                                          fontWeight: "bold",
-                                        }}
-                                      >
-                                        {player.Name || "No Name"}
-                                      </Typography>
-                                    }
-                                  />
-                                  {/* FUTURE -- add inscription date */}
-                                </ListItem>
-                                {index < filteredUsers.length - 1 && <Divider />}
-                              </React.Fragment>
-                            ))}
-                          </List>
-                        </div>
+                                    <DeleteIcon color="error" />
+                                  </IconButton>
+                                }
+                              >
+                                <Avatar
+                                  sx={{
+                                    mr: 2,
+                                    bgcolor: "primary.main",
+                                  }}
+                                >
+                                  <Person />
+                                </Avatar>
+                                <ListItemText
+                                  primary={
+                                    <Typography
+                                      id={player.id || player.Name}
+                                      variant="h6"
+                                      sx={{
+                                        fontWeight: "bold",
+                                      }}
+                                    >
+                                      {player.Name || "No Name"}
+                                    </Typography>
+                                  }
+                                />
+                                {/* FUTURE -- add inscription date */}
+                              </ListItem>
+                              {index < filteredUsers.length - 1 && <Divider />}
+                            </React.Fragment>
+                          ))}
+                        </List>
                       </>
                     ) : null}
                   </Stack>
