@@ -169,10 +169,6 @@ const Event = () => {
     setDraggedPlayerId(playerId);
   };
 
-  const touchMoveHandler = (ev) => {
-    ev.preventDefault();
-  };
-
   const touchEndHandler = (ev, slot) => {
     if (draggedPlayerId) {
       const player = users.find((u) => u.id === draggedPlayerId);
@@ -707,8 +703,7 @@ const Event = () => {
                                 onTouchStart={(e) =>
                                   touchStartHandler(e, player.id || player.Name)
                                 }
-                                onTouchMove={(e) => touchMoveHandler(e)}
-                                sx={{ py: 2, cursor: "grab" }}
+                                sx={{ py: 2, cursor: "grab", touchAction: 'none' }}
                                 secondaryAction={
                                   <IconButton
                                     edge="end"
