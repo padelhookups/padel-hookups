@@ -25,6 +25,7 @@ import {
   Chip,
   Fab,
   Paper,
+  Tab,
   SwipeableDrawer,
   Typography,
   FormControl,
@@ -51,12 +52,15 @@ import {
   TimelineContent,
   TimelineDot,
 } from "@mui/lab";
+import { TabContext, TabList, TabPanel } from "@mui/lab";
 import TimelineItem, { timelineItemClasses } from "@mui/lab/TimelineItem";
 
 import PullToRefresh from 'react-simple-pull-to-refresh';
 
 import ConfirmationModal from "../components/ConfirmationModal";
 import SuccessModal from "../components/SuccessModal";
+import Tour2026 from "../components/Tour2026";
+import PremierPadel from "../components/PremierPadel";
 
 const Puller = styled(Box)(({ theme }) => ({
   width: 30,
@@ -101,6 +105,8 @@ const Home = () => {
   const [recordGames, setRecordGames] = useState(false);
 
   const initialFetchDone = useRef(false);
+
+  const [activeTab, setActiveTab] = useState("tour");
 
   const events = useSelector(selectEvents);
   const loading = useSelector(selectEventsLoading);
@@ -248,147 +254,33 @@ const Home = () => {
               overflow: "auto",
             }}
           >
-            <Timeline
-              sx={{
-                [`& .${timelineItemClasses.root}:before`]: {
-                  flex: 0,
-                  padding: 0,
-                },
-              }}
-            >
-              <PullToRefresh onRefresh={onRefresh}>
-                {Object.entries(groupedEvents).map(([monthKey, { label, events: monthEvents }]) => (
-                  <Box key={monthKey}>
-                    {/* Month Header */}
-                    <TimelineItem>
-                      <TimelineSeparator>
-                        <TimelineConnector />
-                        <TimelineDot sx={{ bgcolor: 'primary.main', width: 20, height: 20, borderWidth: 4 }}>
-                          <CalendarMonth sx={{ fontSize: 20, color: 'white' }} />
-                        </TimelineDot>
-                        <TimelineConnector />
-                      </TimelineSeparator>
-                      <TimelineContent sx={{ py: '12px', px: 2 }}>
-                        <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
-                          {label}
-                        </Typography>
-                      </TimelineContent>
-                    </TimelineItem>
+            <TabContext value={activeTab}>
+              <TabList onChange={(e, v) => setActiveTab(v)} variant="fullWidth">
+                <Tab label="Tour 2026" value="tour" />
+                <Tab label="Premier Padel" value="premier" />
+              </TabList>
 
-                    {/* Events for this month */}
-                    {monthEvents.map((event, index) => {
-                      const alreadyRegistered = event?.PlayersIds?.includes(user?.uid);
-                      return (
-                        <TimelineItem key={`${monthKey}-${index}`}>
-                          <TimelineSeparator>
-                            <TimelineConnector />
-                            <TimelineDot
-                              sx={{
-                                bgcolor: `${getColor(event.Type)}.main`,
-                                color: "white",
-                                fontWeight: "bold",
-                                width: 24,
-                                height: 24,
-                              }}
-                            >
-                              <Typography
-                                variant="span"
-                                sx={{
-                                  fontWeight: "bold",
-                                  width: "100%",
-                                  textAlign: "center",
-                                  px: 0.2,
-                                }}
-                              >
-                                {new Date(event.Date).getDate()}
-                              </Typography>
-                            </TimelineDot>
-                            <TimelineConnector />
-                          </TimelineSeparator>
-                          <TimelineContent sx={{ py: "12px", px: 2 }}>
-                            <Box
-                              sx={{
-                                border: "2px dashed grey",
-                                borderRadius: 2,
-                                p: 1,
-                                position: "relative",
-                                cursor: "pointer",
-                              }}
-                              onClick={() => {
-                                console.log(
-                                  "Box 1 clicked - going to event details"
-                                );
-                                navigate("/Event", {
-                                  state: { eventId: event.id },
-                                });
-                              }}
-                            >
-                              <Typography variant="h6" sx={{ width: 'Calc(100% - 100px)' }}>
-                                {getIcon(event.Type)}
-                                {event.Name}
-                              </Typography>
-                              <Typography variant="body2">
-                                ⌚
-                                {Timestamp.fromMillis(event.Date)
-                                  .toDate()
-                                  .getHours()}
-                                :
-                                {Timestamp.fromMillis(event.Date)
-                                  .toDate()
-                                  .getMinutes()
-                                  .toString()
-                                  .padStart(2, "0")}
-                              </Typography>
-                              <Box
-                                sx={{
-                                  position: "absolute",
-                                  top: 8,
-                                  right: 8,
-                                  display: "flex",
-                                  flexWrap: "wrap",
-                                  flexDirection: "row",
-                                  alignItems: "end",
-                                  justifyContent: "end",
-                                }}
-                              >
-                                <Chip
-                                  variant="solid"
-                                  color={getColor(event.Type)}
-                                  size="small"
-                                  label={event.Type}
-                                  sx={{ width: "100%" }}
-                                />
-                                {event.RecordGames && <span>🎥</span>}
-                              </Box>
-                              {user && alreadyRegistered && (
-                                <Chip
-                                  label="💪 You already In!"
-                                  color="primary"
-                                  sx={{ color: "white", mt: 1 }}
-                                  size="small"
-                                />
-                              )}
-                            </Box>
-                          </TimelineContent>
-                        </TimelineItem>
-                      );
-                    })}
-                  </Box>
-                ))}
-              </PullToRefresh>
-            </Timeline>
-            {user?.IsAdmin && (
-              <Fab
-                color="primary"
-                aria-label="add"
-                sx={{ position: "fixed", bottom: 76, right: 16 }}
-                onClick={() => {
-                  setOpen(true);
-                }}
-              >
-                <Add sx={{ color: "white" }} />
-              </Fab>
-            )}
+              <TabPanel value="tour" sx={{ p: 0 }}>
+                <Tour2026
+                  groupedEvents={groupedEvents}
+                  onRefresh={onRefresh}
+                  getColor={getColor}
+                  getIcon={getIcon}
+                  user={user}
+                  navigate={navigate}
+                  dispatch={dispatch}
+                  db={db}
+                  setOpen={setOpen}
+                  setEventSelectedId={setEventSelectedId}
+                  setShowSuccess={setShowSuccess}
+                  registerFromEvent={registerFromEvent}
+                />
+              </TabPanel>
+
+              <TabPanel value="premier" sx={{ p: 0 }}>
+                <PremierPadel />
+              </TabPanel>
+            </TabContext>
           </Box>
         </>
       ) : (

@@ -1,0 +1,76 @@
+import React from "react";
+import { Box, Paper, Typography, Chip } from "@mui/material";
+import { useNavigate } from "react-router";
+
+const TournamentCard = ({ title, startMonth, durationMonths, color, onClick }) => {
+  const months = [];
+  const monthNames = [
+    "Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"
+  ];
+  for (let i = 0; i < durationMonths; i++) {
+    const m = (startMonth + i) % 12;
+    months.push(monthNames[m]);
+  }
+
+  return (
+    <Paper
+      sx={{ p: 2, mb: 2, borderLeft: `6px solid ${color}`, cursor: onClick ? 'pointer' : 'default' }}
+      elevation={2}
+      onClick={onClick}
+    >
+      <Typography variant="h6" sx={{ fontWeight: 'bold' }}>{title}</Typography>
+      <Box sx={{ display: 'flex', gap: 1, mt: 1, flexWrap: 'wrap' }}>
+        {months.map((m) => (
+          <Chip key={m} label={m} size="small" />
+        ))}
+      </Box>      
+    </Paper>
+  );
+};
+
+const PremierPadel = () => {
+  const navigate = useNavigate();
+
+  // Two tournaments per year: Spring Cup and Autumn Cup
+  const handleOpenCup = (cup) => {
+    navigate("/EventCup", { state: { cup } });
+  };
+
+  return (
+    <Box sx={{ p: 2 }}>
+      <TournamentCard
+        title="Spring Cup"
+        startMonth={4}
+        durationMonths={3}
+        color="#388e3c"
+        onClick={() =>
+          handleOpenCup({
+            title: "Spring Cup",
+            mainSponsor: "Acme Sports",
+            logoSponsor: "PadelCo",
+            type: "Elimination",
+            tournamentId: "spring-2026",
+          })
+        }
+      />
+
+      <TournamentCard
+        title="Autumn Cup"
+        startMonth={8}
+        durationMonths={3}
+        color="#1976d2"
+        onClick={() =>
+          handleOpenCup({
+            title: "Autumn Cup",
+            mainSponsor: "CourtKings",
+            logoSponsor: "NetGear",
+            type: "Elimination",
+            tournamentId: "autumn-2026",
+          })
+        }
+      />
+    </Box>
+  );
+};
+
+export default PremierPadel;
