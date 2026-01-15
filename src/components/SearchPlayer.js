@@ -56,7 +56,7 @@ const SearchPlayer = ({ open, onClose, playersIds, mode }) => {
 
   useEffect(() => {
     const tempPlayers = users
-      .filter((user) => !playersIds.includes(user.id))
+      .filter((user) => !(playersIds || []).includes(user.id))
       .map((user) => ({
         label: user.Name,
         id: user.id,
@@ -64,7 +64,7 @@ const SearchPlayer = ({ open, onClose, playersIds, mode }) => {
       }));
     console.log(tempPlayers);
     setPlayers(tempPlayers);
-  }, [users]);
+  }, [users, playersIds]);
 
   const validate = () => {
     setShowError(false);
@@ -88,6 +88,23 @@ const SearchPlayer = ({ open, onClose, playersIds, mode }) => {
         {mode === "pairs" ? "Search your Partner" : "Search a player"}
       </DialogTitle>
       <DialogContent>
+        {mode === "pairs" && (
+          <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 2 }}>
+            <Avatar
+              sx={{
+                width: 32,
+                height: 32,
+                bgcolor: "primary.main",
+              }}
+            >
+              <Person fontSize="small" />
+            </Avatar>
+            <Typography variant="h6" fontWeight="bold">
+              {user.Name}
+            </Typography>
+          </Stack>
+        )}
+        <Divider sx={{ my: 2 }} />
         <Autocomplete
           freeSolo
           key={open ? "open" : "closed"}
@@ -162,23 +179,6 @@ const SearchPlayer = ({ open, onClose, playersIds, mode }) => {
           loading={usersLoading}
           sx={{ mt: 1 }}
         ></Autocomplete>
-        <Divider sx={{ my: 2 }} />
-        {mode === "pairs" && (
-          <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 2 }}>
-            <Avatar
-              sx={{
-                width: 32,
-                height: 32,
-                bgcolor: "primary.main",
-              }}
-            >
-              <Person fontSize="small" />
-            </Avatar>
-            <Typography variant="h6" fontWeight="bold">
-              {user.Name}
-            </Typography>
-          </Stack>
-        )}
       </DialogContent>
       <DialogActions>
         <Button

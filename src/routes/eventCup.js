@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import {
     Box,
     Paper,
@@ -18,10 +18,15 @@ import {
     Card,
     CardContent,
     Grid,
+    TextField,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions
 } from "@mui/material";
 import { useLocation, useNavigate } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, updateDoc, doc } from "firebase/firestore";
 import { fetchEvents, selectEvents } from "../redux/slices/eventsSlice";
 import { fetchUsers, selectUsers } from "../redux/slices/usersSlice";
 import useAuth from "../utils/useAuth";
@@ -80,6 +85,12 @@ const EventCup = () => {
     const [showExitSuccess, setShowExitSuccess] = useState(false);
     const [type, setType] = useState("joinGame");
     const [modeToSearchPlayer, setModeToSearchPlayer] = useState("single");
+    const [sponsorName, setSponsorName] = useState("");
+    const [sponsorColor, setSponsorColor] = useState("#b88f34");
+    const [sponsorLogoFile, setSponsorLogoFile] = useState(null);
+    const [sponsorLogoPreview, setSponsorLogoPreview] = useState("");
+    const [savingSponsor, setSavingSponsor] = useState(false);
+    const [manageSponsorOpen, setManageSponsorOpen] = useState(false);
 
     useEffect(() => {
         if (!initialFetchDone.current) {
@@ -94,6 +105,16 @@ const EventCup = () => {
         const found = events.find((e) => e.id === eventId);
         setEvent(found || null);
     }, [events, cup]);
+
+    useEffect(() => {
+        // Prefill sponsor fields from event or cup
+        const main = event?.MainSponsor || cup.mainSponsor || "";
+        const color = event?.SponsorColor || cup.sponsorColor || "#b88f34";
+        const logo = event?.SponsorLogo || cup.logoSponsor || "";
+        setSponsorName(main);
+        setSponsorColor(color);
+        setSponsorLogoPreview(logo);
+    }, [event, cup]);
 
     useEffect(() => {
         setCreatePairDisabled(!pairSlots.player1 || !pairSlots.player2);
@@ -158,6 +179,16 @@ const EventCup = () => {
         )
         .filter((u) => event?.PlayersIds?.includes(u.id) || (u.IsGuest && event?.PlayersIds?.includes(u.UserId)))
         .filter((u) => !usersBeingPairedIds.includes(u.id) && !usersBeingPairedIds.includes(u.Name));
+
+    const searchPlayersIds = useMemo(() => {
+        console.log('searchPlayersIds recompute');
+
+        const base = event?.PlayersIds || [];
+        if (modeToSearchPlayer === "pairs" && user?.uid) {
+            return Array.isArray(base) ? [...base, user.uid] : [user.uid];
+        }
+        return base;
+    }, [event?.PlayersIds, modeToSearchPlayer, user?.uid]);
 
     const TabPanel = ({ children, value, index }) => (
         <div hidden={value !== index} style={{ height: "100%", display: value === index ? "flex" : "none", flexDirection: "column" }}>
@@ -246,6 +277,12 @@ const EventCup = () => {
                                     </>
                                 )}
                             </Stack>
+                        )}
+
+                        {user?.IsAdmin && (
+                            <Box sx={{ mt: 2 }}>
+                                <Button variant="outlined" fullWidth onClick={() => setManageSponsorOpen(true)}>Manage Sponsor</Button>
+                            </Box>
                         )}
                     </TabPanel>
 
@@ -496,14 +533,6 @@ const EventCup = () => {
                             {user?.IsAdmin && (
                                 <Button variant="contained" sx={{ mt: 2 }} onClick={() => { setOpenSearchPlayer(true); }}>Add Player</Button>
                             )}
-
-                            <SearchPlayer open={openSearchPlayer} playersIds={event?.PlayersIds || []} mode={'single'} onClose={async (selectedPlayer, pairMode) => {
-                                setOpenSearchPlayer(false);
-                                if (selectedPlayer && typeof selectedPlayer === 'object') {
-                                    // registration handled in SearchPlayer callback in original Event.js; keep simple here
-                                }
-                                dispatch(fetchEvents({ db, forceRefresh: false }));
-                            }} />
                         </Stack>
                     </TabPanel>
 
@@ -552,6 +581,132 @@ const EventCup = () => {
                 _title="Unregistered"
                 _description="You have been unregistered from this cup. Sorry to see you go!"
                 _buttonText="OK"
+            />
+            {/* Manage Sponsor Dialog */}
+            <Dialog fullWidth maxWidth="sm" open={manageSponsorOpen} onClose={() => setManageSponsorOpen(false)}>
+                <DialogTitle>Manage Sponsor</DialogTitle>
+                <DialogContent>
+                    <Paper elevation={0} sx={{ p: 2 }}>
+                        <Stack spacing={2}>
+                            <TextField
+                                label="Sponsor Name"
+                                value={sponsorName}
+                                onChange={(e) => setSponsorName(e.target.value)}
+                                fullWidth
+                            />
+
+                            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                                <TextField
+                                    label="Sponsor Color"
+                                    type="color"
+                                    value={sponsorColor}
+                                    onChange={(e) => setSponsorColor(e.target.value)}
+                                    sx={{ width: 120 }}
+                                />
+
+                                <Box>
+                                    <input
+                                        accept="image/*"
+                                        style={{ display: 'none' }}
+                                        id="sponsor-logo-input-modal"
+                                        type="file"
+                                        onChange={(e) => {
+                                            const f = e.target.files && e.target.files[0];
+                                            setSponsorLogoFile(f || null);
+                                            if (f) {
+                                                const reader = new FileReader();
+                                                reader.onload = (ev) => setSponsorLogoPreview(ev.target.result);
+                                                reader.readAsDataURL(f);
+                                            }
+                                        }}
+                                    />
+                                    <label htmlFor="sponsor-logo-input-modal">
+                                        <Button variant="outlined" component="span">Upload Logo</Button>
+                                    </label>
+                                </Box>
+
+                                {sponsorLogoPreview && (
+                                    <Avatar src={sponsorLogoPreview} sx={{ width: 56, height: 56 }} />
+                                )}
+                            </Box>
+                        </Stack>
+                    </Paper>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setManageSponsorOpen(false)}>Cancel</Button>
+                    <Button variant="outlined" color="error" onClick={async () => {
+                        if (!event?.id) return;
+                        try {
+                            const eventRef = doc(db, `Events/${event.id}`);
+                            await updateDoc(eventRef, {
+                                MainSponsor: null,
+                                SponsorLogo: null,
+                                SponsorColor: null,
+                                ModifiedAt: new Date(),
+                            });
+                            setSponsorName("");
+                            setSponsorLogoPreview("");
+                            setSponsorColor("#b88f34");
+                            dispatch(fetchEvents({ db, forceRefresh: false }));
+                            setManageSponsorOpen(false);
+                        } catch (err) {
+                            console.error('remove sponsor error', err);
+                        }
+                    }}>Remove Sponsor</Button>
+                    <Button variant="contained" onClick={async () => {
+                        if (!event?.id) return;
+                        setSavingSponsor(true);
+                        try {
+                            const eventRef = doc(db, `Events/${event.id}`);
+                            await updateDoc(eventRef, {
+                                MainSponsor: sponsorName || null,
+                                SponsorLogo: sponsorLogoPreview || null,
+                                SponsorColor: sponsorColor || null,
+                                ModifiedAt: new Date(),
+                            });
+                            dispatch(fetchEvents({ db, forceRefresh: false }));
+                            setManageSponsorOpen(false);
+                        } catch (err) {
+                            console.error('save sponsor error', err);
+                        }
+                        setSavingSponsor(false);
+                    }}>Save Sponsor</Button>
+                </DialogActions>
+            </Dialog>
+            <SearchPlayer
+                open={openSearchPlayer}
+                playersIds={searchPlayersIds}
+                mode={modeToSearchPlayer}
+                onClose={async (selectedPlayer, pairMode) => {
+                    setOpenSearchPlayer(false);
+                    // If closing with a selected partner for pairs mode, create a pair
+                    if (pairMode && selectedPlayer) {
+                        try {
+                            const partnerId = selectedPlayer.id || selectedPlayer.UserId || null;
+                            const partnerName = selectedPlayer.label || selectedPlayer.Name || selectedPlayer || "Partner";
+                            if (!partnerId) {
+                                console.warn("Selected partner has no id; skipping pair creation");
+                            } else {
+                                const newPairName = `${user.Name} & ${partnerName}`;
+                                const newPair = {
+                                    DisplayName: newPairName,
+                                    Player1Id: user.uid,
+                                    Player2Id: partnerId,
+                                    CreatedAt: new Date().toISOString(),
+                                };
+                                await addSinglePair(newPair, event?.id || cup.eventId);
+                            }
+                        } catch (err) {
+                            console.error("Error creating pair from SearchPlayer", err);
+                        }
+                    }
+
+                    if (selectedPlayer && typeof selectedPlayer === 'object' && !pairMode) {
+                        // registration handled in SearchPlayer callback in original Event.js; keep simple here
+                    }
+
+                    dispatch(fetchEvents({ db, forceRefresh: false }));
+                }}
             />
         </>
     );

@@ -1,11 +1,11 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Box, Paper, Typography, Chip } from "@mui/material";
 import { useNavigate } from "react-router";
 
 const TournamentCard = ({ title, startMonth, durationMonths, color, onClick }) => {
   const months = [];
   const monthNames = [
-    "Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
   ];
   for (let i = 0; i < durationMonths; i++) {
     const m = (startMonth + i) % 12;
@@ -23,13 +23,22 @@ const TournamentCard = ({ title, startMonth, durationMonths, color, onClick }) =
         {months.map((m) => (
           <Chip key={m} label={m} size="small" />
         ))}
-      </Box>      
+      </Box>
     </Paper>
   );
 };
 
-const PremierPadel = () => {
+const PremierPadel = ({ events }) => {
   const navigate = useNavigate();
+
+  const [premierPadelEvents, setPremierPadelEvents] = useState([]);
+
+  useEffect(() => {
+    const filteredEvents = events.filter(event => event.TypeOfTournament === "Premier");
+    console.log(filteredEvents);
+    
+    setPremierPadelEvents(filteredEvents);
+  }, [events]);
 
   // Two tournaments per year: Spring Cup and Autumn Cup
   const handleOpenCup = (cup) => {
@@ -38,37 +47,20 @@ const PremierPadel = () => {
 
   return (
     <Box sx={{ p: 2 }}>
-      <TournamentCard
-        title="Spring Cup"
-        startMonth={4}
-        durationMonths={3}
-        color="#388e3c"
-        onClick={() =>
-          handleOpenCup({
-            title: "Spring Cup",
-            mainSponsor: "Acme Sports",
-            logoSponsor: "PadelCo",
-            type: "Elimination",
-            tournamentId: "spring-2026",
-          })
-        }
-      />
-
-      <TournamentCard
-        title="Autumn Cup"
-        startMonth={8}
-        durationMonths={3}
-        color="#1976d2"
-        onClick={() =>
-          handleOpenCup({
-            title: "Autumn Cup",
-            mainSponsor: "CourtKings",
-            logoSponsor: "NetGear",
-            type: "Elimination",
-            tournamentId: "autumn-2026",
-          })
-        }
-      />
+      {premierPadelEvents.map((event) => (
+        <TournamentCard
+          key={event.id}
+          title={event.Name}
+          startMonth={event.StartMonth}
+          durationMonths={event.EndMonth - event.StartMonth}
+          //color="#388e3c"
+          onClick={() =>
+            handleOpenCup(
+              event
+            )
+          }
+        />
+      ))}
     </Box>
   );
 };
