@@ -23,8 +23,8 @@ import {
   Button,
   CircularProgress,
   Chip,
-  Fab,
   Paper,
+  Tab,
   SwipeableDrawer,
   Typography,
   FormControl,
@@ -35,7 +35,6 @@ import {
   MenuItem,
 } from "@mui/material";
 import {
-  Add,
   CalendarMonth,
   Construction,
   ShoppingCart,
@@ -44,19 +43,13 @@ import {
 import { styled } from "@mui/material/styles";
 import { grey } from "@mui/material/colors";
 
-import {
-  Timeline,
-  TimelineSeparator,
-  TimelineConnector,
-  TimelineContent,
-  TimelineDot,
-} from "@mui/lab";
-import TimelineItem, { timelineItemClasses } from "@mui/lab/TimelineItem";
-
-import PullToRefresh from 'react-simple-pull-to-refresh';
+import { TabContext, TabList, TabPanel } from "@mui/lab";
 
 import ConfirmationModal from "../components/ConfirmationModal";
 import SuccessModal from "../components/SuccessModal";
+
+import Tour2026 from "../components/Tour2026";
+import PremierPadel from "../components/PremierPadel";
 
 const Puller = styled(Box)(({ theme }) => ({
   width: 30,
@@ -92,6 +85,8 @@ const Home = () => {
   const [evtClass, setEvtClass] = useState("");
   const [evtType, setEvtType] = useState("");
   const [evtDate, setEvtDate] = useState(""); // store as ISO string for now
+  const [evtStartMonth, setEvtStartMonth] = useState("");
+  const [evtEndMonth, setEvtEndMonth] = useState("");
   const [evtLocation, setEvtLocation] = useState("");
   const [evtDescription, setEvtDescription] = useState("");
   const [evtPrice, setEvtPrice] = useState("");
@@ -102,11 +97,14 @@ const Home = () => {
 
   const initialFetchDone = useRef(false);
 
+  const [activeTab, setActiveTab] = useState("tour");
+
   const events = useSelector(selectEvents);
   const loading = useSelector(selectEventsLoading);
 
   const NewHomeForEveryOne = getBoolean(remoteConfig, "NewHomeForEveryOne");
   const ForceRefresh = getNumber(remoteConfig, "ForceRefresh");
+  const PremierPadelForEveryOne = getBoolean(remoteConfig, "PremierPadelForEveryOne");
 
   useEffect(() => {
     // Only fetch if we haven't done initial fetch and don't have benefits
@@ -132,9 +130,12 @@ const Home = () => {
     const eventsCollection = collection(db, "Events");
     await addDoc(eventsCollection, {
       Name: evtName,
-      Type: evtClass.replace("🏆 ", "").replace("🤝 ", "").replace("📚 ", ""),
+      Type: evtType === 'Premier' ? 'Tournament' : evtClass.replace("🏆 ", "").replace("🤝 ", "").replace("📚 ", ""),
       TypeOfTournament: evtType,
       Date: Timestamp.fromDate(new Date(evtDate)),
+      // Premier-specific range
+      StartMonth: evtType === "Premier" ? evtStartMonth || null : null,
+      EndMonth: evtType === "Premier" ? evtEndMonth || null : null,
       Location: evtLocation,
       Description: evtDescription,
       Price: evtPrice,
@@ -148,6 +149,8 @@ const Home = () => {
     setEvtName("");
     setEvtType("Tournament");
     setEvtDate("");
+    setEvtStartMonth("");
+    setEvtEndMonth("");
     setEvtLocation("");
     setHasPrices(false);
     setHasWelcomeKit(false);
@@ -198,12 +201,13 @@ const Home = () => {
 
   // Sort events by date and group by month
   const sortedEvents = [...events].sort((a, b) => b.Date - a.Date);
-  
+
   const groupedEvents = sortedEvents.reduce((acc, event) => {
+    if (event.TypeOfTournament === 'Premier') return acc; // skip events premier 
     const eventDate = new Date(event.Date);
     const monthKey = `${eventDate.getFullYear()}-${String(eventDate.getMonth() + 1).padStart(2, '0')}`;
     const monthLabel = eventDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-    
+
     if (!acc[monthKey]) {
       acc[monthKey] = { label: monthLabel, events: [] };
     }
@@ -248,147 +252,33 @@ const Home = () => {
               overflow: "auto",
             }}
           >
-            <Timeline
-              sx={{
-                [`& .${timelineItemClasses.root}:before`]: {
-                  flex: 0,
-                  padding: 0,
-                },
-              }}
-            >
-              <PullToRefresh onRefresh={onRefresh}>
-                {Object.entries(groupedEvents).map(([monthKey, { label, events: monthEvents }]) => (
-                  <Box key={monthKey}>
-                    {/* Month Header */}
-                    <TimelineItem>
-                      <TimelineSeparator>
-                        <TimelineConnector />
-                        <TimelineDot sx={{ bgcolor: 'primary.main', width: 20, height: 20, borderWidth: 4 }}>
-                          <CalendarMonth sx={{ fontSize: 20, color: 'white' }} />
-                        </TimelineDot>
-                        <TimelineConnector />
-                      </TimelineSeparator>
-                      <TimelineContent sx={{ py: '12px', px: 2 }}>
-                        <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
-                          {label}
-                        </Typography>
-                      </TimelineContent>
-                    </TimelineItem>
+            <TabContext value={activeTab}>
+              <TabList onChange={(e, v) => setActiveTab(v)} variant="fullWidth">
+                <Tab label="Tour 2026" value="tour" />
+                {PremierPadelForEveryOne || user?.IsAdmin || user?.IsTester ? <Tab label="Premier Padel" value="premier" /> : null}
+              </TabList>
 
-                    {/* Events for this month */}
-                    {monthEvents.map((event, index) => {
-                      const alreadyRegistered = event?.PlayersIds?.includes(user?.uid);
-                      return (
-                        <TimelineItem key={`${monthKey}-${index}`}>
-                          <TimelineSeparator>
-                            <TimelineConnector />
-                            <TimelineDot
-                              sx={{
-                                bgcolor: `${getColor(event.Type)}.main`,
-                                color: "white",
-                                fontWeight: "bold",
-                                width: 24,
-                                height: 24,
-                              }}
-                            >
-                              <Typography
-                                variant="span"
-                                sx={{
-                                  fontWeight: "bold",
-                                  width: "100%",
-                                  textAlign: "center",
-                                  px: 0.2,
-                                }}
-                              >
-                                {new Date(event.Date).getDate()}
-                              </Typography>
-                            </TimelineDot>
-                            <TimelineConnector />
-                          </TimelineSeparator>
-                          <TimelineContent sx={{ py: "12px", px: 2 }}>
-                            <Box
-                              sx={{
-                                border: "2px dashed grey",
-                                borderRadius: 2,
-                                p: 1,
-                                position: "relative",
-                                cursor: "pointer",
-                              }}
-                              onClick={() => {
-                                console.log(
-                                  "Box 1 clicked - going to event details"
-                                );
-                                navigate("/Event", {
-                                  state: { eventId: event.id },
-                                });
-                              }}
-                            >
-                              <Typography variant="h6" sx={{ width: 'Calc(100% - 100px)' }}>
-                                {getIcon(event.Type)}
-                                {event.Name}
-                              </Typography>
-                              <Typography variant="body2">
-                                ⌚
-                                {Timestamp.fromMillis(event.Date)
-                                  .toDate()
-                                  .getHours()}
-                                :
-                                {Timestamp.fromMillis(event.Date)
-                                  .toDate()
-                                  .getMinutes()
-                                  .toString()
-                                  .padStart(2, "0")}
-                              </Typography>
-                              <Box
-                                sx={{
-                                  position: "absolute",
-                                  top: 8,
-                                  right: 8,
-                                  display: "flex",
-                                  flexWrap: "wrap",
-                                  flexDirection: "row",
-                                  alignItems: "end",
-                                  justifyContent: "end",
-                                }}
-                              >
-                                <Chip
-                                  variant="solid"
-                                  color={getColor(event.Type)}
-                                  size="small"
-                                  label={event.Type}
-                                  sx={{ width: "100%" }}
-                                />
-                                {event.RecordGames && <span>🎥</span>}
-                              </Box>
-                              {user && alreadyRegistered && (
-                                <Chip
-                                  label="💪 You already In!"
-                                  color="primary"
-                                  sx={{ color: "white", mt: 1 }}
-                                  size="small"
-                                />
-                              )}
-                            </Box>
-                          </TimelineContent>
-                        </TimelineItem>
-                      );
-                    })}
-                  </Box>
-                ))}
-              </PullToRefresh>
-            </Timeline>
-            {user?.IsAdmin && (
-              <Fab
-                color="primary"
-                aria-label="add"
-                sx={{ position: "fixed", bottom: 76, right: 16 }}
-                onClick={() => {
-                  setOpen(true);
-                }}
-              >
-                <Add sx={{ color: "white" }} />
-              </Fab>
-            )}
+              <TabPanel value="tour" sx={{ p: 0 }}>
+                <Tour2026
+                  groupedEvents={groupedEvents}
+                  onRefresh={onRefresh}
+                  getColor={getColor}
+                  getIcon={getIcon}
+                  user={user}
+                  navigate={navigate}
+                  dispatch={dispatch}
+                  db={db}
+                  setOpen={setOpen}
+                  setEventSelectedId={setEventSelectedId}
+                  setShowSuccess={setShowSuccess}
+                  registerFromEvent={registerFromEvent}
+                />
+              </TabPanel>
+
+              <TabPanel value="premier" sx={{ p: 0 }}>
+                <PremierPadel events={sortedEvents} />
+              </TabPanel>
+            </TabContext>
           </Box>
         </>
       ) : (
@@ -604,8 +494,26 @@ const Home = () => {
                 autoComplete="off"
               />
             </FormControl>
-            {/* Class */}
+            {/* Type */}
             <FormControl fullWidth>
+              <TextField
+                select
+                fullWidth
+                label="Type"
+                id="EventType"
+                value={evtType}
+                onChange={(e) => setEvtType(e.target.value)}
+              >
+                {/* , '📚 Training' */}
+                {["Masters", "Mix", "Premier"].map((t) => (
+                  <MenuItem key={t} value={t}>
+                    {t}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </FormControl>
+            {/* Class */}
+            {evtType !== "Premier" ? <FormControl fullWidth>
               <TextField
                 select
                 fullWidth
@@ -621,38 +529,43 @@ const Home = () => {
                   </MenuItem>
                 ))}
               </TextField>
-            </FormControl>
-            {/* Type */}
-            <FormControl fullWidth>
-              <TextField
-                select
-                fullWidth
-                label="Type"
-                id="EventType"
-                value={evtType}
-                onChange={(e) => setEvtType(e.target.value)}
-              >
-                {/* , '📚 Training' */}
-                {["Masters", "Mix"].map((t) => (
-                  <MenuItem key={t} value={t}>
-                    {t}
-                  </MenuItem>
-                ))}
-              </TextField>
-            </FormControl>
+            </FormControl> : null}
+
             {/* Date (local datetime) */}
             <FormControl fullWidth>
               <TextField
                 fullWidth
                 required
-                type="datetime-local"
-                label="Date & Time"
+                type={evtType !== "Premier" ? "datetime-local" : "date"}
+                label={evtType !== "Premier" ? "Date & Time" : "Start Inscriptions Date"}
                 InputLabelProps={{ shrink: true }}
                 id="EventDate"
                 value={evtDate}
                 onChange={(e) => setEvtDate(e.target.value)}
               />
             </FormControl>
+            {evtType === "Premier" && (
+              <FormControl fullWidth>
+                <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
+                  <TextField
+                    fullWidth
+                    label="Start Month"
+                    type="month"
+                    InputLabelProps={{ shrink: true }}
+                    value={evtStartMonth}
+                    onChange={(e) => setEvtStartMonth(e.target.value)}
+                  />
+                  <TextField
+                    fullWidth
+                    label="End Month"
+                    type="month"
+                    InputLabelProps={{ shrink: true }}
+                    value={evtEndMonth}
+                    onChange={(e) => setEvtEndMonth(e.target.value)}
+                  />
+                </Box>
+              </FormControl>
+            )}
             {/* Location */}
             <FormControl fullWidth>
               <TextField

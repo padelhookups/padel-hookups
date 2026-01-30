@@ -505,6 +505,41 @@ const Community = () => {
         }
     };
 
+    // Simple, safe markdown-like renderer for basic formatting.
+    // Supports: **bold** or *bold*, _italic_ or *italic*, [text](url), and newlines.
+    const renderRichText = (input) => {
+        if (!input) return { __html: "" };
+
+        const escapeHtml = (unsafe) =>
+            unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/\"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+
+        let out = escapeHtml(String(input));
+
+        // Links: [text](url)
+        out = out.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (m, text, url) => {
+            const safeUrl = url.replace(/\"/g, "%22");
+            return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${text}</a>`;
+        });
+
+        // Bold: **text** or *text*
+        out = out.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+        out = out.replace(/\*(.+?)\*/g, "<strong>$1</strong>");
+
+        // Italic: _text_ or ~text~
+        out = out.replace(/_(.+?)_/g, "<em>$1</em>");
+        out = out.replace(/~(.+?)~/g, "<em>$1</em>");
+
+        // Preserve line breaks
+        out = out.replace(/\r?\n/g, "<br/>\n");
+
+        return { __html: out };
+    };
+
     return (
         <>
             <Paper
@@ -821,9 +856,12 @@ const Community = () => {
                                         <CardContent>
                                             <Typography
                                                 variant='body1'
-                                                sx={{ whiteSpace: "pre-line" }}>
-                                                {item.Body}
-                                            </Typography>
+                                                component='div'
+                                                sx={{ whiteSpace: "pre-line", wordBreak: "break-word" }}
+                                                dangerouslySetInnerHTML={
+                                                    renderRichText(item.Body)
+                                                }
+                                            />
                                         </CardContent>
                                         <Divider />
                                         <CardActions disableSpacing>
