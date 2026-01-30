@@ -121,7 +121,7 @@ const SearchPlayer = ({ open, onClose, playersIds, mode }) => {
             // If same gender, sort by label (name)
             return genderCompare !== 0
               ? genderCompare
-              : a.label.localeCompare(b.label);
+              : a.label?.localeCompare(b.label);
           })}
           filterOptions={(options, params) => {
             const filtered = filter(options, params);

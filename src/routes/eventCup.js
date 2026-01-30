@@ -108,9 +108,9 @@ const EventCup = () => {
 
     useEffect(() => {
         // Prefill sponsor fields from event or cup
-        const main = event?.MainSponsor || cup.mainSponsor || "";
-        const color = event?.SponsorColor || cup.sponsorColor || "#b88f34";
-        const logo = event?.SponsorLogo || cup.logoSponsor || "";
+        const main = cup?.MainSponsor || cup.mainSponsor || "";
+        const color = cup?.SponsorColor || cup.sponsorColor || "#b88f34";
+        const logo = cup?.SponsorLogo || cup.logoSponsor || "";
         setSponsorName(main);
         setSponsorColor(color);
         setSponsorLogoPreview(logo);
@@ -136,7 +136,7 @@ const EventCup = () => {
     };
 
     const handleConfirmationConfirm = async () => {
-        const eventId = event?.id || cup.eventId;
+        const eventId = cup?.id || cup.eventId;
         setShowConfirmation(false);
         try {
             if (type === "joinGame") {
@@ -171,24 +171,24 @@ const EventCup = () => {
         }
     };
 
-    const filteredUsers = [...(users || []), ...(event?.Guests || [])]
+    const filteredUsers = [...(users || []), ...(cup?.Guests || [])]
         .filter(
             (u) =>
-                !event?.PlayersWithPairsIds?.includes(u.id) &&
-                !event?.PlayersWithPairsIds?.includes(u.UserId)
+                !cup?.PlayersWithPairsIds?.includes(u.id) &&
+                !cup?.PlayersWithPairsIds?.includes(u.UserId)
         )
-        .filter((u) => event?.PlayersIds?.includes(u.id) || (u.IsGuest && event?.PlayersIds?.includes(u.UserId)))
+        .filter((u) => cup?.PlayersIds?.includes(u.id) || (u.IsGuest && cup?.PlayersIds?.includes(u.UserId)))
         .filter((u) => !usersBeingPairedIds.includes(u.id) && !usersBeingPairedIds.includes(u.Name));
 
     const searchPlayersIds = useMemo(() => {
         console.log('searchPlayersIds recompute');
 
-        const base = event?.PlayersIds || [];
+        const base = cup?.PlayersIds || [];
         if (modeToSearchPlayer === "pairs" && user?.uid) {
             return Array.isArray(base) ? [...base, user.uid] : [user.uid];
         }
         return base;
-    }, [event?.PlayersIds, modeToSearchPlayer, user?.uid]);
+    }, [cup?.PlayersIds, modeToSearchPlayer, user?.uid]);
 
     const TabPanel = ({ children, value, index }) => (
         <div hidden={value !== index} style={{ height: "100%", display: value === index ? "flex" : "none", flexDirection: "column" }}>
@@ -196,7 +196,7 @@ const EventCup = () => {
         </div>
     );
 
-    const alreadyRegistered = event?.PlayersIds?.includes(user?.uid);
+    const alreadyRegistered = cup?.PlayersIds?.includes(user?.uid);
 
     return (
         <>
@@ -244,7 +244,7 @@ const EventCup = () => {
                                         variant="contained"
                                         sx={{ bgcolor: "primary.main", color: "white" }}
                                         onClick={async () => {
-                                            if ((event?.TypeOfTournament || cup.type) === "Mix") {
+                                            if ((cup?.TypeOfTournament || cup.type) === "Mix") {
                                                 setType("joinGame");
                                                 setShowConfirmation(true);
                                             } else {
@@ -288,7 +288,7 @@ const EventCup = () => {
 
                     <TabPanel value={tab} index={1}>
                         <Stack spacing={2}>
-                            {!event?.PairsCreated && user?.IsAdmin && (
+                            {!cup?.PairsCreated && user?.IsAdmin && (
                                 <>
                                     <Box
                                         sx={{
@@ -403,7 +403,7 @@ const EventCup = () => {
                                                     pairSlots.player2.UserId,
                                                 CreatedAt: new Date().toISOString(),
                                             };
-                                            await addSinglePair(newPair, event.id);
+                                            await addSinglePair(newPair, cup.id);
                                             setPairSlots({ player1: null, player2: null });
                                             dispatch(fetchEvents({ db, forceRefresh: false }));
                                         }}
@@ -431,7 +431,7 @@ const EventCup = () => {
                                                             aria-label="delete"
                                                             onClick={async () => {
                                                                 await unregisterFromEvent(
-                                                                    event.id,
+                                                                    cup.id,
                                                                     player.id || player.UserId,
                                                                     player.IsGuest
                                                                 );
@@ -474,10 +474,10 @@ const EventCup = () => {
                                 </>
                             )}
 
-                            {event?.Pairs && event.Pairs.length > 0 && (
+                            {cup?.Pairs && cup.Pairs.length > 0 && (
                                 <Box sx={{ px: 0, py: 0 }}>
                                     <Grid container spacing={3}>
-                                        {event.Pairs.map((pair, index) => {
+                                        {cup.Pairs.map((pair, index) => {
                                             const player1Name = pair.DisplayName.split(" & ")[0];
                                             const player2Name = pair.DisplayName.split(" & ")[1];
                                             return (
@@ -515,7 +515,7 @@ const EventCup = () => {
                                         <React.Fragment key={player.id || player.Name}>
                                             <ListItem sx={{ py: 2, cursor: 'pointer' }} onClick={() => handleListItemClick(player)} secondaryAction={
                                                 <IconButton edge="end" aria-label="delete" onClick={async () => {
-                                                    await unregisterFromEvent(event?.id || cup.eventId, player.id || player.UserId, player.IsGuest);
+                                                    await unregisterFromEvent(cup?.id || cup.eventId, player.id || player.UserId, player.IsGuest);
                                                     dispatch(fetchEvents({ db, forceRefresh: false }));
                                                 }}>
                                                     <DeleteIcon color="error" />
@@ -539,9 +539,9 @@ const EventCup = () => {
                     <TabPanel value={tab} index={2}>
                         <Paper sx={{ p: 2 }} elevation={1}>
                             {cup.type === 'Mix' ? (
-                                <RobinHoodBracket eventId={event?.id || cup.eventId} tournamentId={cup.tournamentId} />
+                                <RobinHoodBracket eventId={cup?.id || cup.eventId} tournamentId={cup.tournamentId} />
                             ) : (
-                                <CupBrackets eventId={event?.id || cup.eventId} tournamentId={cup.tournamentId} />
+                                <CupBrackets eventId={cup?.id || cup.eventId} tournamentId={cup.tournamentId} />
                             )}
                         </Paper>
                     </TabPanel>
@@ -635,9 +635,9 @@ const EventCup = () => {
                 <DialogActions>
                     <Button onClick={() => setManageSponsorOpen(false)}>Cancel</Button>
                     <Button variant="outlined" color="error" onClick={async () => {
-                        if (!event?.id) return;
+                        if (!cup?.id) return;
                         try {
-                            const eventRef = doc(db, `Events/${event.id}`);
+                            const eventRef = doc(db, `Events/${cup.id}`);
                             await updateDoc(eventRef, {
                                 MainSponsor: null,
                                 SponsorLogo: null,
@@ -654,10 +654,10 @@ const EventCup = () => {
                         }
                     }}>Remove Sponsor</Button>
                     <Button variant="contained" onClick={async () => {
-                        if (!event?.id) return;
+                        if (!cup?.id) return;
                         setSavingSponsor(true);
                         try {
-                            const eventRef = doc(db, `Events/${event.id}`);
+                            const eventRef = doc(db, `Events/${cup.id}`);
                             await updateDoc(eventRef, {
                                 MainSponsor: sponsorName || null,
                                 SponsorLogo: sponsorLogoPreview || null,
@@ -694,7 +694,7 @@ const EventCup = () => {
                                     Player2Id: partnerId,
                                     CreatedAt: new Date().toISOString(),
                                 };
-                                await addSinglePair(newPair, event?.id || cup.eventId);
+                                await addSinglePair(newPair, cup.id);
                             }
                         } catch (err) {
                             console.error("Error creating pair from SearchPlayer", err);
@@ -702,7 +702,7 @@ const EventCup = () => {
                     }
 
                     if (selectedPlayer && typeof selectedPlayer === 'object' && !pairMode) {
-                        // registration handled in SearchPlayer callback in original Event.js; keep simple here
+                        // registration handled in SearchPlayer callback in original cup.js; keep simple here
                     }
 
                     dispatch(fetchEvents({ db, forceRefresh: false }));
