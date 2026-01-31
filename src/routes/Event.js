@@ -48,6 +48,7 @@ import {
   Group,
   Delete as DeleteIcon,
 } from "@mui/icons-material";
+import { create } from "brackets-manager/dist/base/stage/creator";
 
 const Event = () => {
   const { user } = useAuth();
@@ -82,7 +83,8 @@ const Event = () => {
   const [showCustomSuccess, setShowCustomSuccess] = useState(false);
   const [showJoinSuccess, setShowJoinSuccess] = useState(false);
   const [openSearchPlayer, setOpenSearchPlayer] = useState(false);
-  const [createPairDisabled, setCreatePairDisabled] = useState(true);
+  const [createPairDisabled, setCreatePairDisabled] = useState(false);
+  const [createRandomPairsDisabled, setCreateRandomPairsDisabled] = useState(false);
   const [usersBeingPairedIds, setUsersBeingPairedIds] = useState([]);
   const [pairSlots, setPairSlots] = useState({ player1: null, player2: null });
   const [tab, setTab] = useState(0);
@@ -468,7 +470,7 @@ const Event = () => {
                           fullWidth
                           sx={{ borderColor: "gray" }}
                           disabled={
-                            filteredUsers.length < 2 || event.PairsCreated
+                            filteredUsers.length < 2 || event.PairsCreated || createRandomPairsDisabled
                           }
                           onClick={async () => {
                             // if filteredUsers is not even, block action
@@ -476,8 +478,17 @@ const Event = () => {
                               alert("Please ensure an even number of players.");
                               return;
                             }
+                            setCreateRandomPairsDisabled(true);
                             await createPairsForEvent(filteredUsers, eventId);
                             dispatch(fetchEvents({ db, forceRefresh: false }));
+                            setCreateRandomPairsDisabled(false);
+                            setSuccessTitle("Matches Created!");
+                            setSuccessDescription(
+                              "Check out the Players tab to see the new pairs."
+                            );
+                            setShowCustomSuccess((prev) => {
+                              return true;
+                            });
                           }}
                         >
                           Create Random Pairs
@@ -538,7 +549,7 @@ const Event = () => {
               {!event.PairsCreated && user?.IsAdmin && (
                 <Paper elevation={1}>
                   <Stack spacing={2} sx={{ p: 2 }} direction="column">
-                    {event.TypeOfTournament === "Mix" || user?.IsAdmin ? (
+                    {!event.PairsCreated && (event.TypeOfTournament === "Mix" || user?.IsAdmin) ? (
                       <>
                         <Box
                           sx={{

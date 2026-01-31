@@ -293,6 +293,9 @@ const useEventActions = () => {
       //PairsCreated: true,
       ModifiedAt: Timestamp.fromDate(new Date()),
       //TournamentId: tournamentId,
+      PlayersWithPairsIds: arrayUnion(
+        ...pairs.flatMap((pair) => [pair.Player1Id, pair.Player2Id])
+      ),
       Pairs: arrayUnion(...pairs),
     });
   };
