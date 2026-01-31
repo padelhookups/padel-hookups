@@ -19,7 +19,7 @@ const StatisticsActions = () => {
 
     playerRefs.forEach((playerRef) => {
       // Add the update to the batch
-      if (playerRef?.path.startsWith("Users/")) {
+      if (playerRef.path?.startsWith("Users/")) {
         batch.update(playerRef, {
           [typeOfGame]: increment(1),
           LastModifiedAt: new Date(),
@@ -37,7 +37,7 @@ const StatisticsActions = () => {
 
     playerRefs.forEach((playerRef) => {
       // Add the update to the batch
-      if (playerRef?.path.startsWith("Users/")) {
+      if (playerRef.path?.startsWith("Users/")) {
         batch.update(playerRef, {
           MixsPlayed: increment(-1),
           LastModifiedAt: new Date(),
