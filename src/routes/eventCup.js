@@ -123,13 +123,12 @@ const EventCup = () => {
     const eventId = cup.id;
     const found = events.find((e) => e.id === eventId);
     setEvent(found || null);
-    setSponsorColor(found.SponsorColor || "#b88f34");
   }, [events, cup]);
 
   useEffect(() => {
     // Prefill sponsor fields from event or cup
     const main = event?.mainSponsor || "";
-    const color = event?.sponsorColor || "#b88f34";
+    const color = event?.SponsorColor || "#b88f34";
     const logo = event?.logoSponsor || "";
     setSponsorName(main);
     setSponsorColor(color);
@@ -270,7 +269,7 @@ const EventCup = () => {
     <>
       <Paper
         sx={{
-          bgcolor: event?.SponsorColor || event?.sponsorColor || "#b88f34",
+          bgcolor: sponsorColor || sponsorColor || "#b88f34",
           color: "white",
           textAlign: "start",
           pt: "env(safe-area-inset-top)",
@@ -299,11 +298,11 @@ const EventCup = () => {
             sx={{
               "& .MuiTabs-indicator": {
                 bgcolor:
-                  event?.SponsorColor || event?.sponsorColor || "primary.main",
+                  sponsorColor || sponsorColor || "primary.main",
               },
               "& .MuiTab-root": {
                 color:
-                  event?.SponsorColor || event?.sponsorColor || "primary.main",
+                  sponsorColor || sponsorColor || "primary.main",
               },
             }}
           >
@@ -341,8 +340,8 @@ const EventCup = () => {
                     variant="contained"
                     sx={{
                       bgcolor:
-                        event?.SponsorColor ||
-                        event?.sponsorColor ||
+                        sponsorColor ||
+                        sponsorColor ||
                         "primary.main",
                       color: "white",
                     }}
@@ -376,8 +375,8 @@ const EventCup = () => {
                       variant="contained"
                       sx={{
                         bgcolor:
-                          event?.SponsorColor ||
-                          event?.sponsorColor ||
+                          sponsorColor ||
+                          sponsorColor ||
                           "primary.main",
                         color: "white",
                       }}
@@ -390,12 +389,12 @@ const EventCup = () => {
                       sx={{
                         bgcolor: "white",
                         color:
-                          event?.SponsorColor ||
-                          event?.sponsorColor ||
+                          sponsorColor ||
+                          sponsorColor ||
                           "primary.main",
                         borderColor:
-                          event?.SponsorColor ||
-                          event?.sponsorColor ||
+                          sponsorColor ||
+                          sponsorColor ||
                           "primary.main",
                       }}
                       onClick={() => {
@@ -421,12 +420,12 @@ const EventCup = () => {
                   fullWidth
                   sx={{
                     borderColor:
-                      event?.SponsorColor ||
-                      event?.sponsorColor ||
+                      sponsorColor ||
+                      sponsorColor ||
                       "primary.main",
                     color:
-                      event?.SponsorColor ||
-                      event?.sponsorColor ||
+                      sponsorColor ||
+                      sponsorColor ||
                       "primary.main",
                   }}
                   onClick={() => setManageSponsorOpen(true)}
@@ -442,12 +441,12 @@ const EventCup = () => {
                 fullWidth
                 sx={{
                   borderColor:
-                    event?.SponsorColor ||
-                    event?.sponsorColor ||
+                    sponsorColor ||
+                    sponsorColor ||
                     "primary.main",
                   color:
-                    event?.SponsorColor ||
-                    event?.sponsorColor ||
+                    sponsorColor ||
+                    sponsorColor ||
                     "primary.main",
                 }}
                 disabled={event.TournamentStarted}
@@ -514,8 +513,8 @@ const EventCup = () => {
                               width: 32,
                               height: 32,
                               bgcolor:
-                                event?.SponsorColor ||
-                                event?.sponsorColor ||
+                                sponsorColor ||
+                                sponsorColor ||
                                 "primary.main",
                             }}
                           >
@@ -558,8 +557,8 @@ const EventCup = () => {
                               width: 32,
                               height: 32,
                               bgcolor:
-                                event?.SponsorColor ||
-                                event?.sponsorColor ||
+                                sponsorColor ||
+                                sponsorColor ||
                                 "primary.main",
                             }}
                           >
@@ -579,8 +578,8 @@ const EventCup = () => {
                     variant="contained"
                     sx={{
                       bgcolor:
-                        event?.SponsorColor ||
-                        event?.sponsorColor ||
+                        sponsorColor ||
+                        sponsorColor ||
                         "primary.main",
                       color: "white",
                     }}
@@ -646,8 +645,8 @@ const EventCup = () => {
                                 sx={{
                                   mr: 2,
                                   bgcolor:
-                                    event?.SponsorColor ||
-                                    event?.sponsorColor ||
+                                    sponsorColor ||
+                                    sponsorColor ||
                                     "primary.main",
                                 }}
                               >
@@ -770,8 +769,8 @@ const EventCup = () => {
                                       width: 28,
                                       height: 28,
                                       bgcolor:
-                                        event?.SponsorColor ||
-                                        event?.sponsorColor ||
+                                        sponsorColor ||
+                                        sponsorColor ||
                                         "primary.main",
                                       fontSize: 12,
                                     }}
@@ -817,8 +816,8 @@ const EventCup = () => {
                                       width: 28,
                                       height: 28,
                                       bgcolor:
-                                        event?.SponsorColor ||
-                                        event?.sponsorColor ||
+                                        sponsorColor ||
+                                        sponsorColor ||
                                         "primary.main",
                                       fontSize: 12,
                                     }}
@@ -957,12 +956,10 @@ const EventCup = () => {
                       component="span"
                       sx={{
                         borderColor:
-                          event?.SponsorColor ||
-                          event?.sponsorColor ||
+                          sponsorColor ||
                           "primary.main",
                         color:
-                          event?.SponsorColor ||
-                          event?.sponsorColor ||
+                          sponsorColor ||
                           "primary.main",
                       }}
                     >
@@ -984,12 +981,12 @@ const EventCup = () => {
         <DialogActions>
           <Stack direction="column" spacing={2} sx={{ width: "100%", px: 0 }}>
             <Button
-              variant="contained"
+              variant="outlined"
               fullWidth
-              sx={{ bgcolor: event?.SponsorColor || event?.sponsorColor || "primary.main", color: "white" }}
+              sx={{ borderColor: sponsorColor || "primary.main", color: sponsorColor || "primary.main" }}
               onClick={() => setManageSponsorOpen(false)}
             >
-              <Typography color="white">Cancel</Typography>
+              <Typography color={sponsorColor || "primary.main"}>Cancel</Typography>
             </Button>
             <Button
               fullWidth
@@ -1007,7 +1004,7 @@ const EventCup = () => {
                   });
                   setSponsorName("");
                   setSponsorLogoPreview("");
-                  setSponsorColor("#b88f34");
+                  setSponsorColor(sponsorColor || "#b88f34");
                   dispatch(fetchEvents({ db, forceRefresh: false }));
                   setManageSponsorOpen(false);
                 } catch (err) {
@@ -1020,7 +1017,7 @@ const EventCup = () => {
             <Button
               fullWidth
               variant="contained"
-              sx={{ bgcolor: event?.SponsorColor || event?.sponsorColor || "primary.main", color: "white" }}
+              sx={{ bgcolor: sponsorColor || sponsorColor || "primary.main", color: "white" }}
               onClick={async () => {
                 if (!event?.id) return;
                 setSavingSponsor(true);
@@ -1049,7 +1046,7 @@ const EventCup = () => {
         <Fab
           sx={{
             bgcolor:
-              event?.SponsorColor || event?.sponsorColor || "primary.main",
+              sponsorColor || sponsorColor || "primary.main",
             color: "white",
           }}
           aria-label="add"
@@ -1066,7 +1063,7 @@ const EventCup = () => {
         open={openSearchPlayer}
         playersIds={playersToExclude}
         mode={modeToSearchPlayer}
-        sponsorColor={event?.SponsorColor || event?.sponsorColor || "primary.main"}
+        sponsorColor={sponsorColor || sponsorColor || "primary.main"}
         onClose={async (selectedPlayer, pairMode) => {
           setOpenSearchPlayer(false);
           // If closing with a selected partner for pairs mode, create a pair
