@@ -57,7 +57,7 @@ const useEventActions = () => {
     const manager = new BracketsManager(adapter);
 
     console.log('pairs', pairs);
-    
+
     const seeding = pairs.map((pair, i) => ({
       id: i + 1, // manager-side temporary ID
       name: pair.DisplayName, // display name
@@ -142,7 +142,7 @@ const useEventActions = () => {
       },
       seeding: seeding,
     });
-    
+
     await addPlayedEvent(players, 'Tour');
     await addFirstTourEventPlayedBadge(players);
   };
@@ -257,14 +257,24 @@ const useEventActions = () => {
     }
   };
 
-  const addSinglePair = async (pair, eventId) => {
+  const addSinglePair = async (pair, eventId, addToPlayerIds) => {
     const eventDocRef = doc(db, `Events/${eventId}`);
 
-    await updateDoc(eventDocRef, {
-      ModifiedAt: Timestamp.fromDate(new Date()),
-      PlayersWithPairsIds: arrayUnion(pair.Player1Id, pair.Player2Id),
-      Pairs: arrayUnion(pair),
-    });
+    if (addToPlayerIds) {
+      await updateDoc(eventDocRef, {
+        ModifiedAt: Timestamp.fromDate(new Date()),
+        PlayersIds: arrayUnion(pair.Player1Id, pair.Player2Id),
+        PlayersWithPairsIds: arrayUnion(pair.Player1Id, pair.Player2Id),
+        Pairs: arrayUnion(pair),
+      });
+    } else {
+      await updateDoc(eventDocRef, {
+        ModifiedAt: Timestamp.fromDate(new Date()),
+        PlayersWithPairsIds: arrayUnion(pair.Player1Id, pair.Player2Id),
+        Pairs: arrayUnion(pair),
+      });
+    }
+
   };
 
   const createPairsForEvent = async (players, eventId) => {

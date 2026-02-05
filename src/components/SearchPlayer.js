@@ -31,7 +31,7 @@ const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;
 });
 
-const SearchPlayer = ({ open, onClose, playersIds, mode }) => {
+const SearchPlayer = ({ open, onClose, playersIds, mode, sponsorColor }) => {
   const db = getFirestore();
   const { user } = useAuth();
   const dispatch = useDispatch();
@@ -183,6 +183,7 @@ const SearchPlayer = ({ open, onClose, playersIds, mode }) => {
       <DialogActions>
         <Button
           autoFocus
+          sx={{ color: sponsorColor || "primary.main" }}
           onClick={() => {
             setSelectedPlayer(null);
             onClose();
@@ -192,6 +193,8 @@ const SearchPlayer = ({ open, onClose, playersIds, mode }) => {
         </Button>
         <Button
           autoFocus
+          variant="contained"
+          sx={{ bgcolor: sponsorColor || "primary.main", color: "white" }}
           onClick={() => {
             const hasError = validate();
             if (hasError) return;

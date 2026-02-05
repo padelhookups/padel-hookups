@@ -15,10 +15,6 @@ export default function SuccessModal({
 }) {
 	const navigate = useNavigate();
 
-	const [title, setTitle] = useState(_title);
-	const [description, setDescription] = useState(_description);
-	const [buttonText, setButtonText] = useState(_buttonText);
-
 	const handlePlayClick = () => {
 		if (_navigate && _navigateTo) {
 			navigate(_navigateTo);
@@ -77,7 +73,7 @@ export default function SuccessModal({
 							color: "text.primary",
 							mb: 2
 						}}>
-						{title}
+						{_title}
 					</Typography>
 
 					<Typography
@@ -87,7 +83,7 @@ export default function SuccessModal({
 							mb: 4,
 							lineHeight: 1.6
 						}}>
-						{description}
+						{_description}
 					</Typography>
 
 					{/* Floating Elements */}
@@ -136,7 +132,7 @@ export default function SuccessModal({
 								boxShadow: "0 8px 25px rgba(184, 143, 52, 0.3)"
 							}
 						}}>
-						{buttonText}
+						{_buttonText}
 					</Button>
 				</Box>
 			</Fade>
