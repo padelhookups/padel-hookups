@@ -459,18 +459,11 @@ const EventCup = () => {
                     alert("No pairs available to create matches.");
                     return;
                   }
-                  if (event.TypeOfTournament === "Mix") {
-                    setType("createMatchesRobinHood");
-                    setConfirmationTitle("Create matches?");
-                    setConfirmationDescription("");
-                    setShowConfirmation(true);
-                  } else {
-                    setType("createMasters");
-                    setConfirmationTitle("Create Groups?");
-                    setConfirmationDescription("");
-                    setShowConfirmation(true);
-                  }
-                  dispatch(fetchEvents({ db, forceRefresh: false }));
+
+                  setType("createMasters");
+                  setConfirmationTitle("Create Groups?");
+                  setConfirmationDescription("");
+                  setShowConfirmation(true);                  
                 }}
               >
                 Create Groups & Matches

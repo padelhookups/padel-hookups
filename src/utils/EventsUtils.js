@@ -430,6 +430,17 @@ const useEventActions = () => {
     return totalPairs / groupSize;
   }
 
+  const deleteEvent = async (eventId) => {
+    try {
+      await deleteAllGamesForEvent(eventId);
+      const eventDocRef = doc(db, `Events/${eventId}`);
+      await deleteDoc(eventDocRef);
+    } catch (error) {
+      console.error("Error deleting event:", error);
+      throw error;
+    }
+  };
+
   return {
     addSinglePair,
     createMatchsRobinHood,
@@ -440,6 +451,7 @@ const useEventActions = () => {
     createPairsForEvent,
     deleteAllGamesForEvent,
     deletePairFromEvent,
+    deleteEvent,
   };
 };
 

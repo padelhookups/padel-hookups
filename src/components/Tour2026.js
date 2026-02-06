@@ -1,11 +1,19 @@
 import React from "react";
+import { useDispatch } from "react-redux";
+import { getFirestore } from "firebase/firestore";
+import { Timestamp } from "firebase/firestore";
+import { fetchEvents } from "../redux/slices/eventsSlice";
+
 import {
   Box,
   Chip,
   Fab,
+  IconButton,
   Typography,
 } from "@mui/material";
-import { Add, CalendarMonth } from "@mui/icons-material";
+import { Add, CalendarMonth, Delete as DeleteIcon } from "@mui/icons-material";
+
+import useEventActions from "../utils/EventsUtils";
 import {
   Timeline,
   TimelineSeparator,
@@ -14,8 +22,10 @@ import {
   TimelineDot,
 } from "@mui/lab";
 import TimelineItem, { timelineItemClasses } from "@mui/lab/TimelineItem";
+
 import PullToRefresh from "react-simple-pull-to-refresh";
-import { Timestamp } from "firebase/firestore";
+
+import ConfirmationModal from "../components/ConfirmationModal";
 
 const Tour2026 = ({
   groupedEvents,
@@ -26,6 +36,26 @@ const Tour2026 = ({
   navigate,
   setOpen,
 }) => {
+  const db = getFirestore();
+  const dispatch = useDispatch();
+  const { deleteEvent } = useEventActions();
+
+  const [selectedEventId, setSelectedEventId] = React.useState(null);
+  const [showConfirmation, setShowConfirmation] = React.useState(false);
+  const [type, setType] = React.useState("");
+  const [confirmationTitle, setConfirmationTitle] = React.useState("");
+  const [confirmationDescription, setConfirmationDescription] = React.useState("");
+
+  const handleConfirmationConfirm = async () => {
+    if (type === "deleteEvent") {
+      await deleteEvent(selectedEventId);
+    }
+    setShowConfirmation(false);
+    dispatch(
+      fetchEvents({ db, forceRefresh: false }),
+    );
+  };
+
   return (
     <>
       <Timeline
@@ -144,6 +174,26 @@ const Tour2026 = ({
                             size="small"
                           />
                         )}
+                        {
+                          user?.IsAdmin && (
+                            <IconButton
+                              edge="end"
+                              aria-label="delete"
+                              sx={{ position: "absolute", bottom: 0, right: 12 }}
+                              onClick={async (e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setSelectedEventId(event.id);
+                                setType("deleteEvent");
+                                setConfirmationTitle("Delete Event");
+                                setConfirmationDescription("Are you sure you want to delete this event?");
+                                setShowConfirmation(true);
+                              }}
+                            >
+                              <DeleteIcon color="error" />
+                            </IconButton>
+                          )
+                        }
                       </Box>
                     </TimelineContent>
                   </TimelineItem>
@@ -165,6 +215,16 @@ const Tour2026 = ({
           <Add sx={{ color: "white" }} />
         </Fab>
       )}
+      <ConfirmationModal
+        open={showConfirmation}
+        onClose={() => setShowConfirmation(false)}
+        onConfirm={handleConfirmationConfirm}
+        type={type}
+        title={confirmationTitle}
+        description={confirmationDescription}
+        positiveText={type === "exitGame" ? "Unregister" : "Yes"}
+        negativeText="Cancel"
+      />
     </>
   );
 };
