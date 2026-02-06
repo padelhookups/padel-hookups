@@ -51,9 +51,7 @@ const Tour2026 = ({
       await deleteEvent(selectedEventId);
     }
     setShowConfirmation(false);
-    dispatch(
-      fetchEvents({ db, forceRefresh: false }),
-    );
+    onRefresh();
   };
 
   return (

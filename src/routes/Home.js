@@ -178,6 +178,7 @@ const Home = () => {
     setHasWelcomeKit(false);
     setRecordGames(false);
     setOpen(false);
+    onRefresh();
   };
 
   if (loading && events.length === 0) {
