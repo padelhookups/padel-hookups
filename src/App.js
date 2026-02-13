@@ -18,7 +18,7 @@ import VerifyEmail from "./routes/VerifyEmail";
 import Home from "./routes/Home";
 import Community from "./routes/Community";
 import Event from "./routes/Event";
-import EventCup from "./routes/eventCup";
+import EventCup from "./routes/EventCup";
 import Profile from "./routes/Profile";
 import Settings from "./routes/Settings";
 import Benefits from "./routes/Benefits";

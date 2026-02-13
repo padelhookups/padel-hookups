@@ -186,6 +186,8 @@ const EventCup = () => {
         );
         dispatch(fetchEvents({ db, forceRefresh: false }));
         setShowExitSuccess(true);
+      }else if (type === 'createMasters'){
+
       }
     } catch (err) {
       console.error("confirmation action error", err);
@@ -320,8 +322,8 @@ const EventCup = () => {
         flexDirection="column"
         bgcolor="background.default"
       >
-        <Container maxWidth="sm" sx={{ py: 3, flex: 1 }}>
-          <TabPanel value={tab} index={0}>
+        <TabPanel value={tab} index={0}>
+          <Container maxWidth="sm" sx={{ py: 3, flex: 1 }}>
             <SponsorBanner
               mainSponsor={event.mainSponsor}
               logoSponsor={event.logoSponsor}
@@ -463,16 +465,18 @@ const EventCup = () => {
                   setType("createMasters");
                   setConfirmationTitle("Create Groups?");
                   setConfirmationDescription("");
-                  setShowConfirmation(true);                  
+                  setShowConfirmation(true);
                 }}
               >
                 Create Groups & Matches
               </Button>
             </Box>
-          </TabPanel>
+          </Container>
+        </TabPanel>
 
-          <TabPanel value={tab} index={1}>
-            <Stack spacing={2}>
+        <TabPanel value={tab} index={1}>
+          <Stack spacing={2}>
+            <Box sx={{ px: 4, py: 4 }}>
               {!event?.PairsCreated && user?.IsAdmin && (
                 <>
                   <Box
@@ -568,6 +572,7 @@ const EventCup = () => {
                   </Box>
                   <Button
                     disabled={createPairDisabled}
+                    fullWidth
                     variant="contained"
                     sx={{
                       bgcolor:
@@ -575,6 +580,7 @@ const EventCup = () => {
                         sponsorColor ||
                         "primary.main",
                       color: "white",
+                      marginY: 2,
                     }}
                     onClick={async () => {
                       const newPairName = `${pairSlots.player1.Name} & ${pairSlots.player2.Name}`;
@@ -672,105 +678,108 @@ const EventCup = () => {
                 Pairs registered
               </Typography>
               <Divider />
-              {event?.Pairs && event.Pairs.length > 0 && (
-                <Box sx={{ px: 4, py: 4 }}>
-                  <Grid container spacing={3}>
-                    {event.Pairs.map((pair, index) => {
-                      const player1Name = pair.DisplayName.split(" & ")[0];
-                      const player2Name = pair.DisplayName.split(" & ")[1];
+            </Box>
 
-                      const player1PhotoURL = users.find(
-                        (u) => u.id === pair.Player1Id,
-                      )?.PhotoURL;
-                      const player2PhotoURL = users.find(
-                        (u) => u.id === pair.Player2Id,
-                      )?.PhotoURL;
+            {event?.Pairs && event.Pairs.length > 0 && (
+              <Box sx={{ px: 4, mt: 0 }}>
+                <Grid container spacing={3}>
+                  {event.Pairs.map((pair, index) => {
+                    const player1Name = pair.DisplayName.split(" & ")[0];
+                    const player2Name = pair.DisplayName.split(" & ")[1];
 
-                      const initials = (name) =>
-                        name
-                          .split(" ")
-                          .filter(Boolean)
-                          .map((w) => w[0])
-                          .slice(0, 2)
-                          .join("")
-                          .toUpperCase();
-                      return (
-                        <Grid
-                          item
-                          size={{ xs: 12, md: 6, lg: 3 }}
-                          key={pair.id || index}
+                    const player1PhotoURL = users.find(
+                      (u) => u.id === pair.Player1Id,
+                    )?.PhotoURL;
+                    const player2PhotoURL = users.find(
+                      (u) => u.id === pair.Player2Id,
+                    )?.PhotoURL;
+
+                    const initials = (name) =>
+                      name
+                        .split(" ")
+                        .filter(Boolean)
+                        .map((w) => w[0])
+                        .slice(0, 2)
+                        .join("")
+                        .toUpperCase();
+                    return (
+                      <Grid
+                        item
+                        size={{ xs: 12, md: 6, lg: 3 }}
+                        key={pair.id || index}
+                        sx={{ mt: 0 }}
+                      >
+                        <Card
+                          sx={{
+                            height: "100%",
+                            display: "flex",
+                            flexDirection: "column",
+                            position: "relative",
+                          }}
                         >
-                          <Card
-                            sx={{
-                              height: "100%",
-                              display: "flex",
-                              flexDirection: "column",
-                              position: "relative",
-                            }}
-                          >
-                            <CardContent sx={{ height: "100%" }}>
+                          <CardContent sx={{ height: "100%" }}>
+                            <Stack
+                              direction="row"
+                              alignItems="center"
+                              justifyContent="start"
+                              sx={{ mb: 2 }}
+                            >
+                              <Typography
+                                variant="subtitle2"
+                                color="text.secondary"
+                              >
+                                Pair
+                              </Typography>
+                              <Chip
+                                size="small"
+                                label={`#${index + 1}`}
+                                sx={{ marginLeft: "auto" }}
+                              />
+                              {user?.IsAdmin && (
+                                <IconButton
+                                  edge="end"
+                                  aria-label="delete"
+                                  onClick={async () => {
+                                    await deletePairFromEvent(
+                                      event.id,
+                                      pair.Player1Id,
+                                      pair.Player2Id,
+                                    );
+                                    dispatch(
+                                      fetchEvents({
+                                        db,
+                                        forceRefresh: false,
+                                      }),
+                                    );
+                                  }}
+                                >
+                                  <DeleteIcon color="error" />
+                                </IconButton>
+                              )}
+                            </Stack>
+                            <Divider />
+                            <Stack spacing={1} flexGrow={1} sx={{ mt: 2 }}>
                               <Stack
+                                key={player1Name + index}
                                 direction="row"
                                 alignItems="center"
-                                justifyContent="start"
-                                sx={{ mb: 2 }}
+                                spacing={1.25}
                               >
-                                <Typography
-                                  variant="subtitle2"
-                                  color="text.secondary"
+                                <Avatar
+                                  src={player1PhotoURL}
+                                  sx={{
+                                    width: 28,
+                                    height: 28,
+                                    bgcolor:
+                                      sponsorColor ||
+                                      sponsorColor ||
+                                      "primary.main",
+                                    fontSize: 12,
+                                  }}
                                 >
-                                  Pair
-                                </Typography>
-                                <Chip
-                                  size="small"
-                                  label={`#${index + 1}`}
-                                  sx={{ marginLeft: "auto" }}
-                                />
-                                {user?.IsAdmin && (
-                                  <IconButton
-                                    edge="end"
-                                    aria-label="delete"
-                                    onClick={async () => {
-                                      await deletePairFromEvent(
-                                        event.id,
-                                        pair.Player1Id,
-                                        pair.Player2Id,
-                                      );
-                                      dispatch(
-                                        fetchEvents({
-                                          db,
-                                          forceRefresh: false,
-                                        }),
-                                      );
-                                    }}
-                                  >
-                                    <DeleteIcon color="error" />
-                                  </IconButton>
-                                )}
-                              </Stack>
-                              <Divider />
-                              <Stack spacing={1} flexGrow={1} sx={{ mt: 2 }}>
-                                <Stack
-                                  key={player1Name + index}
-                                  direction="row"
-                                  alignItems="center"
-                                  spacing={1.25}
-                                >
-                                  <Avatar
-                                    src={player1PhotoURL}
-                                    sx={{
-                                      width: 28,
-                                      height: 28,
-                                      bgcolor:
-                                        sponsorColor ||
-                                        sponsorColor ||
-                                        "primary.main",
-                                      fontSize: 12,
-                                    }}
-                                  >
-                                    {initials(player1Name)}
-                                  </Avatar>
-                                  {/* <Avatar
+                                  {initials(player1Name)}
+                                </Avatar>
+                                {/* <Avatar
                                                                     src={user?.PhotoURL && !imageError ? user.PhotoURL : undefined}
                                                                     sx={{
                                                                       width: 100,
@@ -793,84 +802,61 @@ const EventCup = () => {
                                                                     }}>
                                                                     {user?.PhotoURL || getInitials()}
                                                                   </Avatar> */}
-                                  <Typography variant="body2" fontWeight={600}>
-                                    {player1Name}
-                                  </Typography>
-                                </Stack>
-                                <Stack
-                                  key={player2Name + index}
-                                  direction="row"
-                                  alignItems="center"
-                                  spacing={1.25}
-                                >
-                                  <Avatar
-                                    src={player2PhotoURL}
-                                    sx={{
-                                      width: 28,
-                                      height: 28,
-                                      bgcolor:
-                                        sponsorColor ||
-                                        sponsorColor ||
-                                        "primary.main",
-                                      fontSize: 12,
-                                    }}
-                                  >
-                                    {initials(player2Name)}
-                                  </Avatar>
-                                  <Typography variant="body2" fontWeight={600}>
-                                    {player2Name}
-                                  </Typography>
-                                </Stack>
+                                <Typography variant="body2" fontWeight={600}>
+                                  {player1Name}
+                                </Typography>
                               </Stack>
-                            </CardContent>
-                          </Card>
-                        </Grid>
-                      );
-                    })}
-                  </Grid>
-                </Box>
-              )}
+                              <Stack
+                                key={player2Name + index}
+                                direction="row"
+                                alignItems="center"
+                                spacing={1.25}
+                              >
+                                <Avatar
+                                  src={player2PhotoURL}
+                                  sx={{
+                                    width: 28,
+                                    height: 28,
+                                    bgcolor:
+                                      sponsorColor ||
+                                      sponsorColor ||
+                                      "primary.main",
+                                    fontSize: 12,
+                                  }}
+                                >
+                                  {initials(player2Name)}
+                                </Avatar>
+                                <Typography variant="body2" fontWeight={600}>
+                                  {player2Name}
+                                </Typography>
+                              </Stack>
+                            </Stack>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                    );
+                  })}
+                </Grid>
+              </Box>
+            )}           
+          </Stack>
+        </TabPanel>
 
-              {/* <Paper elevation={1} sx={{ p: 2 }}>
-                                <Typography variant="h6">Registered Players</Typography>
-                                <List>
-                                    {filteredUsers.map((player, index) => (
-                                        <React.Fragment key={player.id || player.Name}>
-                                            <ListItem sx={{ py: 2, cursor: 'pointer' }} onClick={() => handleListItemClick(player)} secondaryAction={
-                                                <IconButton edge="end" aria-label="delete" onClick={async () => {
-                                                    await unregisterFromEvent(event?.id || event.eventId, player.id || player.UserId, player.IsGuest);
-                                                    dispatch(fetchEvents({ db, forceRefresh: false }));
-                                                }}>
-                                                    <DeleteIcon color="error" />
-                                                </IconButton>
-                                            }>
-                                                <MAvatar sx={{ mr: 2, bgcolor: 'primary.main' }}><Person /></MAvatar>
-                                                <ListItemText primary={<Typography variant="h6" fontWeight="bold">{player.Name || 'No Name'}</Typography>} />
-                                            </ListItem>
-                                            {index < filteredUsers.length - 1 && <Divider />}
-                                        </React.Fragment>
-                                    ))}
-                                </List>
-                            </Paper> */}
-            </Stack>
-          </TabPanel>
-
-          <TabPanel value={tab} index={2}>
-            <Paper sx={{ p: 2 }} elevation={1}>
-              {event.type === "Mix" ? (
-                <RobinHoodBracket
-                  eventId={event?.id || event.eventId}
-                  tournamentId={event.tournamentId}
-                />
-              ) : (
-                <CupBrackets
-                  eventId={event?.id || event.eventId}
-                  tournamentId={event.tournamentId}
-                />
-              )}
-            </Paper>
-          </TabPanel>
-        </Container>
+        <TabPanel value={tab} index={2}>
+          <Paper sx={{ p: 2 }} elevation={1}>
+            {event.type === "Mix" ? (
+              <RobinHoodBracket
+                eventId={event?.id || event.eventId}
+                tournamentId={event.tournamentId}
+              />
+            ) : (
+              <CupBrackets
+                eventId={event?.id || event.eventId}
+                tournamentId={event.tournamentId}
+              />
+            )}
+          </Paper>
+        </TabPanel>
       </Box>
       {/* Confirmation and success modals */}
       <ConfirmationModal
