@@ -10,7 +10,7 @@ import { Button, Container, Paper, Stack, Typography } from "@mui/material";
 
 import UploadScoreModal from "./UploadScoreModal";
 
-const CupBrackets = ({ eventId, tournamentId }) => {
+const CupBrackets = ({ eventId, tournamentId, sponsorColor }) => {
   const db = getFirestore();
   const { user } = useAuth();
 
@@ -214,8 +214,9 @@ const CupBrackets = ({ eventId, tournamentId }) => {
         clear: true,
         onMatchClick: (match) => {
           console.log("A match was clicked", match);
-          setSelectedMatch(match);
-          setUploadModalOpen(true);
+          // NEW LOGIC
+          /* setSelectedMatch(match);
+          setUploadModalOpen(true); */
         },
         customRoundName: (info, t) => {
           // You have a reference to `t` in order to translate things.
@@ -251,7 +252,7 @@ const CupBrackets = ({ eventId, tournamentId }) => {
               color="text.secondary"
               textAlign="center"
             >
-            Create the pairs and then generate the tournament groups in details page
+              Create the pairs and then generate the tournament groups in details page
             </Typography>
           </Stack>
         </Paper>
@@ -266,6 +267,14 @@ const CupBrackets = ({ eventId, tournamentId }) => {
           display: "flex",
           marginX: "auto !important",
           marginTop: "2rem !important",
+          borderColor:
+            sponsorColor ||
+            sponsorColor ||
+            "primary.main",
+          color:
+            sponsorColor ||
+            sponsorColor ||
+            "primary.main"
         }} onClick={async () => {
           // apagar matches, rounds e groups para este stage
           await adapter.delete("match", { stage_id: stageId });
