@@ -13,7 +13,6 @@ import UploadScoreModal from "./UploadScoreModal";
 const CupBrackets = ({ eventId, tournamentId }) => {
   const db = getFirestore();
   const { user } = useAuth();
-  const { createBracketsElimination } = useEventActions();
 
   const adapter = new FirestoreAdapter(
     db,
@@ -25,61 +24,9 @@ const CupBrackets = ({ eventId, tournamentId }) => {
 
   const [selectedMatch, setSelectedMatch] = React.useState([]);
   const [participants, setParticipants] = React.useState([]);
-  const [finalStandings, setFinalStandings] = React.useState({});
   const [stageId, setStageId] = React.useState("");
   const [uploadModalOpen, setUploadModalOpen] = React.useState(false);
   const [noDataToShow, setNoDataToShow] = React.useState(false);
-  const [showEliminationStageButton, setShowEliminationStageButton] =
-    React.useState(true);
-
-  const sortStandings = (standings) => {
-    return standings.sort((a, b) => {
-      if (b.points !== a.points) return b.points - a.points;
-      const scoredAgainstA = a.scoredAgainst ?? 0;
-      const scoredAgainstB = b.scoredAgainst ?? 0;
-      return scoredAgainstA - scoredAgainstB;
-    });
-  };
-
-  const nextStage = async () => {
-
-    let playersToPass = [];
-    let thirdPlaces = [];
-
-    let keys = Object.keys(finalStandings);
-    const groupCount = keys.length;
-
-    if (groupCount === 3) {
-      // 3 groups: pass 1st and 2nd from each group + 2 best 3rd places
-      keys.forEach((key) => {
-        let group = finalStandings[key];
-        group = sortStandings(group);
-        playersToPass.push(...group.slice(0, 2)); // Take top 2 from each group
-        thirdPlaces.push(group[2]); // Collect third places
-      });
-
-      thirdPlaces = sortStandings(thirdPlaces);
-      playersToPass.push(...thirdPlaces.slice(0, 2)); // Add the best 2 third places
-    } else if (groupCount === 2) {
-      // 2 groups: pass 1st, 2nd, and 3rd from each group
-      keys.forEach((key) => {
-        let group = finalStandings[key];
-        group = sortStandings(group);
-        playersToPass.push(...group.slice(0, 2)); // Take top 2 from each group
-      });
-    } else {
-      // Fallback for other group counts
-      keys.forEach((key) => {
-        let group = finalStandings[key];
-        group = sortStandings(group);
-        playersToPass.push(...group.slice(0, 2));
-      });
-    }
-
-    await createBracketsElimination(eventId, tournamentId, playersToPass);
-    alert("Elimination stage created!");
-    render();
-  };
 
   async function render() {
     const tournamentData = await manager.get.tournamentData(tournamentId);
@@ -103,9 +50,9 @@ const CupBrackets = ({ eventId, tournamentId }) => {
     for (const match of stageData.matches) {
       console.log(match.status);
 
-      if (match.status !== 4 && match.status !== 5) {
+      /* if (match.status !== 4 && match.status !== 5) {
         setShowEliminationStageButton(false);
-      }
+      } */
       const groupId = match.group_id?.id || match.group_id;
       if (!groupId) continue;
 
@@ -183,7 +130,7 @@ const CupBrackets = ({ eventId, tournamentId }) => {
       };
     });
 
-    const rankingFormula = (participant) => {
+    /* const rankingFormula = (participant) => {
       let tempParticipant = stageData.participant.find(
         (p) => p.id === participant.id
       );
@@ -228,24 +175,9 @@ const CupBrackets = ({ eventId, tournamentId }) => {
         }
       }
 
-      setFinalStandings((prev) => {
-        const next = {
-          ...prev,
-          [groupId]: [
-            ...(prev[groupId]?.filter((x) => x.id !== participant.id) || []),
-            {
-              name: participant.name,
-              points,
-              id: participant.id,
-              scoredAgainst: participant.scoreAgainst,
-            },
-          ],
-        };
-        return next;
-      });
 
       return points;
-    };
+    }; */
 
     // 1) Ordenar os rounds pelo campo "number"
     if (stageData.rounds) {
@@ -299,7 +231,7 @@ const CupBrackets = ({ eventId, tournamentId }) => {
             }
           }
         },
-        rankingFormula: rankingFormula,
+        //rankingFormula: rankingFormula,
         showSlotsOrigin: false
       }
     );
@@ -329,26 +261,7 @@ const CupBrackets = ({ eventId, tournamentId }) => {
 
   return (
     <div style={{ width: "100%", height: "100vh" }}>
-      {showEliminationStageButton && user?.IsAdmin && (
-        <Button
-          variant="contained"
-          onClick={async () => {
-            nextStage();
-          }}
-          sx={{
-            display: "flex",
-            marginX: "auto !important",
-            marginTop: "2rem !important",
-            marginBottom: "1rem !important",
-            bgcolor: "primary.main",
-            color: "white",
-            "&:hover": { bgcolor: "white", color: "primary.main" },
-          }}
-        >
-          Create Elimination Stage
-        </Button>
-      )}
-      {user?.IsAdmin && user?.Name == 'Tiago Pereira' && (
+      {user?.IsAdmin && user?.Name === 'Tiago Pereira' && (
         <Button sx={{
           display: "flex",
           marginX: "auto !important",

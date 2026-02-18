@@ -3,6 +3,7 @@ import React, { useEffect, useState, useRef, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
 import { getFirestore, updateDoc, doc } from "firebase/firestore";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { fetchEvents, selectEvents } from "../redux/slices/eventsSlice";
 import { fetchUsers, selectUsers } from "../redux/slices/usersSlice";
 import useAuth from "../utils/useAuth";
@@ -62,9 +63,10 @@ const SponsorBanner = ({ mainSponsor, logoSponsor }) => (
           Logo Sponsor
         </Typography>
         <Avatar
+          src={logoSponsor}
           sx={{ bgcolor: "transparent", width: 56, height: 56, fontSize: 20 }}
         >
-          {logoSponsor?.charAt(0) || "L"}
+          {logoSponsor ? "" : "L"}
         </Avatar>
       </Box>
     </Stack>
@@ -82,6 +84,7 @@ const EventCup = () => {
   const users = useSelector(selectUsers);
   const { user } = useAuth();
   const {
+    createPremierPadelBrackets,
     unregisterFromEvent,
     addSinglePair,
     deletePairFromEvent,
@@ -127,9 +130,9 @@ const EventCup = () => {
 
   useEffect(() => {
     // Prefill sponsor fields from event or cup
-    const main = event?.mainSponsor || "";
+    const main = event?.MainSponsor || "";
     const color = event?.SponsorColor || "#b88f34";
-    const logo = event?.logoSponsor || "";
+    const logo = event?.LogoSponsor || "";
     setSponsorName(main);
     setSponsorColor(color);
     setSponsorLogoPreview(logo);
@@ -187,7 +190,7 @@ const EventCup = () => {
         dispatch(fetchEvents({ db, forceRefresh: false }));
         setShowExitSuccess(true);
       }else if (type === 'createMasters'){
-
+        await createPremierPadelBrackets(eventId);
       }
     } catch (err) {
       console.error("confirmation action error", err);
@@ -286,7 +289,7 @@ const EventCup = () => {
             >
               <Box>
                 <Typography variant="h5" fontWeight={700}>
-                  {event.title || "Event Cup"}
+                  {event.Name || "Event Cup"}
                 </Typography>
               </Box>
             </Stack>
@@ -325,8 +328,8 @@ const EventCup = () => {
         <TabPanel value={tab} index={0}>
           <Container maxWidth="sm" sx={{ py: 3, flex: 1 }}>
             <SponsorBanner
-              mainSponsor={event.mainSponsor}
-              logoSponsor={event.logoSponsor}
+              mainSponsor={event.MainSponsor}
+              logoSponsor={event.LogoSponsor}
             />
             <Paper elevation={1} sx={{ p: 2 }}>
               <Typography variant="body1" color="text.secondary">
@@ -463,12 +466,12 @@ const EventCup = () => {
                   }
 
                   setType("createMasters");
-                  setConfirmationTitle("Create Groups?");
+                  setConfirmationTitle("Create Matches?");
                   setConfirmationDescription("");
                   setShowConfirmation(true);
                 }}
               >
-                Create Groups & Matches
+                Create Matches
               </Button>
             </Box>
           </Container>
@@ -852,7 +855,7 @@ const EventCup = () => {
             ) : (
               <CupBrackets
                 eventId={event?.id || event.eventId}
-                tournamentId={event.tournamentId}
+                tournamentId={event.TournamentId}
               />
             )}
           </Paper>
@@ -901,6 +904,23 @@ const EventCup = () => {
                 value={sponsorName}
                 onChange={(e) => setSponsorName(e.target.value)}
                 fullWidth
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    "&.Mui-focused fieldset": {
+                      borderColor: sponsorColor || "primary.main",
+                    },
+                  },
+                  "& .MuiInputBase-input": {
+                    "&:focus": {
+                      color: sponsorColor || "primary.main",
+                    },
+                  },
+                  "& .MuiInputLabel-root": {
+                    "&.Mui-focused": {
+                      color: sponsorColor || "primary.main",
+                    },
+                  },
+                }}
               />
 
               <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
@@ -909,7 +929,19 @@ const EventCup = () => {
                   type="color"
                   value={sponsorColor}
                   onChange={(e) => setSponsorColor(e.target.value)}
-                  sx={{ width: 120 }}
+                  sx={{
+                    width: 120,
+                    "& .MuiOutlinedInput-root": {
+                      "&.Mui-focused fieldset": {
+                        borderColor: sponsorColor || "primary.main",
+                      },
+                    },
+                    "& .MuiInputLabel-root": {
+                      "&.Mui-focused": {
+                        color: sponsorColor || "primary.main",
+                      },
+                    },
+                  }}
                 />
 
                 <Box>
@@ -918,14 +950,20 @@ const EventCup = () => {
                     style={{ display: "none" }}
                     id="sponsor-logo-input-modal"
                     type="file"
-                    onChange={(e) => {
+                    onChange={async (e) => {
                       const f = e.target.files && e.target.files[0];
                       setSponsorLogoFile(f || null);
                       if (f) {
-                        const reader = new FileReader();
-                        reader.onload = (ev) =>
-                          setSponsorLogoPreview(ev.target.result);
-                        reader.readAsDataURL(f);
+                        try {
+                          const storage = getStorage();
+                          const storagePath = `Events/${event.id}/Sponsor/${sponsorName || "sponsor"}`;
+                          const storageRef = ref(storage, storagePath);
+                          await uploadBytes(storageRef, f);
+                          const downloadURL = await getDownloadURL(storageRef);
+                          setSponsorLogoPreview(downloadURL);
+                        } catch (err) {
+                          console.error("Error uploading sponsor logo", err);
+                        }
                       }
                     }}
                   />
@@ -977,7 +1015,7 @@ const EventCup = () => {
                   const eventRef = doc(db, `Events/${event.id}`);
                   await updateDoc(eventRef, {
                     MainSponsor: null,
-                    SponsorLogo: null,
+                    LogoSponsor: null,
                     SponsorColor: null,
                     ModifiedAt: new Date(),
                   });
@@ -1004,7 +1042,7 @@ const EventCup = () => {
                   const eventRef = doc(db, `Events/${event.id}`);
                   await updateDoc(eventRef, {
                     MainSponsor: sponsorName || null,
-                    SponsorLogo: sponsorLogoPreview || null,
+                    LogoSponsor: sponsorLogoPreview || null,
                     SponsorColor: sponsorColor || null,
                     ModifiedAt: new Date(),
                   });
