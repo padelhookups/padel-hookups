@@ -22,6 +22,7 @@ import EventCup from "./routes/EventCup";
 import Profile from "./routes/Profile";
 import Settings from "./routes/Settings";
 import Benefits from "./routes/Benefits";
+import PremierPadelMatch from "./routes/PremierPadelMatch";
 import Admin from "./routes/Admin";
 import ManageUsers from "./routes/Admin/ManageUsers";
 import ChangePassword from "./routes/ChangePassword";
@@ -159,6 +160,14 @@ function App() {
 							element={
 								<ProtectedRoute user={user}>
 									<EventCup />
+								</ProtectedRoute>
+							}
+						/>
+						<Route
+							path='/PremierPadelMatch/:matchId'
+							element={
+								<ProtectedRoute user={user}>
+									<PremierPadelMatch />
 								</ProtectedRoute>
 							}
 						/>

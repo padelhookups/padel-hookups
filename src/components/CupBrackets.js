@@ -1,10 +1,13 @@
 import React, { useEffect } from "react";
+import { useNavigate } from "react-router";
+
 import { getFirestore } from "firebase/firestore";
 import { BracketsManager } from "brackets-manager";
 
 import { FirestoreAdapter } from "../utils/FirestoreAdapter";
 import useEventActions from "../utils/EventsUtils";
 import useAuth from "../utils/useAuth";
+
 
 import { Button, Container, Paper, Stack, Typography } from "@mui/material";
 
@@ -13,6 +16,7 @@ import UploadScoreModal from "./UploadScoreModal";
 const CupBrackets = ({ eventId, tournamentId, sponsorColor }) => {
   const db = getFirestore();
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const adapter = new FirestoreAdapter(
     db,
@@ -215,8 +219,8 @@ const CupBrackets = ({ eventId, tournamentId, sponsorColor }) => {
         onMatchClick: (match) => {
           console.log("A match was clicked", match);
           // NEW LOGIC
-          /* setSelectedMatch(match);
-          setUploadModalOpen(true); */
+          // navigate to PremierPadelMatch
+          navigate(`/PremierPadelMatch/${match.id}`, { state: { eventId: eventId, mainColor: sponsorColor } });
         },
         customRoundName: (info, t) => {
           // You have a reference to `t` in order to translate things.

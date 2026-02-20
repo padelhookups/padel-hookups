@@ -236,6 +236,10 @@ const useEventActions = () => {
     console.log(eliminationStage);
   }
 
+  const updateMatchsDate = async (eventId) => {
+
+  }
+
   const registerFromEvent = async (
     eventSelectedId,
     selectedUser,
@@ -512,6 +516,7 @@ const useEventActions = () => {
     deleteAllGamesForEvent,
     deletePairFromEvent,
     deleteEvent,
+    updateMatchsDate
   };
 };
 
