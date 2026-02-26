@@ -220,7 +220,9 @@ const CupBrackets = ({ eventId, tournamentId, sponsorColor }) => {
           console.log("A match was clicked", match);
           // NEW LOGIC
           // navigate to PremierPadelMatch
-          navigate(`/PremierPadelMatch/${match.id}`, { state: { eventId: eventId, mainColor: sponsorColor } });
+          const safeMatch = JSON.parse(JSON.stringify(match));
+
+          navigate(`/PremierPadelMatch/${match.id}`, { state: { eventId: eventId, mainColor: sponsorColor, match: safeMatch } });
         },
         customRoundName: (info, t) => {
           // You have a reference to `t` in order to translate things.

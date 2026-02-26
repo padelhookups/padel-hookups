@@ -237,7 +237,7 @@ const useEventActions = () => {
   }
 
   const updateMatchsDate = async (eventId) => {
-
+    
   }
 
   const registerFromEvent = async (

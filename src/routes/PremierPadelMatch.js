@@ -1,41 +1,35 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from "react-router";
+import { useSelector } from "react-redux";
+
+import {
+  selectEvents
+} from "../redux/slices/eventsSlice";
 
 import {
     Box,
     Container,
-    Typography,
     Tabs,
     Tab,
-    Avatar,
-    Chip,
-    IconButton,
-    Paper,
-    Stack,
-    Divider,
-    SwipeableDrawer,
-    Button,
-    TextField,
-    Alert,
-    AlertTitle,
 } from "@mui/material";
 
 import Details from '../components/PremierPadel/Details';
 import Header from '../components/PremierPadel/Header';
 
-const GOLD = '#9a7d2e';
-const GOLD_LIGHT = '#c9a84c';
-const GOLD_DARK = '#7a6020';
 const BG = '#f5f4f0';
 const BORDER = '#e0dbd0';
 
-const PremierPadelMatch = ({ match }) => {
+const PremierPadelMatch = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const eventId = location.state?.eventId || '';
+    const match = location.state?.match || '';
     const mainColor = location.state?.mainColor || '';
 
+    const events = useSelector(selectEvents);
+
     const [activeTab, setActiveTab] = useState(0);
+    const [event, setEvent] = useState(null);
     const [summaryDate, setSummaryDate] = useState(null);
     const [summaryTime, setSummaryTime] = useState(null);
     const [summaryLocation, setSummaryLocation] = useState(null);
@@ -45,9 +39,17 @@ const PremierPadelMatch = ({ match }) => {
         navigate(-1);
     }
 
+    useEffect(() => {
+        // get event from redux
+        setEvent(events.filter(i => i.id === eventId)[0]);
+    }, [events]);
+
+    console.log('PremierPadelMatch', match);
+    
+
     return (
         <>
-            <Header match={match} onBack={onBack} />
+            <Header match={match} onBack={onBack} mainColor={mainColor} event={event} />
             <Box sx={{ backgroundColor: BG, }}>
                 {/* Tabs */}
                 <Tabs
@@ -74,7 +76,7 @@ const PremierPadelMatch = ({ match }) => {
                 <Container maxWidth="sm">
                     <Box>
                         {activeTab === 0 && (
-                            <Details match={match} summaryDate={summaryDate} summaryTime={summaryTime} summaryLocation={summaryLocation} mainColor={mainColor} />
+                            <Details match={match} event={event} summaryDate={summaryDate} summaryTime={summaryTime} summaryLocation={summaryLocation} mainColor={mainColor} />
                         )}
                         {activeTab === 1 && (
                             {/* <ScheduleTab

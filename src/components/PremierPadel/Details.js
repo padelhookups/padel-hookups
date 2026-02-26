@@ -4,19 +4,20 @@ import BoltIcon from "@mui/icons-material/Bolt";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
-import GroupIcon from "@mui/icons-material/Group";
 
 const BG = "#f5f4f0";
 const BORDER = "#e0dbd0";
 
 const Details = ({
   match,
+  event,
   summaryDate,
   summaryTime,
   summaryLocation,
   mainColor,
 }) => {
   const { teamA, teamB } = match?.teams || {};
+  
 
   return (
     <Stack gap={1.5} p={2}>
@@ -25,12 +26,12 @@ const Details = ({
         <InfoRow
           icon={<EmojiEventsIcon sx={{ fontSize: 18, color: mainColor }} />}
           label="Tournament"
-          value={match?.tournament}
+          value={event?.Name}
         />
         <InfoRow
           icon={<BoltIcon sx={{ fontSize: 18, color: mainColor }} />}
           label="Round"
-          value={match?.round}
+          value={match?.metadata.label}
         />
         <InfoRow
           icon={<CalendarTodayIcon sx={{ fontSize: 18, color: mainColor }} />}

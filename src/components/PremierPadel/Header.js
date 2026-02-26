@@ -1,17 +1,36 @@
+import { useEffect, useState } from "react";
 import { Box, Typography, IconButton, Avatar, Stack } from "@mui/material";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 
-const GOLD = "#9a7d2e";
-const GOLD_LIGHT = "#c9a84c";
-const GOLD_DARK = "#7a6020";
+import TeamBlock from './TeamBlock';
 
-const Header = ({ match, onBack }) => {
-  const { teamA, teamB } = match?.teams || {};
+const Header = ({ match, event, onBack, mainColor }) => {
+
+  const [teamA, setTeamA] = useState(null);
+  const [teamB, setTeamB] = useState(null);
+  
+  useEffect(() => {
+    console.log('Header match', match);
+    console.log('Header event', event);
+    if (match && event) {
+      const teamAPlayers = event.Pairs[match.opponent1.id - 1].DisplayName;
+      const teamBPlayers = event.Pairs[match.opponent2.id - 1].DisplayName;
+      console.log('Team A players:', teamAPlayers);
+      console.log('Team B players:', teamBPlayers);
+      setTeamA(teamAPlayers);
+      setTeamB(teamBPlayers);
+    }
+  }, [match, event]);
 
   return (
     <Box
       sx={{
-        background: `linear-gradient(135deg, ${GOLD_DARK} 0%, ${GOLD} 60%, ${GOLD_LIGHT} 100%)`,
+        backgroundImage: `linear-gradient(
+          color-mix(in srgb, ${ mainColor }, white 20%),
+          ${ mainColor },
+          color-mix(in srgb, ${ mainColor }, black 20%)
+        )`,
+        //background: `linear-gradient(135deg, ${GOLD_DARK} 0%, ${GOLD} 60%, ${GOLD_LIGHT} 100%)`,
         position: "relative",
         overflow: "hidden",
         "&::before": {
@@ -62,7 +81,7 @@ const Header = ({ match, onBack }) => {
         px={2}
         py={2.5}
       >
-        {/* <TeamBlock team={teamA} /> */}
+        {teamA && <TeamBlock team={{ name: teamA }} />}
         <Box
           sx={{
             width: 40,
@@ -87,7 +106,7 @@ const Header = ({ match, onBack }) => {
             VS
           </Typography>
         </Box>
-        {/* <TeamBlock team={teamB} /> */}
+        {teamB && <TeamBlock team={{ name: teamB }} />}
       </Stack>
 
       {/* Status bar */}
