@@ -34,6 +34,7 @@ const Header = ({ match, event, onBack, mainColor }) => {
 				//background: `linear-gradient(135deg, ${GOLD_DARK} 0%, ${GOLD} 60%, ${GOLD_LIGHT} 100%)`,
 				position: "relative",
 				overflow: "hidden",
+        height: 210,
 				"&::before": {
 					content: '""',
 					position: "absolute",
@@ -69,9 +70,13 @@ const Header = ({ match, event, onBack, mainColor }) => {
 						fontWeight: 400,
 						letterSpacing: 1,
 						textTransform: "uppercase",
-						fontFamily: "Barlow Condensed, sans-serif"
+						fontFamily: "Barlow Condensed, sans-serif",
+            textAlign: "center",
+            position: "absolute",
+            left: 0,
+            right: 0,
 					}}>
-					{match?.tournament} · {match?.round}
+					{event?.Name} · {match?.metadata.label}
 				</Typography>
 			</Stack>
 

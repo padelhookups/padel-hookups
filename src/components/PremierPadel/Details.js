@@ -1,4 +1,8 @@
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
+
+import { useSelector } from "react-redux";
+import { selectUsers } from "../../redux/slices/usersSlice";
+
 import { Box, Typography, Stack, Avatar, Divider, Paper } from "@mui/material";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import BoltIcon from "@mui/icons-material/Bolt";
@@ -9,6 +13,27 @@ import LocationOnIcon from "@mui/icons-material/LocationOn";
 const BG = "#f5f4f0";
 const BORDER = "#e0dbd0";
 
+const resolvePlayer = (playerId, event, users) => {
+	if (!playerId) return null;
+
+	if (playerId.startsWith("guest_")) {
+		return (
+			event?.Guests?.find(
+				(guest) => guest?.UserId === playerId || guest?.id === playerId
+			) || null
+		);
+	}
+
+	return (
+		users?.find(
+			(user) => user?.id === playerId || user?.UserId === playerId
+		) || null
+	);
+};
+
+const getPlayerName = (player) =>
+	player?.DisplayName || player?.Name || player?.name || "Unknown player";
+
 const Details = ({
 	match,
 	event,
@@ -17,21 +42,45 @@ const Details = ({
 	summaryLocation,
 	mainColor
 }) => {
-	const [teamA, setTeamA] = useState(null);
-	const [teamB, setTeamB] = useState(null);
+	const users = useSelector(selectUsers);
 
-	useEffect(() => {
-		console.log("Header match", match);
-		console.log("Header event", event);
-		if (match && event) {
-			const teamAPlayers = event.Pairs[match.opponent1.id - 1];
-			const teamBPlayers = event.Pairs[match.opponent2.id - 1];
-			console.log("Team A players:", teamAPlayers);
-			console.log("Team B players:", teamBPlayers);
-			setTeamA(teamAPlayers);
-			setTeamB(teamBPlayers);
-		}
-	}, [match, event]);
+	const players = useMemo(() => {
+		if (!match || !event?.Pairs?.length) return [];
+
+		const teamA = event.Pairs[match?.opponent1?.id - 1];
+		const teamB = event.Pairs[match?.opponent2?.id - 1];
+		if (!teamA || !teamB) return [];
+
+		return [
+			{
+				id: teamA.Player1Id,
+				teamLabel: "Team 1",
+				color: `color-mix(in srgb, ${mainColor}, white 20%)`
+			},
+			{
+				id: teamA.Player2Id,
+				teamLabel: "Team 1",
+				color: `color-mix(in srgb, ${mainColor}, white 20%)`
+			},
+			{
+				id: teamB.Player1Id,
+				teamLabel: "Team 2",
+				color: `color-mix(in srgb, ${mainColor}, black 25%)`
+			},
+			{
+				id: teamB.Player2Id,
+				teamLabel: "Team 2",
+				color: `color-mix(in srgb, ${mainColor}, black 25%)`
+			}
+		]
+			.map((slot) => ({
+				...slot,
+				player: resolvePlayer(slot.id, event, users)
+			}))
+			.filter((slot) => slot.player);
+	}, [match, event, users, mainColor]);
+
+	console.log(players);
 
 	return (
 		<Stack gap={1.5} p={2}>
@@ -86,23 +135,16 @@ const Details = ({
 			<InfoCard title='👥 Players' mainColor={mainColor}>
 				<Box
 					display='grid'
-					gridTemplateColumns='1fr 1fr'
+					gridTemplateColumns='repeat(2, minmax(0, 1fr))'
 					gap={1}
+					sx={{ width: "100%", minWidth: 0 }}
 					pt={0.5}>
-					{teamA?.players.map((p) => (
+					{players.map((slot) => (
 						<PlayerChip
-							key={p}
-							name={p}
-							teamLabel='Team 1'
-							color={teamA?.color}
-						/>
-					))}
-					{teamB?.players.map((p) => (
-						<PlayerChip
-							key={p}
-							name={p}
-							teamLabel='Team 2'
-							color={teamB?.color}
+							key={`${slot.teamLabel}-${slot.id}`}
+							name={getPlayerName(slot.player)}
+							teamLabel={slot.teamLabel}
+							color={slot.color}
 						/>
 					))}
 				</Box>
@@ -166,14 +208,18 @@ function InfoRow({ icon, label, value, last }) {
 }
 
 function PlayerChip({ name, teamLabel, color }) {
+	const safeName = name || "Unknown player";
+	const initial = safeName.charAt(0).toUpperCase();
+
 	return (
-		<Stack
-			direction='row'
+		<Box
+			display='flex'
 			alignItems='center'
 			gap={1}
 			p={1.25}
 			bgcolor={BG}
-			borderRadius={2}>
+			borderRadius={2}
+			sx={{ width: "100%", minWidth: 0, overflow: "hidden", boxSizing: "border-box" }}>
 			<Avatar
 				sx={{
 					width: 30,
@@ -182,9 +228,9 @@ function PlayerChip({ name, teamLabel, color }) {
 					fontSize: 12,
 					fontWeight: 700
 				}}>
-				{name[0]}
+				{initial}
 			</Avatar>
-			<Box minWidth={0}>
+			<Box minWidth={0} sx={{ flex: 1, minWidth: 0 }}>
 				<Typography
 					sx={{
 						fontSize: 13,
@@ -193,13 +239,13 @@ function PlayerChip({ name, teamLabel, color }) {
 						textOverflow: "ellipsis",
 						whiteSpace: "nowrap"
 					}}>
-					{name}
+					{safeName}
 				</Typography>
 				<Typography sx={{ fontSize: 10, color: "#888" }}>
 					{teamLabel}
 				</Typography>
 			</Box>
-		</Stack>
+		</Box>
 	);
 }
 

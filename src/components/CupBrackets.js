@@ -5,7 +5,6 @@ import { getFirestore } from "firebase/firestore";
 import { BracketsManager } from "brackets-manager";
 
 import { FirestoreAdapter } from "../utils/FirestoreAdapter";
-import useEventActions from "../utils/EventsUtils";
 import useAuth from "../utils/useAuth";
 
 import { Button, Container, Paper, Stack, Typography } from "@mui/material";

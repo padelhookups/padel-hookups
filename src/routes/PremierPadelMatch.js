@@ -47,12 +47,13 @@ const PremierPadelMatch = () => {
 				mainColor={mainColor}
 				event={event}
 			/>
-			<Box sx={{ backgroundColor: BG }}>
+			<Box sx={{ backgroundColor: BG, height: 'calc(100vh - 270px)' }}>
 				{/* Tabs */}
 				<Tabs
 					value={activeTab}
 					onChange={(_, v) => setActiveTab(v)}
 					variant='fullWidth'
+					textColor='inherit'
 					sx={{
 						color: mainColor,
 						bgcolor: "white",
@@ -68,7 +69,8 @@ const PremierPadelMatch = () => {
 							color: "#888",
 							fontFamily: "Barlow, sans-serif"
 						},
-						"& .Mui-selected": { color: mainColor },
+						"& .MuiTab-root.Mui-selected": { color: `${mainColor} !important` },
+						"& .MuiTab-root.Mui-focusVisible": { color: `${mainColor} !important` },
 						"& .MuiTabs-indicator": { bgcolor: mainColor }
 					}}>
 					<Tab label='Summary' />
@@ -88,15 +90,16 @@ const PremierPadelMatch = () => {
 								mainColor={mainColor}
 							/>
 						)}
-						{activeTab === 1 &&
-							{
-								/* <ScheduleTab
+						{activeTab === 1 && (
+							<>
+								{/* <ScheduleTab
                         match={match}
                         currentTeamId={currentTeamId}
                         onConfirmed={(date, time) => { setSummaryDate(date); setSummaryTime(time); setSummaryLocation('Court TBD'); }}
                         onLocationUpdated={(loc) => setSummaryLocation(loc)}
-                    /> */
-							}}
+                    /> */}
+							</>
+						)}
 						{/* {activeTab === 2 && <ResultsTab />} */}
 					</Box>
 				</Container>
