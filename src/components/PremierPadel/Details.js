@@ -43,6 +43,11 @@ const Details = ({
 	mainColor
 }) => {
 	const users = useSelector(selectUsers);
+	const finalDate = match?.FinalDateToPlay?.seconds
+		? new Date(match.FinalDateToPlay.seconds * 1000)
+		: match?.FinalDateToPlay?.toDate
+			? match.FinalDateToPlay.toDate()
+			: null;
 
 	const players = useMemo(() => {
 		if (!match || !event?.Pairs?.length) return [];
@@ -81,6 +86,7 @@ const Details = ({
 	}, [match, event, users, mainColor]);
 
 	console.log(players);
+	console.log(match);
 
 	return (
 		<Stack gap={1.5} p={2}>
@@ -107,7 +113,8 @@ const Details = ({
 						/>
 					}
 					label='Date'
-					value={summaryDate || "TBD – pending schedule"}
+					value={summaryDate || (finalDate ? `TBD – until ${finalDate.toLocaleDateString()}` : "TBD")}
+					
 				/>
 				<InfoRow
 					icon={
