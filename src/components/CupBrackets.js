@@ -8,133 +8,132 @@ import { FirestoreAdapter } from "../utils/FirestoreAdapter";
 import useEventActions from "../utils/EventsUtils";
 import useAuth from "../utils/useAuth";
 
-
 import { Button, Container, Paper, Stack, Typography } from "@mui/material";
 
 import UploadScoreModal from "./UploadScoreModal";
 
 const CupBrackets = ({ eventId, tournamentId, sponsorColor }) => {
-  const db = getFirestore();
-  const { user } = useAuth();
-  const navigate = useNavigate();
+	const db = getFirestore();
+	const { user } = useAuth();
+	const navigate = useNavigate();
 
-  const adapter = new FirestoreAdapter(
-    db,
-    `Events/${eventId}/TournamentData/${tournamentId}`,
-    tournamentId
-  );
+	const adapter = new FirestoreAdapter(
+		db,
+		`Events/${eventId}/TournamentData/${tournamentId}`,
+		tournamentId
+	);
 
-  const manager = new BracketsManager(adapter);
+	const manager = new BracketsManager(adapter);
 
-  const [selectedMatch, setSelectedMatch] = React.useState([]);
-  const [participants, setParticipants] = React.useState([]);
-  const [stageId, setStageId] = React.useState("");
-  const [uploadModalOpen, setUploadModalOpen] = React.useState(false);
-  const [noDataToShow, setNoDataToShow] = React.useState(false);
+	const [selectedMatch, setSelectedMatch] = React.useState([]);
+	const [participants, setParticipants] = React.useState([]);
+	const [stageId, setStageId] = React.useState("");
+	const [uploadModalOpen, setUploadModalOpen] = React.useState(false);
+	const [noDataToShow, setNoDataToShow] = React.useState(false);
 
-  async function render() {
-    const tournamentData = await manager.get.tournamentData(tournamentId);
+	async function render() {
+		const tournamentData = await manager.get.tournamentData(tournamentId);
 
-    if (tournamentData.stage.length === 0) {
-      setNoDataToShow(true);
-      return;
-    }
-    tournamentData.stage = tournamentData.stage.sort((a, b) => {
-      return a.number - b.number;
-    });
-    const stage = tournamentData.stage[tournamentData.stage.length - 1];
-    setStageId(stage.id);
+		if (tournamentData.stage.length === 0) {
+			setNoDataToShow(true);
+			return;
+		}
+		tournamentData.stage = tournamentData.stage.sort((a, b) => {
+			return a.number - b.number;
+		});
+		const stage = tournamentData.stage[tournamentData.stage.length - 1];
+		setStageId(stage.id);
 
-    const stageData = await manager.get.getStageSpecificData(stage.id);
+		const stageData = await manager.get.getStageSpecificData(stage.id);
 
-    const participantsData = await adapter.select("participant");
-    setParticipants((prev) => [...participantsData]);
-    const participantGroups = {};
+		const participantsData = await adapter.select("participant");
+		setParticipants((prev) => [...participantsData]);
+		const participantGroups = {};
 
-    for (const match of stageData.matches) {
-      console.log(match.status);
+		for (const match of stageData.matches) {
+			console.log(match.status);
 
-      /* if (match.status !== 4 && match.status !== 5) {
+			/* if (match.status !== 4 && match.status !== 5) {
         setShowEliminationStageButton(false);
       } */
-      const groupId = match.group_id?.id || match.group_id;
-      if (!groupId) continue;
+			const groupId = match.group_id?.id || match.group_id;
+			if (!groupId) continue;
 
-      if (!participantGroups[groupId]) participantGroups[groupId] = [];
+			if (!participantGroups[groupId]) participantGroups[groupId] = [];
 
-      if (
-        match.opponent1?.id &&
-        !participantGroups[groupId].includes(match.opponent1.id)
-      ) {
-        participantGroups[groupId].push(match.opponent1.id);
-      }
+			if (
+				match.opponent1?.id &&
+				!participantGroups[groupId].includes(match.opponent1.id)
+			) {
+				participantGroups[groupId].push(match.opponent1.id);
+			}
 
-      if (
-        match.opponent2?.id &&
-        !participantGroups[groupId].includes(match.opponent2.id)
-      ) {
-        participantGroups[groupId].push(match.opponent2.id);
-      }
-    };
+			if (
+				match.opponent2?.id &&
+				!participantGroups[groupId].includes(match.opponent2.id)
+			) {
+				participantGroups[groupId].push(match.opponent2.id);
+			}
+		}
 
-    function computeStandings(matches) {
-      const results = participantsData.map((p) => ({
-        id: p.id,
-        name: p.name,
-        wins: 0,
-        losses: 0,
-        draws: 0,
-        points: 0,
-      }));
+		function computeStandings(matches) {
+			const results = participantsData.map((p) => ({
+				id: p.id,
+				name: p.name,
+				wins: 0,
+				losses: 0,
+				draws: 0,
+				points: 0
+			}));
 
-      for (const match of matches) {
-        const p1 = results.find((p) => p.id === match.opponent1?.id);
-        const p2 = results.find((p) => p.id === match.opponent2?.id);
+			for (const match of matches) {
+				const p1 = results.find((p) => p.id === match.opponent1?.id);
+				const p2 = results.find((p) => p.id === match.opponent2?.id);
 
-        if (!p1 || !p2) continue;
-        if (!match.opponent1.score && !match.opponent2.score) continue; // Skip unplayed matches
+				if (!p1 || !p2) continue;
+				if (!match.opponent1.score && !match.opponent2.score) continue; // Skip unplayed matches
 
-        const matchWinnerId =
-          match.opponent1.result === "win"
-            ? match.opponent1.id
-            : match.opponent2.result === "win"
-              ? match.opponent2.id
-              : null;
+				const matchWinnerId =
+					match.opponent1.result === "win"
+						? match.opponent1.id
+						: match.opponent2.result === "win"
+							? match.opponent2.id
+							: null;
 
-        if (matchWinnerId === p1.id) {
-          p1.wins++;
-          p1.points += 3; // You can chan ge this scoring system
-          p2.losses++;
-        } else if (matchWinnerId === p2.id) {
-          p2.wins++;
-          p2.points += 3;
-          p1.losses++;
-        } else {
-          // Optional: handle draw
-          p1.draws++;
-          p2.draws++;
-          p1.points++;
-          p2.points++;
-        }
-      }
+				if (matchWinnerId === p1.id) {
+					p1.wins++;
+					p1.points += 3; // You can chan ge this scoring system
+					p2.losses++;
+				} else if (matchWinnerId === p2.id) {
+					p2.wins++;
+					p2.points += 3;
+					p1.losses++;
+				} else {
+					// Optional: handle draw
+					p1.draws++;
+					p2.draws++;
+					p1.points++;
+					p2.points++;
+				}
+			}
 
-      return results;
-    }
+			return results;
+		}
 
-    const standings = computeStandings(stageData.matches);
+		const standings = computeStandings(stageData.matches);
 
-    stageData.participant = participantsData?.map((p) => {
-      const s = standings.find((x) => x.id === p.id);
-      return {
-        ...p,
-        ...s,
-        group_id: Object.keys(participantGroups).find((key) =>
-          participantGroups[key].includes(p.id)
-        ),
-      };
-    });
+		stageData.participant = participantsData?.map((p) => {
+			const s = standings.find((x) => x.id === p.id);
+			return {
+				...p,
+				...s,
+				group_id: Object.keys(participantGroups).find((key) =>
+					participantGroups[key].includes(p.id)
+				)
+			};
+		});
 
-    /* const rankingFormula = (participant) => {
+		/* const rankingFormula = (participant) => {
       let tempParticipant = stageData.participant.find(
         (p) => p.id === participant.id
       );
@@ -183,139 +182,151 @@ const CupBrackets = ({ eventId, tournamentId, sponsorColor }) => {
       return points;
     }; */
 
-    // 1) Ordenar os rounds pelo campo "number"
-    if (stageData.rounds) {
-      stageData.rounds = [...stageData.rounds].sort((a, b) => (a.number ?? 0) - (b.number ?? 0));
-    }
+		// 1) Ordenar os rounds pelo campo "number"
+		if (stageData.rounds) {
+			stageData.rounds = [...stageData.rounds].sort(
+				(a, b) => (a.number ?? 0) - (b.number ?? 0)
+			);
+		}
 
-    // 2) Criar mapa: round_id -> round_number (tabelas)
-    const roundNumberById = {};
-    if (stageData.rounds) {
-      for (const r of stageData.rounds) {
-        roundNumberById[r.id] = r.number;
-      }
-    }
+		// 2) Criar mapa: round_id -> round_number (tabelas)
+		const roundNumberById = {};
+		if (stageData.rounds) {
+			for (const r of stageData.rounds) {
+				roundNumberById[r.id] = r.number;
+			}
+		}
 
-    // 3) Ordenar matches pelo número da ronda e número do match
-    const orderedMatches = [...stageData.matches].sort((a, b) => {
-      const roundA = roundNumberById[a.round_id] ?? 999;
-      const roundB = roundNumberById[b.round_id] ?? 999;
+		// 3) Ordenar matches pelo número da ronda e número do match
+		const orderedMatches = [...stageData.matches].sort((a, b) => {
+			const roundA = roundNumberById[a.round_id] ?? 999;
+			const roundB = roundNumberById[b.round_id] ?? 999;
 
-      if (roundA !== roundB) return roundA - roundB;
+			if (roundA !== roundB) return roundA - roundB;
 
-      // ordenar por número do match dentro da ronda
-      return (a.number ?? 0) - (b.number ?? 0);
-    });
+			// ordenar por número do match dentro da ronda
+			return (a.number ?? 0) - (b.number ?? 0);
+		});
 
-    window.bracketsViewer.render(
-      {
-        stages: [stage],
-        matches: orderedMatches,
-        matchGames: stageData.matchGames,
-        participants: participantsData,
-      },
-      {
-        clear: true,
-        onMatchClick: (match) => {
-          console.log("A match was clicked", match);
-          // NEW LOGIC
-          // navigate to PremierPadelMatch
-          const safeMatch = JSON.parse(JSON.stringify(match));
+		window.bracketsViewer.render(
+			{
+				stages: [stage],
+				matches: orderedMatches,
+				matchGames: stageData.matchGames,
+				participants: participantsData
+			},
+			{
+				clear: true,
+				onMatchClick: (match) => {
+					console.log("A match was clicked", match);
+					// NEW LOGIC
+					// navigate to PremierPadelMatch
+					const safeMatch = JSON.parse(JSON.stringify(match));
 
-          navigate(`/PremierPadelMatch/${match.id}`, { state: { eventId: eventId, mainColor: sponsorColor, match: safeMatch } });
-        },
-        customRoundName: (info, t) => {
-          // You have a reference to `t` in order to translate things.
-          // Returning `undefined` will fallback to the default round name in the current language.
+					navigate(`/PremierPadelMatch/${match.id}`, {
+						state: {
+							eventId: eventId,
+							mainColor: sponsorColor,
+							match: safeMatch
+						}
+					});
+				},
+				customRoundName: (info, t) => {
+					// You have a reference to `t` in order to translate things.
+					// Returning `undefined` will fallback to the default round name in the current language.
 
-          if (info.fractionOfFinal === 1 / 2) {
-            if (info.groupType === "single-bracket") {
-              // Single elimination
-              return "Semi Finals";
-            } else {
-              // Double elimination
-              return `${t(`abbreviations.${info.groupType}`)} Semi Finals`;
-            }
-          }
-        },
-        //rankingFormula: rankingFormula,
-        showSlotsOrigin: false
-      }
-    );
-  }
+					if (info.fractionOfFinal === 1 / 2) {
+						if (info.groupType === "single-bracket") {
+							// Single elimination
+							return "Semi Finals";
+						} else {
+							// Double elimination
+							return `${t(`abbreviations.${info.groupType}`)} Semi Finals`;
+						}
+					}
+				},
+				//rankingFormula: rankingFormula,
+				showSlotsOrigin: false
+			}
+		);
+	}
 
-  useEffect(() => {
-    render();
-  }, []);
+	useEffect(() => {
+		render();
+	}, []);
 
-  if (noDataToShow) {
-    return (
-      <Container maxWidth="sm" sx={{ py: 3, flex: 1 }}>
-        <Paper elevation={1} sx={{ p: 2.5 }}>
-          <Stack spacing={1.25}>
-            <Typography
-              variant="body1"
-              color="text.secondary"
-              textAlign="center"
-            >
-              Create the pairs and then generate the tournament groups in details page
-            </Typography>
-          </Stack>
-        </Paper>
-      </Container>
-    )
-  }
+	if (noDataToShow) {
+		return (
+			<Container maxWidth='sm' sx={{ py: 3, flex: 1 }}>
+				<Paper elevation={1} sx={{ p: 2.5 }}>
+					<Stack spacing={1.25}>
+						<Typography
+							variant='body1'
+							color='text.secondary'
+							textAlign='center'>
+							Create the pairs and then generate the tournament
+							groups in details page
+						</Typography>
+					</Stack>
+				</Paper>
+			</Container>
+		);
+	}
 
-  return (
-    <div style={{ width: "100%", height: "100vh" }}>
-      {user?.IsAdmin && user?.Name === 'Tiago Pereira' && (
-        <Button sx={{
-          display: "flex",
-          marginX: "auto !important",
-          marginTop: "2rem !important",
-          borderColor:
-            sponsorColor ||
-            sponsorColor ||
-            "primary.main",
-          color:
-            sponsorColor ||
-            sponsorColor ||
-            "primary.main"
-        }} onClick={async () => {
-          // apagar matches, rounds e groups para este stage
-          await adapter.delete("match", { stage_id: stageId });
-          await adapter.delete("round", { stage_id: stageId });
-          await adapter.delete("group", { stage_id: stageId });
-          await adapter.delete("stage", stageId);
+	return (
+		<div style={{ width: "100%", height: "100vh" }}>
+			{user?.IsAdmin && user?.Name === "Tiago Pereira" && (
+				<Button
+					sx={{
+						display: "flex",
+						marginX: "auto !important",
+						marginTop: "2rem !important",
+						borderColor:
+							sponsorColor || sponsorColor || "primary.main",
+						color: sponsorColor || sponsorColor || "primary.main"
+					}}
+					onClick={async () => {
+						// apagar matches, rounds e groups para este stage
+						await adapter.delete("match", { stage_id: stageId });
+						await adapter.delete("round", { stage_id: stageId });
+						await adapter.delete("group", { stage_id: stageId });
+						await adapter.delete("stage", stageId);
 
-          console.log("Deleted old stage data for stage:", stageId);
-        }}>Eliminate stage</Button>)}
-      <div
-        className="brackets-viewer"
-        style={{ padding: "0", paddingBottom: "1rem" }}
-      ></div>
-      {adapter && selectedMatch && (
-        <UploadScoreModal
-          open={uploadModalOpen}
-          adapter={adapter}
-          team1Name={
-            participants.find((p) => p.id === selectedMatch?.opponent1?.id)
-              ?.name
-          }
-          team2Name={
-            participants.find((p) => p.id === selectedMatch?.opponent2?.id)
-              ?.name
-          }
-          onClose={() => {
-            setUploadModalOpen(false);
-            setSelectedMatch(null);
-            render();
-          }}
-          match={selectedMatch}
-        />
-      )}
-    </div>
-  );
+						console.log(
+							"Deleted old stage data for stage:",
+							stageId
+						);
+					}}>
+					Eliminate stage
+				</Button>
+			)}
+			<div
+				className='brackets-viewer'
+				style={{ padding: "0", paddingBottom: "1rem" }}></div>
+			{adapter && selectedMatch && (
+				<UploadScoreModal
+					open={uploadModalOpen}
+					adapter={adapter}
+					team1Name={
+						participants.find(
+							(p) => p.id === selectedMatch?.opponent1?.id
+						)?.name
+					}
+					team2Name={
+						participants.find(
+							(p) => p.id === selectedMatch?.opponent2?.id
+						)?.name
+					}
+					onClose={() => {
+						setUploadModalOpen(false);
+						setSelectedMatch(null);
+						render();
+					}}
+					match={selectedMatch}
+				/>
+			)}
+		</div>
+	);
 };
 
 export default CupBrackets;
