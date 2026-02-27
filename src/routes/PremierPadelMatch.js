@@ -47,7 +47,7 @@ const PremierPadelMatch = () => {
 	}, [events]);
 
 	useEffect(() => {
-		if (match && event) {
+		if (match && event && user) {
 			const teamAPair = event.Pairs[match.opponent1.id - 1];
 			const teamBPair = event.Pairs[match.opponent2.id - 1];
 			const teamAPlayers = teamAPair?.DisplayName || "";
@@ -68,11 +68,7 @@ const PremierPadelMatch = () => {
 			setTeamA(teamAPlayers);
 			setTeamB(teamBPlayers);
 
-			if (
-				!match.teams &&
-				event?.TournamentId &&
-				match?.id
-			) {
+			if (!match.teams && event?.TournamentId && match?.id) {
 				// Update match in firebase to add teams info (player ids) if not already present, this is needed to identify which team the user logged in is in and show the schedule tab accordingly
 				const teamsPayload = {
 					teamA: {
@@ -87,6 +83,7 @@ const PremierPadelMatch = () => {
 					}
 				};
 
+				match.teams = teamsPayload; // Update local match object to avoid re-rendering issues
 				setDoc(
 					doc(
 						db,
@@ -100,17 +97,16 @@ const PremierPadelMatch = () => {
 			}
 			// identify which team the user logged id is in or if not in any team, hide the schedule, show de details tab and and results tabs
 			// current user id comes from firebase auth
-			if (user) {
-				if (teamAIds.includes(user.uid)) {
-					setCurrentTeam("teamA");
-				} else if (teamBIds.includes(user.uid)) {
-					setCurrentTeam("teamB");
-				} else {
-					setCurrentTeam(null);
-				}
+
+			if (teamAIds.includes(user.uid)) {
+				setCurrentTeam("teamA");
+			} else if (teamBIds.includes(user.uid)) {
+				setCurrentTeam("teamB");
+			} else {
+				setCurrentTeam(null);
 			}
 		}
-	}, [match, event]);
+	}, [match, event, user]);
 
 	console.log("PremierPadelMatch", match);
 
@@ -122,7 +118,7 @@ const PremierPadelMatch = () => {
 				mainColor={mainColor}
 				event={event}
 			/>
-			<Box sx={{ backgroundColor: BG, height: "calc(100vh - 270px)" }}>
+			<Box sx={{ backgroundColor: BG }}>
 				{/* Tabs */}
 				<Tabs
 					value={activeTab}
@@ -135,6 +131,7 @@ const PremierPadelMatch = () => {
 						position: "sticky",
 						top: 0,
 						zIndex: 10,
+						height: 50,
 						borderBottom: `1px solid ${BORDER}`,
 						"& .MuiTab-root": {
 							fontSize: 11,
@@ -158,7 +155,11 @@ const PremierPadelMatch = () => {
 				</Tabs>
 
 				<Container maxWidth='sm'>
-					<Box>
+					<Box
+						sx={{
+							height: "calc(100vh - 320px)",
+							overflowY: "auto",
+						}}>
 						{activeTab === 0 && (
 							<Details
 								match={match}
