@@ -26,7 +26,6 @@ import {
     ListItem,
     ListItemText,
     IconButton,
-    Avatar as MAvatar,
     Card,
     CardContent,
     Grid,
@@ -43,7 +42,6 @@ import { Add, Group } from "@mui/icons-material";
 import ConfirmationModal from "../components/ConfirmationModal";
 import SuccessModal from "../components/SuccessModal";
 import SearchPlayer from "../components/SearchPlayer";
-import RobinHoodBracket from "../components/RobinHoodBracket";
 import CupBrackets from "../components/CupBrackets";
 import { Person, Delete as DeleteIcon } from "@mui/icons-material";
 
