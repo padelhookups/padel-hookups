@@ -184,7 +184,8 @@ const useEventActions = () => {
     // Get Event to get fresh pairs
     const eventDocRef = doc(db, `Events/${eventId}`);
     const eventSnap = await getDoc(eventDocRef);
-    const pairs = eventSnap.data().Pairs;
+    const event = { ...eventSnap.data(), id: eventId };
+    const pairs = event.Pairs;
     //const players = eventSnap.data().PlayersIds;
 
     // 1️⃣ Create a "TournamentData" document for this event
@@ -234,10 +235,37 @@ const useEventActions = () => {
     });
 
     console.log(eliminationStage);
+    await updateMatchsDate(event, tournamentId, manager);
   }
 
-  const updateMatchsDate = async (eventId) => {
-    
+  const updateMatchsDate = async (event, tournamentId,  manager) => {
+    // Loop All games
+    const stage = await manager.get.stageData();
+    const rounds = stage.round;
+    const matches = stage.match;
+
+    console.log(matches);
+    console.log(rounds);
+    const startDate = event.Date.toDate();
+    console.log(startDate);
+
+    // so if tournament start at day X, first round of matchs need to end 2 weeks after, 2nd round of matches 4 weeks after etc
+    const roundDuration = 14;
+    matches.forEach(async (match) => {
+      const roundNumber = rounds.filter(r => r.id === match.round_id)[0].number;
+      const matchDate = new Date(
+        startDate.getTime() + roundNumber * roundDuration * 24 * 60 * 60 * 1000
+      );
+      const matchDocRef = doc(
+        db,
+        `Events/${event.id}/TournamentData/${tournamentId}/matches/${match.id}`
+      );
+      await updateDoc(matchDocRef, {
+        FinalDateToPlay: matchDate,
+      });
+      console.log(matchDate);
+      
+    });
   }
 
   const registerFromEvent = async (
