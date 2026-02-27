@@ -249,11 +249,16 @@ const useEventActions = () => {
     const startDate = event.Date.toDate();
     console.log(startDate);
 
-    // so if tournament start at day X, first round of matchs need to end 2 weeks after, 2nd round of matches 4 weeks after etc
+    // so if tournament start at day X:
+    // round 1 starts at day X and ends 2 weeks after,
+    // round 2 starts 2 weeks after and ends 4 weeks after, etc.
     const roundDuration = 14;
     matches.forEach(async (match) => {
       const roundNumber = rounds.filter(r => r.id === match.round_id)[0].number;
-      const matchDate = new Date(
+      const matchStartDate = new Date(
+        startDate.getTime() + (roundNumber - 1) * roundDuration * 24 * 60 * 60 * 1000
+      );
+      const matchFinalDate = new Date(
         startDate.getTime() + roundNumber * roundDuration * 24 * 60 * 60 * 1000
       );
       const matchDocRef = doc(
@@ -261,9 +266,10 @@ const useEventActions = () => {
         `Events/${event.id}/TournamentData/${tournamentId}/matches/${match.id}`
       );
       await updateDoc(matchDocRef, {
-        FinalDateToPlay: matchDate,
+        StartDateToPlay: matchStartDate,
+        FinalDateToPlay: matchFinalDate,
       });
-      console.log(matchDate);
+      console.log(matchStartDate, matchFinalDate);
       
     });
   }
