@@ -1,6 +1,18 @@
 import React, { useEffect, useState, useRef, useMemo } from "react";
+
+import { useLocation, useNavigate } from "react-router";
+import { useDispatch, useSelector } from "react-redux";
+import { getFirestore, updateDoc, doc } from "firebase/firestore";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { fetchEvents, selectEvents } from "../redux/slices/eventsSlice";
+import { fetchUsers, selectUsers } from "../redux/slices/usersSlice";
+import useAuth from "../utils/useAuth";
+import useEventActions from "../utils/EventsUtils";
+
 import {
     Box,
+    Chip,
+    Fab,
     Paper,
     Typography,
     Avatar,
@@ -22,15 +34,12 @@ import {
     Dialog,
     DialogTitle,
     DialogContent,
-    DialogActions
+    DialogActions,
+    CircularProgress,
 } from "@mui/material";
-import { useLocation, useNavigate } from "react-router";
-import { useDispatch, useSelector } from "react-redux";
-import { getFirestore, updateDoc, doc } from "firebase/firestore";
-import { fetchEvents, selectEvents } from "../redux/slices/eventsSlice";
-import { fetchUsers, selectUsers } from "../redux/slices/usersSlice";
-import useAuth from "../utils/useAuth";
-import useEventActions from "../utils/EventsUtils";
+
+import { Add, Group } from "@mui/icons-material";
+
 import ConfirmationModal from "../components/ConfirmationModal";
 import SuccessModal from "../components/SuccessModal";
 import SearchPlayer from "../components/SearchPlayer";
@@ -49,12 +58,15 @@ const SponsorBanner = ({ mainSponsor, logoSponsor }) => (
                     {mainSponsor}
                 </Typography>
             </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <Typography variant="subtitle2" color="text.secondary">
                     Logo Sponsor
                 </Typography>
-                <Avatar sx={{ bgcolor: 'transparent', width: 56, height: 56, fontSize: 20 }}>
-                    {logoSponsor?.charAt(0) || "L"}
+                <Avatar
+                    src={logoSponsor}
+                    sx={{ bgcolor: "transparent", width: 56, height: 56, fontSize: 20 }}
+                >
+                    {logoSponsor ? "" : "L"}
                 </Avatar>
             </Box>
         </Stack>
@@ -71,7 +83,13 @@ const EventCup = () => {
     const events = useSelector(selectEvents);
     const users = useSelector(selectUsers);
     const { user } = useAuth();
-    const { unregisterFromEvent, addSinglePair, deletePairFromEvent, registerFromEvent } = useEventActions();
+    const {
+        createPremierPadelBrackets,
+        unregisterFromEvent,
+        addSinglePair,
+        deletePairFromEvent,
+        registerFromEvent,
+    } = useEventActions();
 
     const initialFetchDone = useRef(false);
     const [tab, setTab] = useState(0);
@@ -81,8 +99,12 @@ const EventCup = () => {
     const [usersBeingPairedIds, setUsersBeingPairedIds] = useState([]);
     const [createPairDisabled, setCreatePairDisabled] = useState(true);
     const [showConfirmation, setShowConfirmation] = useState(false);
+    const [confirmationTitle, setConfirmationTitle] = useState("");
+    const [confirmationDescription, setConfirmationDescription] = useState("");
     const [showJoinSuccess, setShowJoinSuccess] = useState(false);
     const [showExitSuccess, setShowExitSuccess] = useState(false);
+    const [successTitle, setSuccessTitle] = useState("");
+    const [successDescription, setSuccessDescription] = useState("");
     const [type, setType] = useState("joinGame");
     const [modeToSearchPlayer, setModeToSearchPlayer] = useState("single");
     const [sponsorName, setSponsorName] = useState("");
@@ -101,20 +123,20 @@ const EventCup = () => {
     }, [dispatch, db]);
 
     useEffect(() => {
-        const eventId = cup.eventId || cup.tournamentId;
+        const eventId = cup.id;
         const found = events.find((e) => e.id === eventId);
         setEvent(found || null);
     }, [events, cup]);
 
     useEffect(() => {
         // Prefill sponsor fields from event or cup
-        const main = cup?.MainSponsor || cup.mainSponsor || "";
-        const color = cup?.SponsorColor || cup.sponsorColor || "#b88f34";
-        const logo = cup?.SponsorLogo || cup.logoSponsor || "";
+        const main = event?.MainSponsor || "";
+        const color = event?.SponsorColor || "#b88f34";
+        const logo = event?.LogoSponsor || "";
         setSponsorName(main);
         setSponsorColor(color);
         setSponsorLogoPreview(logo);
-    }, [event, cup]);
+    }, [event]);
 
     useEffect(() => {
         setCreatePairDisabled(!pairSlots.player1 || !pairSlots.player2);
@@ -136,7 +158,7 @@ const EventCup = () => {
     };
 
     const handleConfirmationConfirm = async () => {
-        const eventId = cup?.id || cup.eventId;
+        const eventId = event?.id || event.eventId;
         setShowConfirmation(false);
         try {
             if (type === "joinGame") {
@@ -147,9 +169,28 @@ const EventCup = () => {
                 setModeToSearchPlayer("pairs");
                 setOpenSearchPlayer(true);
             } else if (type === "exitGame") {
-                await unregisterFromEvent(eventId, user?.uid, false);
+                let partnerId, pair;
+                pair = event?.Pairs?.find(
+                    (p) => p.Player1Id === user.uid || p.Player2Id === user.uid,
+                );
+
+                if (pair.Player1Id === user.uid) {
+                    partnerId = pair.Player2Id;
+                } else {
+                    partnerId = pair.Player1Id;
+                }
+
+                await deletePairFromEvent(event.id, user.uid, partnerId);
+                dispatch(
+                    fetchEvents({
+                        db,
+                        forceRefresh: false,
+                    }),
+                );
                 dispatch(fetchEvents({ db, forceRefresh: false }));
                 setShowExitSuccess(true);
+            } else if (type === 'createMasters') {
+                await createPremierPadelBrackets(eventId);
             }
         } catch (err) {
             console.error("confirmation action error", err);
@@ -163,46 +204,77 @@ const EventCup = () => {
             setUsersBeingPairedIds((prev) =>
                 prev.filter(
                     (id) =>
-                        id !== player.id &&
-                        id !== player.UserId &&
-                        id !== player.Name
-                )
+                        id !== player.id && id !== player.UserId && id !== player.Name,
+                ),
             );
         }
     };
 
-    const filteredUsers = [...(users || []), ...(cup?.Guests || [])]
+    const filteredUsers = [...(users || []), ...(event?.Guests || [])]
         .filter(
             (u) =>
-                !cup?.PlayersWithPairsIds?.includes(u.id) &&
-                !cup?.PlayersWithPairsIds?.includes(u.UserId)
+                !event?.PlayersWithPairsIds?.includes(u.id) &&
+                !event?.PlayersWithPairsIds?.includes(u.UserId),
         )
-        .filter((u) => cup?.PlayersIds?.includes(u.id) || (u.IsGuest && cup?.PlayersIds?.includes(u.UserId)))
-        .filter((u) => !usersBeingPairedIds.includes(u.id) && !usersBeingPairedIds.includes(u.Name));
+        .filter(
+            (u) =>
+                event?.PlayersIds?.includes(u.id) ||
+                (u.IsGuest && event?.PlayersIds?.includes(u.UserId)),
+        )
+        .filter(
+            (u) =>
+                !usersBeingPairedIds.includes(u.id) &&
+                !usersBeingPairedIds.includes(u.Name),
+        );
 
-    const searchPlayersIds = useMemo(() => {
-        console.log('searchPlayersIds recompute');
+    const playersToExclude = useMemo(() => {
+        if (!event || !user) return [];
 
-        const base = cup?.PlayersIds || [];
-        if (modeToSearchPlayer === "pairs" && user?.uid) {
-            return Array.isArray(base) ? [...base, user.uid] : [user.uid];
-        }
-        return base;
-    }, [cup?.PlayersIds, modeToSearchPlayer, user?.uid]);
+        let playersToExclude = users.filter(
+            (u) =>
+                event?.PlayersWithPairsIds?.includes(u.id) ||
+                event?.PlayersIds?.includes(u.id) ||
+                user?.uid === u.id,
+        );
+        let playersToExcludeIds = playersToExclude.map((p) => p.id);
+        return playersToExcludeIds;
+    }, [event?.PlayersIds, event?.PlayersWithPairsIds, user]);
 
     const TabPanel = ({ children, value, index }) => (
-        <div hidden={value !== index} style={{ height: "100%", display: value === index ? "flex" : "none", flexDirection: "column" }}>
-            {value === index && <Box sx={{ flex: 1, overflow: "auto" }}>{children}</Box>}
+        <div
+            hidden={value !== index}
+            style={{
+                height: "100%",
+                display: value === index ? "flex" : "none",
+                flexDirection: "column",
+            }}
+        >
+            {value === index && (
+                <Box sx={{ flex: 1, overflow: "auto" }}>{children}</Box>
+            )}
         </div>
     );
 
-    const alreadyRegistered = cup?.PlayersIds?.includes(user?.uid);
+    if (event === null || user === null || user === undefined) {
+        return (
+            <Box
+                height="100vh"
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+            >
+                <CircularProgress />
+            </Box>
+        );
+    }
+
+    const alreadyRegistered = event?.PlayersIds?.includes(user?.uid);
 
     return (
         <>
             <Paper
                 sx={{
-                    bgcolor: "#b88f34",
+                    bgcolor: sponsorColor || sponsorColor || "#b88f34",
                     color: "white",
                     textAlign: "start",
                     pt: "env(safe-area-inset-top)",
@@ -210,17 +282,35 @@ const EventCup = () => {
             >
                 <Box sx={{ py: 3, px: 2 }}>
                     <Container maxWidth="sm">
-                        <Stack direction="row" alignItems="center" justifyContent="space-between">
+                        <Stack
+                            direction="row"
+                            alignItems="center"
+                            justifyContent="space-between"
+                        >
                             <Box>
                                 <Typography variant="h5" fontWeight={700}>
-                                    {cup.title || "Event Cup"}
+                                    {event.Name || "Event Cup"}
                                 </Typography>
                             </Box>
                         </Stack>
                     </Container>
                 </Box>
                 <Box bgcolor="background.default" sx={{ pt: 2 }}>
-                    <Tabs value={tab} onChange={(e, v) => setTab(v)} variant="fullWidth">
+                    <Tabs
+                        value={tab}
+                        onChange={(e, v) => setTab(v)}
+                        variant="fullWidth"
+                        sx={{
+                            "& .MuiTabs-indicator": {
+                                bgcolor:
+                                    sponsorColor || sponsorColor || "primary.main",
+                            },
+                            "& .MuiTab-root": {
+                                color:
+                                    sponsorColor || sponsorColor || "primary.main",
+                            },
+                        }}
+                    >
                         <Tab label="Details" />
                         <Tab label="Players" />
                         <Tab label="Brackets" />
@@ -228,12 +318,23 @@ const EventCup = () => {
                 </Box>
             </Paper>
 
-            <Box height="100vh" maxHeight="calc(100vh - 230px - env(safe-area-inset-bottom))" display="flex" flexDirection="column" bgcolor="background.default">
-                <Container maxWidth="sm" sx={{ py: 3, flex: 1 }}>
-                    <TabPanel value={tab} index={0}>
-                        <SponsorBanner mainSponsor={cup.mainSponsor} logoSponsor={cup.logoSponsor} />
+            <Box
+                height="100vh"
+                maxHeight="calc(100vh - 230px - env(safe-area-inset-bottom))"
+                display="flex"
+                flexDirection="column"
+                bgcolor="background.default"
+            >
+                <TabPanel value={tab} index={0}>
+                    <Container maxWidth="sm" sx={{ py: 3, flex: 1 }}>
+                        <SponsorBanner
+                            mainSponsor={event.MainSponsor}
+                            logoSponsor={event.LogoSponsor}
+                        />
                         <Paper elevation={1} sx={{ p: 2 }}>
-                            <Typography variant="body1" color="text.secondary">{cup.description || "Cup overview and details."}</Typography>
+                            <Typography variant="body1" color="text.secondary">
+                                {event.description || "Cup overview and details."}
+                            </Typography>
                         </Paper>
 
                         {user && (
@@ -242,14 +343,28 @@ const EventCup = () => {
                                     <Button
                                         fullWidth
                                         variant="contained"
-                                        sx={{ bgcolor: "primary.main", color: "white" }}
+                                        sx={{
+                                            bgcolor:
+                                                sponsorColor ||
+                                                sponsorColor ||
+                                                "primary.main",
+                                            color: "white",
+                                        }}
                                         onClick={async () => {
-                                            if ((cup?.TypeOfTournament || cup.type) === "Mix") {
+                                            if ((event?.TypeOfTournament || event.type) === "Mix") {
                                                 setType("joinGame");
+                                                setConfirmationTitle("Register");
+                                                setConfirmationDescription(
+                                                    "Do you want to register for this cup?",
+                                                );
                                                 setShowConfirmation(true);
                                             } else {
                                                 setType("joinGameInPairs");
                                                 setModeToSearchPlayer("pairs");
+                                                setConfirmationTitle("Find Partner");
+                                                setConfirmationDescription(
+                                                    "You'll be able to pick a partner to form a pair for this event. Continue?",
+                                                );
                                                 setShowConfirmation(true);
                                             }
                                         }}
@@ -260,15 +375,39 @@ const EventCup = () => {
 
                                 {alreadyRegistered && (
                                     <>
-                                        <Button fullWidth variant="contained" sx={{ bgcolor: "primary.main", color: "white" }}>
+                                        <Button
+                                            fullWidth
+                                            variant="contained"
+                                            sx={{
+                                                bgcolor:
+                                                    sponsorColor ||
+                                                    sponsorColor ||
+                                                    "primary.main",
+                                                color: "white",
+                                            }}
+                                        >
                                             Good Luck 🤞
                                         </Button>
                                         <Button
                                             fullWidth
                                             variant="outlined"
-                                            sx={{ bgcolor: "white", color: "error.main", borderColor: "error.main" }}
+                                            sx={{
+                                                bgcolor: "white",
+                                                color:
+                                                    sponsorColor ||
+                                                    sponsorColor ||
+                                                    "primary.main",
+                                                borderColor:
+                                                    sponsorColor ||
+                                                    sponsorColor ||
+                                                    "primary.main",
+                                            }}
                                             onClick={() => {
                                                 setType("exitGame");
+                                                setConfirmationTitle("Unregister");
+                                                setConfirmationDescription(
+                                                    "Are you sure you want to unregister from this cup?",
+                                                );
                                                 setShowConfirmation(true);
                                             }}
                                         >
@@ -281,14 +420,67 @@ const EventCup = () => {
 
                         {user?.IsAdmin && (
                             <Box sx={{ mt: 2 }}>
-                                <Button variant="outlined" fullWidth onClick={() => setManageSponsorOpen(true)}>Manage Sponsor</Button>
+                                <Button
+                                    variant="outlined"
+                                    fullWidth
+                                    sx={{
+                                        borderColor:
+                                            sponsorColor ||
+                                            sponsorColor ||
+                                            "primary.main",
+                                        color:
+                                            sponsorColor ||
+                                            sponsorColor ||
+                                            "primary.main",
+                                    }}
+                                    onClick={() => setManageSponsorOpen(true)}
+                                >
+                                    Manage Sponsor
+                                </Button>
                             </Box>
                         )}
-                    </TabPanel>
+                        <Box sx={{ mt: 2 }}>
+                            <Button
+                                variant="outlined"
+                                startIcon={<Group />}
+                                fullWidth
+                                sx={{
+                                    borderColor:
+                                        sponsorColor ||
+                                        sponsorColor ||
+                                        "primary.main",
+                                    color:
+                                        sponsorColor ||
+                                        sponsorColor ||
+                                        "primary.main",
+                                }}
+                                disabled={event.TournamentStarted}
+                                onClick={async () => {
+                                    if (
+                                        !event.Pairs ||
+                                        event.Pairs.length % 2 !== 0 ||
+                                        event.Pairs.length < 4
+                                    ) {
+                                        alert("No pairs available to create matches.");
+                                        return;
+                                    }
 
-                    <TabPanel value={tab} index={1}>
-                        <Stack spacing={2}>
-                            {!cup?.PairsCreated && user?.IsAdmin && (
+                                    setType("createMasters");
+                                    setConfirmationTitle("Create Matches?");
+                                    setConfirmationDescription("");
+                                    setShowConfirmation(true);
+                                }}
+                            >
+                                Create Matches
+                            </Button>
+                        </Box>
+                    </Container>
+                </TabPanel>
+
+                <TabPanel value={tab} index={1}>
+                    <Stack spacing={2}>
+                        <Box sx={{ px: 4, py: 4 }}>
+                            {!event?.PairsCreated && user?.IsAdmin && (
                                 <>
                                     <Box
                                         sx={{
@@ -315,28 +507,25 @@ const EventCup = () => {
                                             onClick={() => removeFromPair("player1")}
                                         >
                                             {pairSlots.player1 ? (
-                                                <Stack
-                                                    direction="row"
-                                                    alignItems="center"
-                                                    spacing={1}
-                                                >
+                                                <Stack direction="row" alignItems="center" spacing={1}>
                                                     <Avatar
                                                         sx={{
                                                             width: 32,
                                                             height: 32,
-                                                            bgcolor: "primary.main",
+                                                            bgcolor:
+                                                                sponsorColor ||
+                                                                sponsorColor ||
+                                                                "primary.main",
                                                         }}
                                                     >
                                                         <Person fontSize="small" />
                                                     </Avatar>
-                                                    <Typography variant="h6" fontWeight="bold">
+                                                    <Typography variant="p" fontWeight="bold">
                                                         {pairSlots.player1.Name || "No Name"}
                                                     </Typography>
                                                 </Stack>
                                             ) : (
-                                                <Typography color="text.secondary">
-                                                    Player 1
-                                                </Typography>
+                                                <Typography color="text.secondary">Player 1</Typography>
                                             )}
                                         </Box>
 
@@ -362,190 +551,309 @@ const EventCup = () => {
                                             onClick={() => removeFromPair("player2")}
                                         >
                                             {pairSlots.player2 ? (
-                                                <Stack
-                                                    direction="row"
-                                                    alignItems="center"
-                                                    spacing={1}
-                                                >
+                                                <Stack direction="row" alignItems="center" spacing={1}>
                                                     <Avatar
                                                         sx={{
                                                             width: 32,
                                                             height: 32,
-                                                            bgcolor: "primary.main",
+                                                            bgcolor:
+                                                                sponsorColor ||
+                                                                sponsorColor ||
+                                                                "primary.main",
                                                         }}
                                                     >
                                                         <Person fontSize="small" />
                                                     </Avatar>
-                                                    <Typography variant="h6" fontWeight="bold">
+                                                    <Typography variant="p" fontWeight="bold">
                                                         {pairSlots.player2.Name || "No Name"}
                                                     </Typography>
                                                 </Stack>
                                             ) : (
-                                                <Typography color="text.secondary">
-                                                    Player 2
-                                                </Typography>
+                                                <Typography color="text.secondary">Player 2</Typography>
                                             )}
                                         </Box>
                                     </Box>
                                     <Button
                                         disabled={createPairDisabled}
+                                        fullWidth
                                         variant="contained"
-                                        sx={{ color: "white" }}
+                                        sx={{
+                                            bgcolor:
+                                                sponsorColor ||
+                                                sponsorColor ||
+                                                "primary.main",
+                                            color: "white",
+                                            marginY: 2,
+                                        }}
                                         onClick={async () => {
                                             const newPairName = `${pairSlots.player1.Name} & ${pairSlots.player2.Name}`;
                                             const newPair = {
                                                 DisplayName: newPairName,
                                                 Player1Id:
-                                                    pairSlots.player1.id ||
-                                                    pairSlots.player1.UserId,
+                                                    pairSlots.player1.id || pairSlots.player1.UserId,
                                                 Player2Id:
-                                                    pairSlots.player2.id ||
-                                                    pairSlots.player2.UserId,
+                                                    pairSlots.player2.id || pairSlots.player2.UserId,
                                                 CreatedAt: new Date().toISOString(),
                                             };
-                                            await addSinglePair(newPair, cup.id);
+                                            await addSinglePair(newPair, event.id, false);
                                             setPairSlots({ player1: null, player2: null });
                                             dispatch(fetchEvents({ db, forceRefresh: false }));
                                         }}
                                     >
                                         Create Pair
                                     </Button>
-                                    <Typography variant="title1" fontWeight="bold">
-                                        Single players registered
-                                    </Typography>
-                                    <Divider />
-                                    <List
-                                        sx={{
-                                            margin: "0 !important",
-                                            padding: "0 !important",
-                                        }}
-                                    >
-                                        {filteredUsers.map((player, index) => (
-                                            <React.Fragment key={player.id || player.Name}>
-                                                <ListItem
-                                                    onClick={() => handleListItemClick(player)}
-                                                    sx={{ py: 2, cursor: "pointer", WebkitUserSelect: "none", userSelect: "none" }}
-                                                    secondaryAction={
-                                                        <IconButton
-                                                            edge="end"
-                                                            aria-label="delete"
-                                                            onClick={async () => {
-                                                                await unregisterFromEvent(
-                                                                    cup.id,
-                                                                    player.id || player.UserId,
-                                                                    player.IsGuest
-                                                                );
-                                                                dispatch(
-                                                                    fetchEvents({ db, forceRefresh: false })
-                                                                );
+                                    {filteredUsers.length > 0 && (
+                                        <>
+                                            <Typography variant="title1" fontWeight="bold">
+                                                Single players registered
+                                            </Typography>
+                                            <Divider />
+                                            <List
+                                                sx={{
+                                                    margin: "0 !important",
+                                                    padding: "0 !important",
+                                                }}
+                                            >
+                                                {filteredUsers.map((player, index) => (
+                                                    <React.Fragment key={player.id || player.Name}>
+                                                        <ListItem
+                                                            onClick={() => handleListItemClick(player)}
+                                                            sx={{
+                                                                py: 2,
+                                                                cursor: "pointer",
+                                                                WebkitUserSelect: "none",
+                                                                userSelect: "none",
                                                             }}
+                                                            secondaryAction={
+                                                                <IconButton
+                                                                    edge="end"
+                                                                    aria-label="delete"
+                                                                    onClick={async () => {
+                                                                        await unregisterFromEvent(
+                                                                            event.id,
+                                                                            player.id || player.UserId,
+                                                                            player.IsGuest,
+                                                                        );
+                                                                        dispatch(
+                                                                            fetchEvents({ db, forceRefresh: false }),
+                                                                        );
+                                                                    }}
+                                                                >
+                                                                    <DeleteIcon color="error" />
+                                                                </IconButton>
+                                                            }
                                                         >
-                                                            <DeleteIcon color="error" />
-                                                        </IconButton>
-                                                    }
-                                                >
-                                                    <Avatar
-                                                        sx={{
-                                                            mr: 2,
-                                                            bgcolor: "primary.main",
-                                                        }}
-                                                    >
-                                                        <Person />
-                                                    </Avatar>
-                                                    <ListItemText
-                                                        primary={
-                                                            <Typography
-                                                                id={player.id || player.Name}
-                                                                variant="h6"
+                                                            <Avatar
                                                                 sx={{
-                                                                    fontWeight: "bold",
+                                                                    mr: 2,
+                                                                    bgcolor:
+                                                                        sponsorColor ||
+                                                                        sponsorColor ||
+                                                                        "primary.main",
                                                                 }}
                                                             >
-                                                                {player.Name || "No Name"}
-                                                            </Typography>
-                                                        }
-                                                    />
-                                                    {/* FUTURE -- add inscription date */}
-                                                </ListItem>
-                                                {index < filteredUsers.length - 1 && <Divider />}
-                                            </React.Fragment>
-                                        ))}
-                                    </List>
+                                                                <Person />
+                                                            </Avatar>
+                                                            <ListItemText
+                                                                primary={
+                                                                    <Typography
+                                                                        id={player.id || player.Name}
+                                                                        variant="h6"
+                                                                        sx={{
+                                                                            fontWeight: "bold",
+                                                                        }}
+                                                                    >
+                                                                        {player.Name || "No Name"}
+                                                                    </Typography>
+                                                                }
+                                                            />
+                                                            {/* FUTURE -- add inscription date */}
+                                                        </ListItem>
+                                                        {index < filteredUsers.length - 1 && <Divider />}
+                                                    </React.Fragment>
+                                                ))}
+                                            </List>
+                                        </>
+                                    )}
                                 </>
                             )}
+                            <Typography variant="title1" fontWeight="bold">
+                                Pairs registered
+                            </Typography>
+                            <Divider />
+                        </Box>
 
-                            {cup?.Pairs && cup.Pairs.length > 0 && (
-                                <Box sx={{ px: 0, py: 0 }}>
-                                    <Grid container spacing={3}>
-                                        {cup.Pairs.map((pair, index) => {
-                                            const player1Name = pair.DisplayName.split(" & ")[0];
-                                            const player2Name = pair.DisplayName.split(" & ")[1];
-                                            return (
-                                                <Grid item xs={12} md={6} key={pair.id || index}>
-                                                    <Card sx={{ height: '100%' }}>
-                                                        <CardContent>
-                                                            <Stack direction="row" alignItems="center" spacing={1}>
-                                                                <Typography variant="subtitle2" color="text.secondary">Pair</Typography>
-                                                                <Typography sx={{ ml: 'auto' }}>#{index + 1}</Typography>
+                        {event?.Pairs && event.Pairs.length > 0 && (
+                            <Box sx={{ px: 4, mt: 0 }}>
+                                <Grid container spacing={3}>
+                                    {event.Pairs.map((pair, index) => {
+                                        const player1Name = pair.DisplayName.split(" & ")[0];
+                                        const player2Name = pair.DisplayName.split(" & ")[1];
+
+                                        const player1PhotoURL = users.find(
+                                            (u) => u.id === pair.Player1Id,
+                                        )?.PhotoURL;
+                                        const player2PhotoURL = users.find(
+                                            (u) => u.id === pair.Player2Id,
+                                        )?.PhotoURL;
+
+                                        const initials = (name) =>
+                                            name
+                                                .split(" ")
+                                                .filter(Boolean)
+                                                .map((w) => w[0])
+                                                .slice(0, 2)
+                                                .join("")
+                                                .toUpperCase();
+                                        return (
+                                            <Grid
+                                                item
+                                                size={{ xs: 12, md: 6, lg: 3 }}
+                                                key={pair.id || index}
+                                                sx={{ mt: 0 }}
+                                            >
+                                                <Card
+                                                    sx={{
+                                                        height: "100%",
+                                                        display: "flex",
+                                                        flexDirection: "column",
+                                                        position: "relative",
+                                                    }}
+                                                >
+                                                    <CardContent sx={{ height: "100%" }}>
+                                                        <Stack
+                                                            direction="row"
+                                                            alignItems="center"
+                                                            justifyContent="start"
+                                                            sx={{ mb: 2 }}
+                                                        >
+                                                            <Typography
+                                                                variant="subtitle2"
+                                                                color="text.secondary"
+                                                            >
+                                                                Pair
+                                                            </Typography>
+                                                            <Chip
+                                                                size="small"
+                                                                label={`#${index + 1}`}
+                                                                sx={{ marginLeft: "auto" }}
+                                                            />
+                                                            {user?.IsAdmin && (
+                                                                <IconButton
+                                                                    edge="end"
+                                                                    aria-label="delete"
+                                                                    onClick={async () => {
+                                                                        await deletePairFromEvent(
+                                                                            event.id,
+                                                                            pair.Player1Id,
+                                                                            pair.Player2Id,
+                                                                        );
+                                                                        dispatch(
+                                                                            fetchEvents({
+                                                                                db,
+                                                                                forceRefresh: false,
+                                                                            }),
+                                                                        );
+                                                                    }}
+                                                                >
+                                                                    <DeleteIcon color="error" />
+                                                                </IconButton>
+                                                            )}
+                                                        </Stack>
+                                                        <Divider />
+                                                        <Stack spacing={1} flexGrow={1} sx={{ mt: 2 }}>
+                                                            <Stack
+                                                                key={player1Name + index}
+                                                                direction="row"
+                                                                alignItems="center"
+                                                                spacing={1.25}
+                                                            >
+                                                                <Avatar
+                                                                    src={player1PhotoURL}
+                                                                    sx={{
+                                                                        width: 28,
+                                                                        height: 28,
+                                                                        bgcolor:
+                                                                            sponsorColor ||
+                                                                            sponsorColor ||
+                                                                            "primary.main",
+                                                                        fontSize: 12,
+                                                                    }}
+                                                                >
+                                                                    {initials(player1Name)}
+                                                                </Avatar>
+                                                                {/* <Avatar
+                                                                    src={user?.PhotoURL && !imageError ? user.PhotoURL : undefined}
+                                                                    sx={{
+                                                                      width: 100,
+                                                                      height: 100,
+                                                                      mx: "auto",
+                                                                      mb: 2,
+                                                                      fontSize: "2rem",
+                                                                      bgcolor: "primary.main",
+                                                                      border: '3px solid',
+                                                                      borderColor: 'primary.main',
+                                                                      opacity: imageLoading && user?.PhotoURL && !imageError ? 0 : 1,
+                                                                      transition: 'opacity 0.3s ease-in-out',
+                                                                    }}
+                                                                    imgProps={{
+                                                                      onLoad: () => setImageLoading(false),
+                                                                      onError: () => {
+                                                                        setImageLoading(false);
+                                                                        setImageError(true);
+                                                                      }
+                                                                    }}>
+                                                                    {user?.PhotoURL || getInitials()}
+                                                                  </Avatar> */}
+                                                                <Typography variant="body2" fontWeight={600}>
+                                                                    {player1Name}
+                                                                </Typography>
                                                             </Stack>
-                                                            <Divider sx={{ my: 1 }} />
-                                                            <Stack spacing={1}>
-                                                                <Stack direction="row" alignItems="center" spacing={1}>
-                                                                    <MAvatar sx={{ width: 28, height: 28, bgcolor: 'primary.main' }}>{player1Name?.slice(0, 2).toUpperCase()}</MAvatar>
-                                                                    <Typography variant="body2" fontWeight={600}>{player1Name}</Typography>
-                                                                </Stack>
-                                                                <Stack direction="row" alignItems="center" spacing={1}>
-                                                                    <MAvatar sx={{ width: 28, height: 28, bgcolor: 'primary.main' }}>{player2Name?.slice(0, 2).toUpperCase()}</MAvatar>
-                                                                    <Typography variant="body2" fontWeight={600}>{player2Name}</Typography>
-                                                                </Stack>
+                                                            <Stack
+                                                                key={player2Name + index}
+                                                                direction="row"
+                                                                alignItems="center"
+                                                                spacing={1.25}
+                                                            >
+                                                                <Avatar
+                                                                    src={player2PhotoURL}
+                                                                    sx={{
+                                                                        width: 28,
+                                                                        height: 28,
+                                                                        bgcolor:
+                                                                            sponsorColor ||
+                                                                            sponsorColor ||
+                                                                            "primary.main",
+                                                                        fontSize: 12,
+                                                                    }}
+                                                                >
+                                                                    {initials(player2Name)}
+                                                                </Avatar>
+                                                                <Typography variant="body2" fontWeight={600}>
+                                                                    {player2Name}
+                                                                </Typography>
                                                             </Stack>
-                                                        </CardContent>
-                                                    </Card>
-                                                </Grid>
-                                            )
-                                        })}
-                                    </Grid>
-                                </Box>
-                            )}
+                                                        </Stack>
+                                                    </CardContent>
+                                                </Card>
+                                            </Grid>
+                                        );
+                                    })}
+                                </Grid>
+                            </Box>
+                        )}
+                    </Stack>
+                </TabPanel>
 
-                            <Paper elevation={1} sx={{ p: 2 }}>
-                                <Typography variant="h6">Registered Players</Typography>
-                                <List>
-                                    {filteredUsers.map((player, index) => (
-                                        <React.Fragment key={player.id || player.Name}>
-                                            <ListItem sx={{ py: 2, cursor: 'pointer' }} onClick={() => handleListItemClick(player)} secondaryAction={
-                                                <IconButton edge="end" aria-label="delete" onClick={async () => {
-                                                    await unregisterFromEvent(cup?.id || cup.eventId, player.id || player.UserId, player.IsGuest);
-                                                    dispatch(fetchEvents({ db, forceRefresh: false }));
-                                                }}>
-                                                    <DeleteIcon color="error" />
-                                                </IconButton>
-                                            }>
-                                                <MAvatar sx={{ mr: 2, bgcolor: 'primary.main' }}><Person /></MAvatar>
-                                                <ListItemText primary={<Typography variant="h6" fontWeight="bold">{player.Name || 'No Name'}</Typography>} />
-                                            </ListItem>
-                                            {index < filteredUsers.length - 1 && <Divider />}
-                                        </React.Fragment>
-                                    ))}
-                                </List>
-                            </Paper>
-
-                            {user?.IsAdmin && (
-                                <Button variant="contained" sx={{ mt: 2 }} onClick={() => { setOpenSearchPlayer(true); }}>Add Player</Button>
-                            )}
-                        </Stack>
-                    </TabPanel>
-
-                    <TabPanel value={tab} index={2}>
-                        <Paper sx={{ p: 2 }} elevation={1}>
-                            {cup.type === 'Mix' ? (
-                                <RobinHoodBracket eventId={cup?.id || cup.eventId} tournamentId={cup.tournamentId} />
-                            ) : (
-                                <CupBrackets eventId={cup?.id || cup.eventId} tournamentId={cup.tournamentId} />
-                            )}
-                        </Paper>
-                    </TabPanel>
-                </Container>
+                <TabPanel value={tab} index={2}>
+                    <Paper sx={{ p: 2 }} elevation={1}>
+                        <CupBrackets
+                            eventId={event?.id || event.eventId}
+                            tournamentId={event.TournamentId}
+                            sponsorColor={sponsorColor}
+                        />
+                    </Paper>
+                </TabPanel>
             </Box>
             {/* Confirmation and success modals */}
             <ConfirmationModal
@@ -553,16 +861,8 @@ const EventCup = () => {
                 onClose={() => setShowConfirmation(false)}
                 onConfirm={handleConfirmationConfirm}
                 type={type}
-                title={
-                    type === "exitGame" ? "Unregister" : type === "joinGameInPairs" ? "Find Partner" : "Register"
-                }
-                description={
-                    type === "exitGame"
-                        ? "Are you sure you want to unregister from this cup?"
-                        : type === "joinGameInPairs"
-                            ? "You'll be able to pick a partner to form a pair for this cup. Continue?"
-                            : "Do you want to register for this cup?"
-                }
+                title={confirmationTitle}
+                description={confirmationDescription}
                 positiveText={type === "exitGame" ? "Unregister" : "Yes"}
                 negativeText="Cancel"
             />
@@ -570,8 +870,8 @@ const EventCup = () => {
             <SuccessModal
                 open={showJoinSuccess}
                 onClose={() => setShowJoinSuccess(false)}
-                _title="Registered"
-                _description="You have been registered for this cup. Good luck!"
+                _title={successTitle}
+                _description={successDescription}
                 _buttonText="Great"
             />
 
@@ -579,11 +879,16 @@ const EventCup = () => {
                 open={showExitSuccess}
                 onClose={() => setShowExitSuccess(false)}
                 _title="Unregistered"
-                _description="You have been unregistered from this cup. Sorry to see you go!"
+                _description="You have been unregistered from this event. Sorry to see you go!"
                 _buttonText="OK"
             />
             {/* Manage Sponsor Dialog */}
-            <Dialog fullWidth maxWidth="sm" open={manageSponsorOpen} onClose={() => setManageSponsorOpen(false)}>
+            <Dialog
+                fullWidth
+                maxWidth="sm"
+                open={manageSponsorOpen}
+                onClose={() => setManageSponsorOpen(false)}
+            >
                 <DialogTitle>Manage Sponsor</DialogTitle>
                 <DialogContent>
                     <Paper elevation={0} sx={{ p: 2 }}>
@@ -593,99 +898,199 @@ const EventCup = () => {
                                 value={sponsorName}
                                 onChange={(e) => setSponsorName(e.target.value)}
                                 fullWidth
+                                sx={{
+                                    "& .MuiOutlinedInput-root": {
+                                        "&.Mui-focused fieldset": {
+                                            borderColor: sponsorColor || "primary.main",
+                                        },
+                                    },
+                                    "& .MuiInputBase-input": {
+                                        "&:focus": {
+                                            color: sponsorColor || "primary.main",
+                                        },
+                                    },
+                                    "& .MuiInputLabel-root": {
+                                        "&.Mui-focused": {
+                                            color: sponsorColor || "primary.main",
+                                        },
+                                    },
+                                }}
                             />
 
-                            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                            <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
                                 <TextField
                                     label="Sponsor Color"
                                     type="color"
                                     value={sponsorColor}
                                     onChange={(e) => setSponsorColor(e.target.value)}
-                                    sx={{ width: 120 }}
+                                    sx={{
+                                        width: 120,
+                                        "& .MuiOutlinedInput-root": {
+                                            "&.Mui-focused fieldset": {
+                                                borderColor: sponsorColor || "primary.main",
+                                            },
+                                        },
+                                        "& .MuiInputLabel-root": {
+                                            "&.Mui-focused": {
+                                                color: sponsorColor || "primary.main",
+                                            },
+                                        },
+                                    }}
                                 />
 
                                 <Box>
                                     <input
                                         accept="image/*"
-                                        style={{ display: 'none' }}
+                                        style={{ display: "none" }}
                                         id="sponsor-logo-input-modal"
                                         type="file"
-                                        onChange={(e) => {
+                                        onChange={async (e) => {
                                             const f = e.target.files && e.target.files[0];
                                             setSponsorLogoFile(f || null);
                                             if (f) {
-                                                const reader = new FileReader();
-                                                reader.onload = (ev) => setSponsorLogoPreview(ev.target.result);
-                                                reader.readAsDataURL(f);
+                                                try {
+                                                    const storage = getStorage();
+                                                    const storagePath = `Events/${event.id}/Sponsor/${sponsorName || "sponsor"}`;
+                                                    const storageRef = ref(storage, storagePath);
+                                                    await uploadBytes(storageRef, f);
+                                                    const downloadURL = await getDownloadURL(storageRef);
+                                                    setSponsorLogoPreview(downloadURL);
+                                                } catch (err) {
+                                                    console.error("Error uploading sponsor logo", err);
+                                                }
                                             }
                                         }}
                                     />
                                     <label htmlFor="sponsor-logo-input-modal">
-                                        <Button variant="outlined" component="span">Upload Logo</Button>
+                                        <Button
+                                            variant="outlined"
+                                            component="span"
+                                            sx={{
+                                                borderColor:
+                                                    sponsorColor ||
+                                                    "primary.main",
+                                                color:
+                                                    sponsorColor ||
+                                                    "primary.main",
+                                            }}
+                                        >
+                                            Upload Logo
+                                        </Button>
                                     </label>
                                 </Box>
 
                                 {sponsorLogoPreview && (
-                                    <Avatar src={sponsorLogoPreview} sx={{ width: 56, height: 56 }} />
+                                    <Avatar
+                                        src={sponsorLogoPreview}
+                                        sx={{ width: 56, height: 56 }}
+                                    />
                                 )}
                             </Box>
                         </Stack>
                     </Paper>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setManageSponsorOpen(false)}>Cancel</Button>
-                    <Button variant="outlined" color="error" onClick={async () => {
-                        if (!cup?.id) return;
-                        try {
-                            const eventRef = doc(db, `Events/${cup.id}`);
-                            await updateDoc(eventRef, {
-                                MainSponsor: null,
-                                SponsorLogo: null,
-                                SponsorColor: null,
-                                ModifiedAt: new Date(),
-                            });
-                            setSponsorName("");
-                            setSponsorLogoPreview("");
-                            setSponsorColor("#b88f34");
-                            dispatch(fetchEvents({ db, forceRefresh: false }));
-                            setManageSponsorOpen(false);
-                        } catch (err) {
-                            console.error('remove sponsor error', err);
-                        }
-                    }}>Remove Sponsor</Button>
-                    <Button variant="contained" onClick={async () => {
-                        if (!cup?.id) return;
-                        setSavingSponsor(true);
-                        try {
-                            const eventRef = doc(db, `Events/${cup.id}`);
-                            await updateDoc(eventRef, {
-                                MainSponsor: sponsorName || null,
-                                SponsorLogo: sponsorLogoPreview || null,
-                                SponsorColor: sponsorColor || null,
-                                ModifiedAt: new Date(),
-                            });
-                            dispatch(fetchEvents({ db, forceRefresh: false }));
-                            setManageSponsorOpen(false);
-                        } catch (err) {
-                            console.error('save sponsor error', err);
-                        }
-                        setSavingSponsor(false);
-                    }}>Save Sponsor</Button>
+                    <Stack direction="column" spacing={2} sx={{ width: "100%", px: 0 }}>
+                        <Button
+                            variant="outlined"
+                            fullWidth
+                            sx={{ borderColor: sponsorColor || "primary.main", color: sponsorColor || "primary.main" }}
+                            onClick={() => setManageSponsorOpen(false)}
+                        >
+                            <Typography color={sponsorColor || "primary.main"}>Cancel</Typography>
+                        </Button>
+                        <Button
+                            fullWidth
+                            variant="outlined"
+                            sx={{ borderColor: "error.main", color: "error.main" }}
+                            onClick={async () => {
+                                if (!event?.id) return;
+                                try {
+                                    const eventRef = doc(db, `Events/${event.id}`);
+                                    await updateDoc(eventRef, {
+                                        MainSponsor: null,
+                                        LogoSponsor: null,
+                                        SponsorColor: null,
+                                        ModifiedAt: new Date(),
+                                    });
+                                    setSponsorName("");
+                                    setSponsorLogoPreview("");
+                                    setSponsorColor(sponsorColor || "#b88f34");
+                                    dispatch(fetchEvents({ db, forceRefresh: false }));
+                                    setManageSponsorOpen(false);
+                                } catch (err) {
+                                    console.error("remove sponsor error", err);
+                                }
+                            }}
+                        >
+                            Remove Sponsor
+                        </Button>
+                        <Button
+                            fullWidth
+                            variant="contained"
+                            sx={{ bgcolor: sponsorColor || sponsorColor || "primary.main", color: "white" }}
+                            onClick={async () => {
+                                if (!event?.id) return;
+                                setSavingSponsor(true);
+                                try {
+                                    const eventRef = doc(db, `Events/${event.id}`);
+                                    await updateDoc(eventRef, {
+                                        MainSponsor: sponsorName || null,
+                                        LogoSponsor: sponsorLogoPreview || null,
+                                        SponsorColor: sponsorColor || null,
+                                        ModifiedAt: new Date(),
+                                    });
+                                    dispatch(fetchEvents({ db, forceRefresh: false }));
+                                    setManageSponsorOpen(false);
+                                } catch (err) {
+                                    console.error("save sponsor error", err);
+                                }
+                                setSavingSponsor(false);
+                            }}
+                        >
+                            <Typography color="white">Save Sponsor</Typography>
+                        </Button>
+                    </Stack>
                 </DialogActions>
             </Dialog>
+            {user?.IsAdmin && (
+                <Fab
+                    sx={{
+                        bgcolor:
+                            sponsorColor || sponsorColor || "primary.main",
+                        color: "white",
+                    }}
+                    aria-label="add"
+                    style={{ position: "fixed", bottom: 76, right: 16 }}
+                    onClick={() => {
+                        setModeToSearchPlayer("single");
+                        setOpenSearchPlayer(true);
+                    }}
+                >
+                    <Add sx={{ color: "white" }} />
+                </Fab>
+            )}
             <SearchPlayer
                 open={openSearchPlayer}
-                playersIds={searchPlayersIds}
+                playersIds={playersToExclude}
                 mode={modeToSearchPlayer}
+                sponsorColor={sponsorColor || sponsorColor || "primary.main"}
                 onClose={async (selectedPlayer, pairMode) => {
                     setOpenSearchPlayer(false);
                     // If closing with a selected partner for pairs mode, create a pair
                     if (pairMode && selectedPlayer) {
                         try {
-                            const partnerId = selectedPlayer.id || selectedPlayer.UserId || null;
-                            const partnerName = selectedPlayer.label || selectedPlayer.Name || selectedPlayer || "Partner";
+                            const partnerId =
+                                selectedPlayer.id || selectedPlayer.UserId || null;
+                            const partnerName =
+                                selectedPlayer.label ||
+                                selectedPlayer.Name ||
+                                selectedPlayer ||
+                                "Partner";
                             if (!partnerId) {
-                                console.warn("Selected partner has no id; skipping pair creation");
+                                console.warn(
+                                    "Selected partner has no id; skipping pair creation",
+                                );
                             } else {
                                 const newPairName = `${user.Name} & ${partnerName}`;
                                 const newPair = {
@@ -694,15 +1099,27 @@ const EventCup = () => {
                                     Player2Id: partnerId,
                                     CreatedAt: new Date().toISOString(),
                                 };
-                                await addSinglePair(newPair, cup.id);
+                                await addSinglePair(newPair, event.id, true);
+                                setSuccessTitle("Pair Created Successfully");
+                                setSuccessDescription(
+                                    `You have been paired with ${partnerName} for this event.`,
+                                );
+                                setShowJoinSuccess(true);
                             }
                         } catch (err) {
                             console.error("Error creating pair from SearchPlayer", err);
                         }
                     }
 
-                    if (selectedPlayer && typeof selectedPlayer === 'object' && !pairMode) {
-                        // registration handled in SearchPlayer callback in original cup.js; keep simple here
+                    if (
+                        selectedPlayer &&
+                        typeof selectedPlayer === "object" &&
+                        !pairMode
+                    ) {
+                        // registration handled in SearchPlayer callback in original event.js; keep simple here
+                        await registerFromEvent(event.id, selectedPlayer.id, false, false);
+                    } else if (selectedPlayer && typeof selectedPlayer === "string") {
+                        await registerFromEvent(event.id, selectedPlayer, true, false);
                     }
 
                     dispatch(fetchEvents({ db, forceRefresh: false }));

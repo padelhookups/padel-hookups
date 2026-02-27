@@ -62,25 +62,13 @@ export default function ConfirmationModal({
             <AnimatedPadelIcon size={100} />
           </Box>}
 
-          {/* {type === 'exitGame' && <Box
-            sx={{
-              mb: 3,
-              position: "relative",
-              height: "120px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center"
-            }}>
-            <AnimatedPadelIcon size={100} />
-          </Box>} */}
-
           {/* Title */}
           <Typography
             variant="h4"
             component="h2"
             sx={{
               fontWeight: "bold",
-              color: type === 'exitGame' ? 'error.main' : 'primary.main',
+              color: (type === 'exitGame' || type === 'deleteEvent') ? 'error.main' : 'primary.main',
               mb: 2,
             }}
           >
@@ -131,7 +119,7 @@ export default function ConfirmationModal({
               size="large"
               fullWidth
               sx={(theme) => ({
-                background: type === 'exitGame' ? theme.palette.error.main : 'linear-gradient(45deg, #b88f34 30%, rgba(184, 143, 52, 0.9) 90%)',
+                background: (type === 'exitGame' || type === 'deleteEvent') ? theme.palette.error.main : 'linear-gradient(45deg, #b88f34 30%, rgba(184, 143, 52, 0.9) 90%)',
                 color: "white",
                 fontWeight: 600,
                 py: 1.5,
@@ -139,7 +127,7 @@ export default function ConfirmationModal({
                 textTransform: "none",
                 fontSize: "1rem",
                 "&:hover": {
-                  background: type === 'exitGame'
+                  background: (type === 'exitGame' || type === 'deleteEvent')
                     ? theme.palette.error.dark
                     : 'linear-gradient(45deg, rgba(184, 143, 52, 0.9) 30%, #b88f34 90%)',
                 },

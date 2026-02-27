@@ -98,6 +98,8 @@ const Home = () => {
   const initialFetchDone = useRef(false);
 
   const [activeTab, setActiveTab] = useState("tour");
+  const [sortedEvents, setSortedEvents] = useState([]);
+  const [groupedEvents, setGroupedEvents] = useState({});
 
   const events = useSelector(selectEvents);
   const loading = useSelector(selectEventsLoading);
@@ -118,6 +120,26 @@ const Home = () => {
       localStorage.setItem("ForceRefresh", ForceRefresh);
     }
   }, [dispatch, db, events.length]); // include dispatch
+
+  useEffect(() => {
+    // Sort events by date and group by month
+    const tempSortedEvents = [...events].sort((a, b) => b.Date - a.Date);
+    setSortedEvents(tempSortedEvents);
+
+    const tempGroupedEvents = tempSortedEvents.reduce((acc, event) => {
+      if (event.TypeOfTournament === 'Premier') return acc; // skip events premier 
+      const eventDate = new Date(event.Date);
+      const monthKey = `${eventDate.getFullYear()}-${String(eventDate.getMonth() + 1).padStart(2, '0')}`;
+      const monthLabel = eventDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+      if (!acc[monthKey]) {
+        acc[monthKey] = { label: monthLabel, events: [] };
+      }
+      acc[monthKey].events.push(event);
+      return acc;
+    }, {});
+    setGroupedEvents(tempGroupedEvents);
+  }, [events]);
 
   const onRefresh = async () => {
     await dispatch(fetchEvents({ db, forceRefresh: true }));
@@ -156,6 +178,7 @@ const Home = () => {
     setHasWelcomeKit(false);
     setRecordGames(false);
     setOpen(false);
+    onRefresh();
   };
 
   if (loading && events.length === 0) {
@@ -198,22 +221,6 @@ const Home = () => {
         return "❓";
     }
   };
-
-  // Sort events by date and group by month
-  const sortedEvents = [...events].sort((a, b) => b.Date - a.Date);
-
-  const groupedEvents = sortedEvents.reduce((acc, event) => {
-    if (event.TypeOfTournament === 'Premier') return acc; // skip events premier 
-    const eventDate = new Date(event.Date);
-    const monthKey = `${eventDate.getFullYear()}-${String(eventDate.getMonth() + 1).padStart(2, '0')}`;
-    const monthLabel = eventDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-
-    if (!acc[monthKey]) {
-      acc[monthKey] = { label: monthLabel, events: [] };
-    }
-    acc[monthKey].events.push(event);
-    return acc;
-  }, {});
 
   return (
     <>

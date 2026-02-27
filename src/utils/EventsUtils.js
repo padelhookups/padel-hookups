@@ -57,7 +57,7 @@ const useEventActions = () => {
     const manager = new BracketsManager(adapter);
 
     console.log('pairs', pairs);
-    
+
     const seeding = pairs.map((pair, i) => ({
       id: i + 1, // manager-side temporary ID
       name: pair.DisplayName, // display name
@@ -142,7 +142,7 @@ const useEventActions = () => {
       },
       seeding: seeding,
     });
-    
+
     await addPlayedEvent(players, 'Tour');
     await addFirstTourEventPlayedBadge(players);
   };
@@ -158,9 +158,10 @@ const useEventActions = () => {
     );
     const manager = new BracketsManager(adapter);
 
-    const seeding = pairs.map((pair) => {
-      return pair.id;
-    });
+    const seeding = pairs.map((pair, i) => ({
+      id: i + 1, // manager-side temporary ID
+      name: pair.DisplayName, // display name
+    }));
 
     const eliminationStage = await manager.create.stage({
       tournamentId: tournamentId,
@@ -176,6 +177,68 @@ const useEventActions = () => {
 
     console.log(eliminationStage);
   };
+
+  const createPremierPadelBrackets = async (eventId) => {
+    const db = getFirestore();
+
+    // Get Event to get fresh pairs
+    const eventDocRef = doc(db, `Events/${eventId}`);
+    const eventSnap = await getDoc(eventDocRef);
+    const pairs = eventSnap.data().Pairs;
+    //const players = eventSnap.data().PlayersIds;
+
+    // 1️⃣ Create a "TournamentData" document for this event
+    const tournamentCol = collection(db, `Events/${eventId}/TournamentData`);
+    const tournamentRef = await addDoc(tournamentCol, {
+      createdAt: Date.now(),
+      eventId,
+    });
+    const tournamentId = tournamentRef.id;
+
+    await updateDoc(eventDocRef, {
+      /*  PairsCreated: true,
+       TournamentStarted: true, */
+      ModifiedAt: Timestamp.fromDate(new Date()),
+      TournamentId: tournamentId,
+    });
+
+    // 2️⃣ Create adapter and manager
+    const adapter = new FirestoreAdapter(
+      db,
+      `Events/${eventId}/TournamentData/${tournamentId}`,
+      tournamentId
+    );
+    const manager = new BracketsManager(adapter);
+
+    console.log(pairs);
+
+
+    const seeding = pairs.map((pair, i) => ({
+      id: i + 1, // manager-side temporary ID
+      name: pair.DisplayName, // display name
+    }));
+
+    console.log(seeding);
+
+
+    const eliminationStage = await manager.create.stage({
+      tournamentId: tournamentId,
+      name: "Elimination Stage",
+      type: "single_elimination",
+      settings: {
+        size: pairs.length,
+        seedOrdering: ["inner_outer"],
+        balanceByes: true,
+      },
+      seeding: seeding,
+    });
+
+    console.log(eliminationStage);
+  }
+
+  const updateMatchsDate = async (eventId) => {
+    
+  }
 
   const registerFromEvent = async (
     eventSelectedId,
@@ -257,14 +320,24 @@ const useEventActions = () => {
     }
   };
 
-  const addSinglePair = async (pair, eventId) => {
+  const addSinglePair = async (pair, eventId, addToPlayerIds) => {
     const eventDocRef = doc(db, `Events/${eventId}`);
 
-    await updateDoc(eventDocRef, {
-      ModifiedAt: Timestamp.fromDate(new Date()),
-      PlayersWithPairsIds: arrayUnion(pair.Player1Id, pair.Player2Id),
-      Pairs: arrayUnion(pair),
-    });
+    if (addToPlayerIds) {
+      await updateDoc(eventDocRef, {
+        ModifiedAt: Timestamp.fromDate(new Date()),
+        PlayersIds: arrayUnion(pair.Player1Id, pair.Player2Id),
+        PlayersWithPairsIds: arrayUnion(pair.Player1Id, pair.Player2Id),
+        Pairs: arrayUnion(pair),
+      });
+    } else {
+      await updateDoc(eventDocRef, {
+        ModifiedAt: Timestamp.fromDate(new Date()),
+        PlayersWithPairsIds: arrayUnion(pair.Player1Id, pair.Player2Id),
+        Pairs: arrayUnion(pair),
+      });
+    }
+
   };
 
   const createPairsForEvent = async (players, eventId) => {
@@ -423,16 +496,30 @@ const useEventActions = () => {
     return totalPairs / groupSize;
   }
 
+  const deleteEvent = async (eventId) => {
+    try {
+      await deleteAllGamesForEvent(eventId);
+      const eventDocRef = doc(db, `Events/${eventId}`);
+      await deleteDoc(eventDocRef);
+    } catch (error) {
+      console.error("Error deleting event:", error);
+      throw error;
+    }
+  };
+
   return {
     addSinglePair,
     createMatchsRobinHood,
     createMatchsElimination,
     createBracketsElimination,
+    createPremierPadelBrackets,
     registerFromEvent,
     unregisterFromEvent,
     createPairsForEvent,
     deleteAllGamesForEvent,
     deletePairFromEvent,
+    deleteEvent,
+    updateMatchsDate
   };
 };
 

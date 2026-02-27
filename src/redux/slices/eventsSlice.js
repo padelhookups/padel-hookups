@@ -117,7 +117,7 @@ export const fetchEvents = createAsyncThunk(
       const fetchedEvents = eventsSnapshot.docs.map((doc) => {
         /* console.log(doc.data()); */
 
-        let finalDoc = { ...doc.data(), PlayersIds: doc.data().PlayersIds?.map(r => r?.id ?? null) ?? [] };
+        let finalDoc = { ...doc.data(), PlayersIds: doc.data().PlayersIds?.map(r => r?.id ?? r) ?? [] };
 
         return serializeEvent({
           ...finalDoc,
