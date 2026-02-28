@@ -63,8 +63,6 @@ const PremierPadelMatch = () => {
 				teamBPair?.Player2Id
 			].filter(Boolean);
 
-			console.log("Team A players:", teamAPlayers);
-			console.log("Team B players:", teamBPlayers);
 			setTeamA(teamAPlayers);
 			setTeamB(teamBPlayers);
 
@@ -108,7 +106,24 @@ const PremierPadelMatch = () => {
 		}
 	}, [match, event, user]);
 
-	console.log("PremierPadelMatch", match);
+	const handleSubmitAvailability = async (payload) => {
+		if (!eventId || !event?.TournamentId || !match?.id || !currentTeam) {
+			throw new Error("Missing data to update scheduling");
+		}
+
+		await setDoc(
+			doc(
+				db,
+				`Events/${eventId}/TournamentData/${event.TournamentId}/matches/${match.id}`
+			),
+			{
+				scheduling: {
+					[currentTeam]: payload
+				}
+			},
+			{ merge: true }
+		);
+	};
 
 	return (
 		<>
@@ -175,6 +190,9 @@ const PremierPadelMatch = () => {
 								<Schedule
 									match={match}
 									currentTeamId={currentTeam}
+									onSubmitAvailability={
+										handleSubmitAvailability
+									}
 									onConfirmed={(date, time) => {
 										setSummaryDate(date);
 										setSummaryTime(time);

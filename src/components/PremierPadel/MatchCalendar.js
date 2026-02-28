@@ -27,6 +27,8 @@ const MatchCalendar = ({
 	interactive,
 	mainColor
 }) => {
+	console.log(team1Avail, team2Avail, interactive);
+	
 	const firstDay = new Date(year, month, 1).getDay();
 	const daysInMonth = new Date(year, month + 1, 0).getDate();
 
@@ -35,15 +37,14 @@ const MatchCalendar = ({
 	}
 
 	const days = [];
-	// empty cells
-	for (let i = 0; i < firstDay; i++) days.push({ empty: true, key: `e${i}` });
-	// real days
 	for (let d = 1; d <= daysInMonth; d++) {
 		const key = dateKey(d);
 		const outside = key < windowStart || key > windowEnd;
 		const inT1 = !!team1Avail?.[key];
 		const inT2 = !!(team2Avail?.[key]?.size > 0);
-		days.push({ d, key, outside, inT1, inT2 });
+		if(!outside){
+			days.push({ d, key, outside, inT1, inT2 });
+		}
 	}
 
 	return (
@@ -86,17 +87,17 @@ const MatchCalendar = ({
 			<Box display='grid' gridTemplateColumns='repeat(7,1fr)' gap={0.5}>
 				{days.map((cell) => {
 					if (cell.empty) return <Box key={cell.key} />;
-					const { d, key, outside, inT1, inT2 } = cell;
+					const { d, key, inT1, inT2 } = cell;
+					//console.log(d, key, inT1, inT2);
+					
 					const bothSelected = inT1 && inT2;
-					const canTap = interactive && !outside;
+					const canTap = interactive;
 
 					let bgcolor = "transparent";
 					let color = "#222";
 					let border = "1px solid transparent";
 
-					if (outside) {
-						color = "#ccc";
-					} else if (bothSelected) {
+					if (bothSelected) {
 						bgcolor = mainColor;
 						color = "white";
 						border = `1px solid ${mainColor}`;
