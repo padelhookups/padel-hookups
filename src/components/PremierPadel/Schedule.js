@@ -25,6 +25,11 @@ import { BORDER, BG } from "../../routes/PremierPadelMatch";
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const SLOT_MAP = Object.fromEntries(SLOTS.map((s) => [s.key, s]));
 
+function getSlotsCount(slots) {
+	if (Array.isArray(slots)) return slots.length;
+	return slots?.size || 0;
+}
+
 function formatDate(key) {
 	const d = new Date(key + "T12:00:00");
 	return `${DAY_NAMES[d.getDay()]} ${d.toLocaleDateString("en-GB", { day: "numeric", month: "long" })}`;
@@ -49,6 +54,7 @@ function getWindowMonths(startDate) {
 const Schedule = ({
 	match,
 	currentTeamId,
+	onSubmitAvailability,
 	onConfirmed,
 	onLocationUpdated,
 	mainColor
@@ -61,8 +67,12 @@ const Schedule = ({
 	const DARK = `color-mix(in srgb, ${mainColor}, black 20%)`;
 
 	// Scheduling state
-	const [myAvail, setMyAvail] = useState({}); // { "2026-02-22": Set(["morning_9_12"]) }
-	const [submitted, setSubmitted] = useState(false);
+	const [myAvail, setMyAvail] = useState(
+		match.scheduling?.[currentTeamId]?.availability || {}
+	); // { "2026-02-22": Set(["morning_9_12"]) }
+	const [submitted, setSubmitted] = useState(
+		!!match.scheduling?.[currentTeamId]
+	);
 	const [phase, setPhase] = useState("availability"); // availability | confirmed | court_booked
 
 	// Sheet state
@@ -75,6 +85,8 @@ const Schedule = ({
 	// Court booking
 	const [location, setLocation] = useState("");
 	const [confirmedSlot, setConfirmedSlot] = useState(null);
+
+	const [submitLoading, setSubmitLoading] = useState(false);
 
 	const { months, deadline } = useMemo(
 		() => getWindowMonths(match.StartDateToPlay),
@@ -96,17 +108,22 @@ const Schedule = ({
 		if (!submitted || !otherSubmitted) return [];
 		const otherAvail = match.scheduling[otherTeamId]?.availability || {};
 		const result = [];
+		console.log("overlaps", myAvail);
+
 		for (const [date, mySlots] of Object.entries(myAvail)) {
 			const myArr = [...mySlots];
 			const otherSlots = otherAvail[date] || [];
 			const shared = myArr.filter((s) => otherSlots.includes(s));
 			if (shared.length) result.push({ date, slots: shared });
 		}
+		console.log("overlaps", result);
+
 		return result;
 	}, [submitted, myAvail, match.scheduling, otherTeamId, otherSubmitted]);
 
 	function handleDayTap(key) {
-		if (submitted) return;
+		console.log("handleDayTap", key);
+
 		if (!myAvail[key])
 			setMyAvail((prev) => ({ ...prev, [key]: new Set() }));
 		setSheetDay(key);
@@ -114,6 +131,8 @@ const Schedule = ({
 	}
 
 	function handleSheetDone(selectedSlots) {
+		console.log("handleSheetDone", selectedSlots);
+
 		setMyAvail((prev) => {
 			const next = { ...prev };
 			if (selectedSlots.size === 0) delete next[sheetDay];
@@ -128,7 +147,9 @@ const Schedule = ({
 		setSheetOpen(true);
 	}
 
-	const hasAnySlots = Object.values(myAvail).some((s) => s.size > 0);
+	const hasAnySlots = Object.values(myAvail).some(
+		(s) => getSlotsCount(s) > 0
+	);
 	const selectedDays = Object.keys(myAvail).sort();
 
 	// Firestore payload (log here, in real app call updateDoc)
@@ -140,23 +161,28 @@ const Schedule = ({
 		return { submittedAt: new Date(), availability: out };
 	}
 
-	function handleSubmit() {
-		console.log("Firestore payload:", getFirestorePayload());
-		setSubmitted(true);
+	async function handleSubmit() {
+		setSubmitLoading(true);
+		try {
+			const payload = getFirestorePayload();
+			await onSubmitAvailability?.(payload);
+			setSubmitted(true);
+		} catch (error) {
+			console.error("Error submitting availability:", error);
+		} finally {
+			setSubmitLoading(false);
+		}
 	}
 
 	function handleConfirm() {
-		const pick =
-			chosenOverlap ||
-			(overlaps[0] && {
-				date: overlaps[0].date,
-				slot: overlaps[0].slots[0]
-			});
-		if (!pick) return;
-		setConfirmedSlot(pick);
-		const dateLabel = formatDate(pick.date);
+		if (!chosenOverlap) return;
+		setConfirmedSlot(chosenOverlap);
+		const dateLabel = formatDate(chosenOverlap.date);
 		const timeLabel =
-			SLOT_MAP[pick.slot]?.label + " (" + SLOT_MAP[pick.slot]?.time + ")";
+			SLOT_MAP[chosenOverlap.slot]?.label +
+			" (" +
+			SLOT_MAP[chosenOverlap.slot]?.time +
+			")";
 		onConfirmed(dateLabel, timeLabel);
 		setPhase("confirmed");
 	}
@@ -249,7 +275,9 @@ const Schedule = ({
 				<TeamCard
 					team={otherTeam}
 					submitted={otherSubmitted}
-					availability={null}
+					availability={
+						match.scheduling?.[otherTeamId]?.availability || null
+					}
 					months={months}
 					windowStart={windowStart}
 					windowEnd={windowEnd}
@@ -263,12 +291,14 @@ const Schedule = ({
 				<TeamCard
 					team={currentTeam}
 					submitted={submitted}
-					availability={null}
+					availability={
+						match.scheduling?.[currentTeamId]?.availability || null
+					}
 					months={months}
 					windowStart={windowStart}
 					windowEnd={windowEnd}
 					myAvail={myAvail}
-					interactive={!submitted}
+					interactive={true}
 					onDayTap={handleDayTap}
 					selectedDays={selectedDays}
 					onEditDay={openSheetForDay}
@@ -362,6 +392,7 @@ const Schedule = ({
 								fullWidth
 								variant='contained'
 								onClick={handleConfirm}
+								disabled={!chosenOverlap}
 								sx={{
 									bgcolor: "#28a745",
 									fontFamily: "Barlow Condensed, sans-serif",
@@ -371,41 +402,49 @@ const Schedule = ({
 									"&:hover": { bgcolor: "#218838" },
 									boxShadow: "none"
 								}}>
-								✅ Confirm This Slot
+								<Typography
+									variant='button'
+									sx={{ color: "white", fontWeight: "bold" }}>
+									✅ Confirm This Slot
+								</Typography>
 							</Button>
 						</Paper>
 					</Box>
 				)}
 
 				{/* Submit button */}
-				{!submitted && (
-					<Box px={2} pb={3}>
-						<Button
-							fullWidth
-							variant='contained'
-							disabled={!hasAnySlots}
-							onClick={handleSubmit}
-							sx={{
-								py: 1.75,
-								background: hasAnySlots
-									? `linear-gradient(135deg, ${DARK}, ${mainColor})`
-									: undefined,
-								fontFamily: "Barlow Condensed, sans-serif",
-								fontSize: 15,
-								fontWeight: 700,
-								letterSpacing: 1,
-								borderRadius: 2,
-								boxShadow: "none",
-								"&:hover": { boxShadow: "none", opacity: 0.9 },
-								"&.Mui-disabled": {
-									bgcolor: "#ccc",
-									color: "white"
-								}
-							}}>
-							📤 Submit My Availability
-						</Button>
-					</Box>
-				)}
+				<Box px={2} pb={3}>
+					<Button
+						fullWidth
+						variant='contained'
+						disabled={!hasAnySlots || submitLoading}
+						onClick={handleSubmit}
+						sx={{
+							py: 1.75,
+							background: hasAnySlots
+								? `linear-gradient(135deg, ${DARK}, ${mainColor})`
+								: undefined,
+							fontFamily: "Barlow Condensed, sans-serif",
+							fontSize: 15,
+							fontWeight: 700,
+							letterSpacing: 1,
+							borderRadius: 2,
+							boxShadow: "none",
+							"&:hover": { boxShadow: "none", opacity: 0.9 },
+							"&.Mui-disabled": {
+								bgcolor: "#ccc",
+								color: "white"
+							}
+						}}>
+						<Typography
+							variant='button'
+							sx={{ color: "white", fontWeight: "bold" }}>
+							{submitLoading
+								? "Submitting..."
+								: "📤 Submit My Availability"}
+						</Typography>
+					</Button>
+				</Box>
 
 				{/* Bottom sheet */}
 				<TimeSlotSheet
@@ -415,7 +454,15 @@ const Schedule = ({
 						sheetDay ? [...(myAvail[sheetDay] || [])] : []
 					}
 					onDone={handleSheetDone}
-					onClose={() => setSheetOpen(false)}
+					onClose={() => {
+						/* console.log("onClose");
+						setMyAvail((prev) => {
+							const next = { ...prev };
+							delete next[sheetDay];
+							return next;
+						}); */
+						setSheetOpen(false);
+					}}
 					mainColor={mainColor}
 				/>
 			</Stack>
@@ -492,7 +539,11 @@ const Schedule = ({
 								color: "white"
 							}
 						}}>
-						📍 Update Location
+						<Typography
+							variant='button'
+							sx={{ color: "white", fontWeight: "bold" }}>
+							📍 Update Location
+						</Typography>
 					</Button>
 				</Paper>
 			</Stack>
@@ -612,7 +663,7 @@ function TeamCard({
 					team2Avail={isOtherTeam ? null : myAvail}
 					onDayTap={onDayTap}
 					interactive={interactive}
-          mainColor={mainColor}
+					mainColor={mainColor}
 				/>
 			))}
 
@@ -663,7 +714,7 @@ function TeamCard({
 				<Stack gap={0.75} px={2} pb={1.5}>
 					{selectedDays.map((date) => {
 						const slots = myAvail[date];
-						const hasSlots = slots?.size > 0;
+						const hasSlots = getSlotsCount(slots) > 0;
 						return (
 							<Stack
 								key={date}

@@ -59,7 +59,8 @@ const Header = ({ match, event, onBack, mainColor }) => {
 					sx={{
 						bgcolor: "rgba(255,255,255,0.15)",
 						color: "white",
-						"&:hover": { bgcolor: "rgba(255,255,255,0.25)" }
+						zIndex: 1,
+						"&:hover": { bgcolor: "rgba(255,255,255,0.25)", }
 					}}>
 					<ArrowBackIosNewIcon sx={{ fontSize: 16 }} />
 				</IconButton>
