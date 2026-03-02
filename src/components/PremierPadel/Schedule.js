@@ -87,6 +87,7 @@ const Schedule = ({
 	const [confirmedSlot, setConfirmedSlot] = useState(null);
 
 	const [submitLoading, setSubmitLoading] = useState(false);
+	const [hasPendingChanges, setHasPendingChanges] = useState(false);
 
 	const { months, deadline } = useMemo(
 		() => getWindowMonths(match.StartDateToPlay),
@@ -139,6 +140,7 @@ const Schedule = ({
 			else next[sheetDay] = selectedSlots;
 			return next;
 		});
+		setHasPendingChanges(true);
 		setSheetOpen(false);
 	}
 
@@ -165,12 +167,14 @@ const Schedule = ({
 		setSubmitLoading(true);
 		try {
 			const payload = getFirestorePayload();
+			console.log(payload);
 			await onSubmitAvailability?.(payload);
 			setSubmitted(true);
 		} catch (error) {
 			console.error("Error submitting availability:", error);
 		} finally {
 			setSubmitLoading(false);
+			setHasPendingChanges(false);
 		}
 	}
 
@@ -292,7 +296,7 @@ const Schedule = ({
 					team={currentTeam}
 					submitted={submitted}
 					availability={
-						match.scheduling?.[currentTeamId]?.availability || null
+						match.scheduling?.[otherTeamId]?.availability || null
 					}
 					months={months}
 					windowStart={windowStart}
@@ -313,11 +317,11 @@ const Schedule = ({
 						border='1px solid #90c9e8'
 						label='Other team'
 					/>
-					<LegendItem gradient label='Both available ✨' />
+					<LegendItem gradient label='Both available' color={mainColor} />
 				</Stack>
 
 				{/* Overlaps after submit */}
-				{submitted && overlaps.length > 0 && (
+				{submitted && overlaps.length > 0 && !hasPendingChanges && (
 					<Box px={2} pb={2}>
 						<Paper
 							variant='outlined'
@@ -831,7 +835,7 @@ function LegendItem({ color, border, gradient, label }) {
 					flexShrink: 0,
 					bgcolor: gradient ? undefined : color,
 					background: gradient
-						? `linear-gradient(135deg, ${color} 50%, #3a8fb5 50%)`
+						? `linear-gradient(135deg,${color} 50%, #9ab4df 50%)`
 						: undefined,
 					border: border || undefined
 				}}
