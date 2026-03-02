@@ -117,11 +117,12 @@ const PremierPadelMatch = () => {
 				`Events/${eventId}/TournamentData/${event.TournamentId}/matches/${match.id}`
 			),
 			{
+				...match,
 				scheduling: {
+					...match.scheduling,
 					[currentTeam]: payload
 				}
-			},
-			{ merge: true }
+			}
 		);
 	};
 
