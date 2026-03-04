@@ -523,7 +523,7 @@ const Event = () => {
                           color="error"
                           onClick={deleteAllGames}
                         >
-                          Delete All Games{" "}
+                          Delete All Games
                         </Button>
                       )}
                     </Stack>

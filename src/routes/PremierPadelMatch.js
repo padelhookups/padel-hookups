@@ -32,6 +32,7 @@ const PremierPadelMatch = () => {
 	const [summaryDate, setSummaryDate] = useState(null);
 	const [summaryTime, setSummaryTime] = useState(null);
 	const [summaryLocation, setSummaryLocation] = useState(null);
+	const [allPlayersIds, setAllPlayersIds] = useState(null);
 	const [teamA, setTeamA] = useState(null);
 	const [teamB, setTeamB] = useState(null);
 	const [currentTeam, setCurrentTeam] = useState(null);
@@ -65,6 +66,7 @@ const PremierPadelMatch = () => {
 
 			setTeamA(teamAPlayers);
 			setTeamB(teamBPlayers);
+			setAllPlayersIds([...teamAIds, ...teamBIds]);
 
 			if (!match.teams && event?.TournamentId && match?.id) {
 				// Update match in firebase to add teams info (player ids) if not already present, this is needed to identify which team the user logged in is in and show the schedule tab accordingly
@@ -166,7 +168,9 @@ const PremierPadelMatch = () => {
 						"& .MuiTabs-indicator": { bgcolor: mainColor }
 					}}>
 					<Tab label='Summary' />
-					<Tab label='Schedule' />
+					{user?.isAdmin || currentTeam ? (
+						<Tab label='Schedule' />
+					) : null}
 					<Tab label='Results' />
 				</Tabs>
 
@@ -174,7 +178,7 @@ const PremierPadelMatch = () => {
 					<Box
 						sx={{
 							height: "calc(100vh - 320px)",
-							overflowY: "auto",
+							overflowY: "auto"
 						}}>
 						{activeTab === 0 && (
 							<Details
@@ -194,10 +198,83 @@ const PremierPadelMatch = () => {
 									onSubmitAvailability={
 										handleSubmitAvailability
 									}
-									onConfirmed={(date, time) => {
-										setSummaryDate(date);
-										setSummaryTime(time);
-										setSummaryLocation("Court TBD");
+									onConfirmed={(
+										date,
+										time,
+										overlaps,
+										chosenOverlaps
+									) => {
+										console.log(overlaps);
+
+										// remove chosen overlaps from the overlaps array to avoid showing them as conflicts in the match details
+
+										/*[
+											{
+												"date": "2026-03-06",
+												"slots": [
+													"night_21"
+												]
+											},
+											{
+												"date": "2026-03-02",
+												"slots": [
+													"night_21"
+												]
+											}
+										]*/
+										/* const finalOverlaps = overlaps
+											.map((o) => {
+												const filteredSlots =
+													o.slots.filter((slot) => {
+														// check if the slot is in the chosen overlaps for the same date
+														const isChosen =
+															chosenOverlaps.some(
+																(co) =>
+																	co.date ===
+																		o.date &&
+																	co.slot ===
+																		slot
+															);
+														return !isChosen;
+													});
+												return {
+													date: o.date,
+													slots: filteredSlots
+												};
+											})
+											.filter((o) => o.slots.length > 0); // remove dates with no overlapping slots
+
+										console.log(finalOverlaps); */
+
+										// update match in firebase with confirmed date and time
+										var matchRef = doc(
+											db,
+											`Events/${eventId}/TournamentData/${event.TournamentId}/matches/${match.id}`
+										);
+
+										// Set the "Date" field of the match
+										// Add overlaps to the match document
+										return matchRef
+											.update({
+												ChoosenDate: date,
+												ChoosenTime: time,
+												/* Overlaps: finalOverlaps */
+											})
+											.then(() => {
+												console.log(
+													"Match successfully updated!"
+												);
+												setSummaryDate(date);
+												setSummaryTime(time);
+												setSummaryLocation("Court TBD");
+											})
+											.catch((error) => {
+												// The document probably doesn't exist.
+												console.error(
+													"Error updating document: ",
+													error
+												);
+											});
 									}}
 									onLocationUpdated={(loc) =>
 										setSummaryLocation(loc)

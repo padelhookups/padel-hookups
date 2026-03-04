@@ -171,7 +171,10 @@ const Home = () => {
 			// Premier-specific range
 			StartMonth: evtType === "Premier" ? evtStartMonth || null : null,
 			EndMonth: evtType === "Premier" ? evtEndMonth || null : null,
-      		InscriptionDate: evtType === "Premier" ? Timestamp.fromDate(new Date(evtInscriptionDate)) : null,
+			InscriptionDate:
+				evtType === "Premier"
+					? Timestamp.fromDate(new Date(evtInscriptionDate))
+					: null,
 			Location: evtLocation,
 			Description: evtDescription,
 			Price: evtPrice,
@@ -594,7 +597,9 @@ const Home = () => {
 										id='EventInscriptionDate'
 										value={evtInscriptionDate}
 										onChange={(e) =>
-											setEvtInscriptionDate(e.target.value)
+											setEvtInscriptionDate(
+												e.target.value
+											)
 										}
 									/>
 								</FormControl>
@@ -626,25 +631,29 @@ const Home = () => {
 							</>
 						)}
 						{/* Location */}
-						<FormControl fullWidth>
-							<TextField
-								fullWidth
-								label='Location'
-								id='EventLocation'
-								value={evtLocation}
-								onChange={(e) => setEvtLocation(e.target.value)}
-								autoComplete='off'
-								slotProps={{
-									input: {
-										startAdornment: (
-											<InputAdornment position='start'>
-												📍
-											</InputAdornment>
-										)
+						{evtType !== "Premier" && (
+							<FormControl fullWidth>
+								<TextField
+									fullWidth
+									label='Location'
+									id='EventLocation'
+									value={evtLocation}
+									onChange={(e) =>
+										setEvtLocation(e.target.value)
 									}
-								}}
-							/>
-						</FormControl>
+									autoComplete='off'
+									slotProps={{
+										input: {
+											startAdornment: (
+												<InputAdornment position='start'>
+													📍
+												</InputAdornment>
+											)
+										}
+									}}
+								/>
+							</FormControl>
+						)}
 						<FormControl fullWidth>
 							<TextField
 								fullWidth
