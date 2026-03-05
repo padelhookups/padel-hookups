@@ -187,7 +187,7 @@ const Schedule = ({
 			" (" +
 			SLOT_MAP[chosenOverlap.slot]?.time +
 			")";
-		onConfirmed(dateLabel, timeLabel);
+		onConfirmed(dateLabel, timeLabel, overlaps, chosenOverlap);
 		setPhase("confirmed");
 	}
 

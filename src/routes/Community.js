@@ -848,7 +848,6 @@ const Community = () => {
                                         {item.Image && (
                                             <CardMedia
                                                 component='img'
-                                                height='200'
                                                 image={item.Image}
                                                 alt='News image'
                                             />
