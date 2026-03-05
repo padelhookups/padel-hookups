@@ -277,9 +277,10 @@ const Home = () => {
 								onChange={(e, v) => setActiveTab(v)}
 								variant='fullWidth'>
 								<Tab label='Tour 2026' value='tour' />
+								{/* ||
+								user?.IsTester  */}
 								{PremierPadelForEveryOne ||
-								user?.IsAdmin ||
-								user?.IsTester ? (
+								user?.IsAdmin ? (
 									<Tab
 										label='Premier Padel'
 										value='premier'
