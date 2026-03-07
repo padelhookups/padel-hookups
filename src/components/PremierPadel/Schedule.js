@@ -103,8 +103,9 @@ const Schedule = ({
             SLOT_MAP[k].key ===
             match.ChoosenTime.toLowerCase()
               .replaceAll(/\s/g, "_")
-              .replaceAll(/[()h]/g, "")
-              .replaceAll("_–_", "_"),
+              .replaceAll(/[()+]/g, "")
+              .replaceAll("_–_", "_")
+              .replaceAll(/(\d)h/gi, "$1")
         ),
       });
     } else if (match.CourtBooked) {
@@ -604,6 +605,15 @@ const Schedule = ({
               >
                 In case its not possible to find a court on this slot, or any
                 major reason
+              </Typography>
+              <Typography
+                sx={{
+                  fontSize: 12,
+                  color: "#155724",
+                  mb: 1.5,
+                }}
+              >
+                Make sure the other team still agrees to the new slot before updating!
               </Typography>
               <Stack gap={1} mb={2}>
                 {finalOverlaps?.map(({ date, slots }) =>
