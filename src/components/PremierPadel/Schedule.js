@@ -82,7 +82,7 @@ const Schedule = ({
   const [chosenOverlap, setChosenOverlap] = useState(null);
 
   // Court booking
-  const [location, setLocation] = useState("");
+  const [location, setLocation] = useState(match?.Location || "");
   const [confirmedSlot, setConfirmedSlot] = useState(null);
 
   const [submitLoading, setSubmitLoading] = useState(false);
@@ -94,7 +94,21 @@ const Schedule = ({
   );
 
   useEffect(() => {
-    if (match.ChoosenDate && match.ChoosenTime) {
+    if (match.Location) {
+      setPhase("court_booked");
+      setConfirmedSlot({
+        date: match.ChoosenDate,
+        slot: Object.keys(SLOT_MAP).find(
+          (k) =>
+            SLOT_MAP[k].key ===
+            match.ChoosenTime.toLowerCase()
+              .replaceAll(/\s/g, "_")
+              .replaceAll(/[()+]/g, "")
+              .replaceAll("_–_", "_")
+              .replaceAll(/(\d)h/gi, "$1")
+        ),
+      });
+    } else if (match.ChoosenDate && match.ChoosenTime) {
       setPhase("confirmed");
       setConfirmedSlot({
         date: match.ChoosenDate,
@@ -108,9 +122,7 @@ const Schedule = ({
               .replaceAll(/(\d)h/gi, "$1")
         ),
       });
-    } else if (match.CourtBooked) {
-      setPhase("court_booked");
-    } else {
+    } else  {
       setPhase("availability");
     }
   }, [match]);
