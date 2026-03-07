@@ -236,6 +236,7 @@ const useEventActions = () => {
 
     console.log(eliminationStage);
     await updateMatchsDate(event, tournamentId, manager);
+    await updateRoundsNumber(event, tournamentId,  manager);
   }
 
   const updateMatchsDate = async (event, tournamentId,  manager) => {
@@ -266,11 +267,27 @@ const useEventActions = () => {
         `Events/${event.id}/TournamentData/${tournamentId}/matches/${match.id}`
       );
       await updateDoc(matchDocRef, {
-        StartDateToPlay: matchStartDate,
-        FinalDateToPlay: matchFinalDate,
+        StartDateToPlay: Timestamp.fromDate(matchStartDate),
+        FinalDateToPlay: Timestamp.fromDate(matchFinalDate),
       });
       console.log(matchStartDate, matchFinalDate);
       
+    });
+  }
+
+  const updateRoundsNumber = async (event, tournamentId, manager) => {
+    const stage = await manager.get.stageData();
+    const rounds = stage.round;
+    const matches = stage.match;
+    matches.forEach(async (match) => {
+      const roundNumber = rounds.filter(r => r.id === match.round_id)[0].number;
+      const matchDocRef = doc(
+        db,
+        `Events/${event.id}/TournamentData/${tournamentId}/matches/${match.id}`
+      );
+      await updateDoc(matchDocRef, {
+        roundNumber: roundNumber,
+      });
     });
   }
 

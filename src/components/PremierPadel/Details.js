@@ -3,6 +3,8 @@ import { useMemo } from "react";
 import { useSelector } from "react-redux";
 import { selectUsers } from "../../redux/slices/usersSlice";
 
+import { getRoundLabel } from "../../utils/TournamentUtils";
+
 import { Box, Typography, Stack, Avatar, Divider, Paper } from "@mui/material";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import BoltIcon from "@mui/icons-material/Bolt";
@@ -85,6 +87,13 @@ const Details = ({
 			.filter((slot) => slot.player);
 	}, [match, event, users, mainColor]);
 
+	const totalRounds = event?.Pairs?.length
+		? Math.ceil(Math.log2(event.Pairs.length))
+		: null;
+	const roundNumber = Number(match?.roundNumber) || null;
+	const computedRoundLabel = getRoundLabel(roundNumber, totalRounds);
+	const roundLabel = computedRoundLabel || match?.metadata?.label || "Match";
+
 	console.log(players);
 	console.log(match);
 
@@ -104,7 +113,7 @@ const Details = ({
 				<InfoRow
 					icon={<BoltIcon sx={{ fontSize: 18, color: mainColor }} />}
 					label='Round'
-					value={match?.metadata.label}
+					value={roundLabel}
 				/>
 				<InfoRow
 					icon={
@@ -113,8 +122,12 @@ const Details = ({
 						/>
 					}
 					label='Date'
-					value={summaryDate || (finalDate ? `TBD – until ${finalDate.toLocaleDateString()}` : "TBD")}
-					
+					value={
+						summaryDate ||
+						(finalDate
+							? `TBD – until ${finalDate.toLocaleDateString()}`
+							: "TBD")
+					}
 				/>
 				<InfoRow
 					icon={
@@ -226,7 +239,12 @@ function PlayerChip({ name, teamLabel, color }) {
 			p={1.25}
 			bgcolor={BG}
 			borderRadius={2}
-			sx={{ width: "100%", minWidth: 0, overflow: "hidden", boxSizing: "border-box" }}>
+			sx={{
+				width: "100%",
+				minWidth: 0,
+				overflow: "hidden",
+				boxSizing: "border-box"
+			}}>
 			<Avatar
 				sx={{
 					width: 30,

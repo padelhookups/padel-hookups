@@ -1,12 +1,20 @@
 import { useEffect, useState } from "react";
 import { Box, Typography, IconButton, Avatar, Stack } from "@mui/material";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
+import { getRoundLabel } from "../../utils/TournamentUtils";
 
 import TeamBlock from "./TeamBlock";
 
 const Header = ({ match, event, onBack, mainColor }) => {
 	const [teamA, setTeamA] = useState(null);
 	const [teamB, setTeamB] = useState(null);
+
+	const totalRounds = event?.Pairs?.length
+		? Math.ceil(Math.log2(event.Pairs.length))
+		: null;
+	const roundNumber = Number(match?.roundNumber) || null;
+	const computedRoundLabel = getRoundLabel(roundNumber, totalRounds);
+	const roundLabel = computedRoundLabel || match?.metadata?.label || "Match";
 
 	useEffect(() => {
 		console.log("Header match", match);
@@ -34,7 +42,7 @@ const Header = ({ match, event, onBack, mainColor }) => {
 				//background: `linear-gradient(135deg, ${GOLD_DARK} 0%, ${GOLD} 60%, ${GOLD_LIGHT} 100%)`,
 				position: "relative",
 				overflow: "hidden",
-        height: 210,
+				height: 210,
 				"&::before": {
 					content: '""',
 					position: "absolute",
@@ -60,7 +68,7 @@ const Header = ({ match, event, onBack, mainColor }) => {
 						bgcolor: "rgba(255,255,255,0.15)",
 						color: "white",
 						zIndex: 1,
-						"&:hover": { bgcolor: "rgba(255,255,255,0.25)", }
+						"&:hover": { bgcolor: "rgba(255,255,255,0.25)" }
 					}}>
 					<ArrowBackIosNewIcon sx={{ fontSize: 16 }} />
 				</IconButton>
@@ -72,12 +80,12 @@ const Header = ({ match, event, onBack, mainColor }) => {
 						letterSpacing: 1,
 						textTransform: "uppercase",
 						fontFamily: "Barlow Condensed, sans-serif",
-            textAlign: "center",
-            position: "absolute",
-            left: 0,
-            right: 0,
+						textAlign: "center",
+						position: "absolute",
+						left: 0,
+						right: 0
 					}}>
-					{event?.Name} · {match?.metadata.label}
+					{event?.Name} · {roundLabel}
 				</Typography>
 			</Stack>
 
