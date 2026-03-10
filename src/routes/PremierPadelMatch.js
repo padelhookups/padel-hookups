@@ -17,6 +17,7 @@ import { Box, Container, Tabs, Tab } from "@mui/material";
 import Details from "../components/PremierPadel/Details";
 import Header from "../components/PremierPadel/Header";
 import Schedule from "../components/PremierPadel/Schedule";
+import Results from "../components/PremierPadel/Results";
 
 export const BG = "#f5f4f0";
 export const BORDER = "#e0dbd0";
@@ -315,7 +316,7 @@ const PremierPadelMatch = () => {
 								/>
 							</>
 						)}
-						{/* {activeTab === 2 && <ResultsTab />} */}
+						{activeTab === 2 && <Results match={match} />}
 					</Box>
 				</Container>
 			</Box>
