@@ -191,6 +191,22 @@ const PremierPadelMatch = () => {
 		await updateDoc(matchRef, updates);
 	};
 
+	const handleResults = async (resultsPayload) => {
+		if (!eventId || !event?.TournamentId || !match?.id) {
+			throw new Error("Missing data to update results");
+		}
+		var matchRef = doc(
+			db,
+			`Events/${eventId}/TournamentData/${event.TournamentId}/matches/${match.id}`
+		);
+		const updates = {
+			results: resultsPayload
+		};
+		console.log(updates);
+		
+		/* await updateDoc(matchRef, updates); */
+	};
+
 	return (
 		<>
 			<Header
@@ -316,7 +332,7 @@ const PremierPadelMatch = () => {
 								/>
 							</>
 						)}
-						{activeTab === 2 && <Results match={match} />}
+						{activeTab === 2 && <Results match={match} mainColor={mainColor} onSubmit={handleResults}/>}
 					</Box>
 				</Container>
 			</Box>

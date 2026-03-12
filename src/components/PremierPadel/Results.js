@@ -10,9 +10,9 @@ import {
 } from "@mui/material";
 import { BORDER, BG } from "../../routes/PremierPadelMatch";
 
-const BLUE = "#3a8fb5";
-const GOLD_LIGHT = "#c9a84c";
-const GOLD_DARK = "#7a6020";
+//const BLUE = "#3a8fb5";
+/* const GOLD_LIGHT = "#c9a84c";
+const GOLD_DARK = "#7a6020"; */
 
 const SETS = [
 	{ key: 1, label: "Set 1", max: 7 },
@@ -205,6 +205,7 @@ const Results = ({ match, onSubmit, mainColor }) => {
 											handleScoreChange(set.key, "a", v)
 										}
 										winning={getSetWinner(set.key) === "a"}
+										mainColor={mainColor}
 									/>
 									<VsDivider />
 									<ScoreCell
@@ -213,6 +214,7 @@ const Results = ({ match, onSubmit, mainColor }) => {
 											handleScoreChange(set.key, "b", v)
 										}
 										winning={getSetWinner(set.key) === "b"}
+										mainColor={mainColor}
 									/>
 								</Box>
 							)
@@ -279,12 +281,7 @@ const Results = ({ match, onSubmit, mainColor }) => {
 											"Barlow Condensed, sans-serif",
 										fontSize: 16,
 										fontWeight: 700,
-										color:
-											winner === "a"
-												? GOLD_DARK
-												: winner === "b"
-													? BLUE
-													: "#888"
+										color: mainColor
 									}}>
 									{winner === "a"
 										? `🏆 ${teamA.name} wins`
@@ -314,9 +311,7 @@ const Results = ({ match, onSubmit, mainColor }) => {
 							onClick={handleSubmit}
 							sx={{
 								py: 1.75,
-								background: winner
-									? `linear-gradient(135deg, ${GOLD_DARK}, ${mainColor})`
-									: undefined,
+								background: winner ? mainColor : undefined,
 								fontFamily: "Barlow Condensed, sans-serif",
 								fontSize: 15,
 								fontWeight: 700,
@@ -345,6 +340,148 @@ const Results = ({ match, onSubmit, mainColor }) => {
 							final once both sides agree.
 						</Typography>
 					</Box>
+				</Box>
+			)}
+
+			{showResults && phase == "pending" && (
+				<Box
+					p={2}
+					pb='70px'
+					display='flex'
+					flexDirection='column'
+					gap={1.5}>
+					{/* Waiting card */}
+					<Paper
+						variant='outlined'
+						sx={{
+							borderRadius: "12px",
+							borderColor: BORDER,
+							textAlign: "center",
+							p: "28px 20px"
+						}}>
+						<Typography sx={{ fontSize: 42, mb: 1.25 }}>
+							⏳
+						</Typography>
+						<Typography
+							sx={{
+								fontFamily: "Barlow Condensed, sans-serif",
+								fontSize: 17,
+								fontWeight: 700,
+								textTransform: "uppercase",
+								letterSpacing: 1,
+								mb: 0.75
+							}}>
+							Waiting for Confirmation
+						</Typography>
+						<Typography
+							sx={{
+								fontSize: 13,
+								color: "#888",
+								lineHeight: 1.5
+							}}>
+							You submitted the result. Waiting for{" "}
+							<strong>{teamA.name}</strong> to confirm.
+						</Typography>
+					</Paper>
+
+					{/* Submitted score breakdown */}
+					<Paper
+						variant='outlined'
+						sx={{
+							borderRadius: "12px",
+							borderColor: BORDER,
+							p: 2
+						}}>
+						<Typography sx={styles.sectionLabel}>
+							📊 Submitted Score
+						</Typography>
+						<Stack
+							mt={1}
+							divider={<Divider sx={{ borderColor: BORDER }} />}>
+							{setsToCount.map((s) => {
+								const sw = getSetWinner(s);
+								const label = s === 3 ? "Super TB" : `Set ${s}`;
+								return (
+									<Box
+										key={s}
+										display='flex'
+										alignItems='center'
+										justifyContent='space-between'
+										py={0.875}>
+										<Typography
+											sx={{
+												fontSize: 12,
+												fontWeight: 600,
+												textTransform: "uppercase",
+												letterSpacing: 0.5,
+												color: "#888"
+											}}>
+											{label}
+										</Typography>
+										<Typography
+											sx={{
+												fontFamily:
+													"Barlow Condensed, sans-serif",
+												fontSize: 20,
+												fontWeight: 700,
+												lineHeight: 1
+											}}>
+											<Box
+												component='span'
+												sx={{
+													color:
+														sw === "a"
+															? mainColor
+															: "inherit"
+												}}>
+												{getVal(s, "a")}
+											</Box>
+											<Box
+												component='span'
+												sx={{
+													color: "#aaa",
+													fontSize: 14,
+													mx: "5px"
+												}}>
+												–
+											</Box>
+											<Box
+												component='span'
+												sx={{
+													color:
+														sw === "b"
+															? mainColor
+															: "inherit"
+												}}>
+												{getVal(s, "b")}
+											</Box>
+										</Typography>
+									</Box>
+								);
+							})}
+						</Stack>
+					</Paper>
+
+					{/* Cancel */}
+					<Button
+						fullWidth
+						onClick={handleCancel}
+						sx={{
+							py: 1.5,
+							background: "none",
+							border: `1px solid ${BORDER}`,
+							borderRadius: "10px",
+							fontFamily: "Barlow, sans-serif",
+							fontSize: 13,
+							color: "#888",
+							textTransform: "none",
+							"&:hover": {
+								borderColor: "#aaa",
+								background: "none"
+							}
+						}}>
+						Cancel &amp; Re-enter
+					</Button>
 				</Box>
 			)}
 		</>
@@ -431,7 +568,7 @@ function ScoreCell({ value, onChange, winning, mainColor }) {
 					fontSize: 28,
 					fontWeight: 800,
 					textAlign: "center",
-					color: winning ? GOLD_DARK : "#222",
+					color: winning ? mainColor : "#222",
 					outline: "none",
 					transition: "all 0.15s",
 					"&:focus": {
