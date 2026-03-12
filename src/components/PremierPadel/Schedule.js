@@ -18,7 +18,7 @@ import ScheduleSendIcon from "@mui/icons-material/ScheduleSend";
 
 import MatchCalendar from "./MatchCalendar";
 import TimeSlotSheet, { SLOTS } from "./TimeSlotSheet";
-import { BORDER, BG } from "../../routes/PremierPadelMatch";
+import { BORDER } from "../../routes/PremierPadelMatch";
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const SLOT_MAP = Object.fromEntries(SLOTS.map((s) => [s.key, s]));

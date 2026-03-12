@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router";
+import { useNavigate, useLocation, useParams } from "react-router";
 import { useSelector } from "react-redux";
 import {
 	doc,
+	getDoc,
 	getFirestore,
 	updateDoc,
 	setDoc,
@@ -17,6 +18,7 @@ import { Box, Container, Tabs, Tab } from "@mui/material";
 import Details from "../components/PremierPadel/Details";
 import Header from "../components/PremierPadel/Header";
 import Schedule from "../components/PremierPadel/Schedule";
+import Results from "../components/PremierPadel/Results";
 
 export const BG = "#f5f4f0";
 export const BORDER = "#e0dbd0";
@@ -24,18 +26,15 @@ export const BORDER = "#e0dbd0";
 const PremierPadelMatch = () => {
 	const navigate = useNavigate();
 	const location = useLocation();
+	const { eventId: eventIdParam, matchId: matchIdParam } = useParams();
 	const db = getFirestore();
 	const { user } = useAuth();
-
-	const eventId = location.state?.eventId || "";
-	const initialMatch = location.state?.match || "";
-	const mainColor = location.state?.mainColor || "";
 
 	const events = useSelector(selectEvents);
 
 	const [activeTab, setActiveTab] = useState(0);
 	const [event, setEvent] = useState(null);
-	const [match, setMatch] = useState(initialMatch);
+	const [match, setMatch] = useState(null);
 	const [summaryDate, setSummaryDate] = useState(null);
 	const [summaryTime, setSummaryTime] = useState(null);
 	const [summaryLocation, setSummaryLocation] = useState(null);
@@ -43,19 +42,54 @@ const PremierPadelMatch = () => {
 	const [teamA, setTeamA] = useState(null);
 	const [teamB, setTeamB] = useState(null);
 	const [currentTeam, setCurrentTeam] = useState(null);
+	const [mainColor, setMainColor] = useState(null);
 
 	const onBack = () => {
 		// Implement navigation back to matches list
 		navigate(-1);
 	};
 
+	// Fallback: when the route is opened directly, location.state.match may be missing.
+	useEffect(() => {
+		const fetchMatch = async () => {
+			if (match) return;
+
+			try {
+				// get event first 
+				const eventRef = doc(db, "Events", eventIdParam);
+				const eventSnap = await getDoc(eventRef);
+				if (eventSnap.exists()) {
+					setEvent({ id: eventSnap.id, ...eventSnap.data() });
+					setMainColor(eventSnap.data().SponsorColor);
+				} else {
+					console.error("Event not found for match:", eventIdParam);
+					return;
+				}
+
+				const matchRef = doc(
+					db,
+					`Events/${eventIdParam}/TournamentData/${eventSnap.data().TournamentId}/matches/${matchIdParam}`
+				);
+				const matchSnap = await getDoc(matchRef);
+
+				if (matchSnap.exists()) {
+					setMatch({ id: matchSnap.id, ...matchSnap.data() });
+				}
+			} catch (error) {
+				console.error("Error fetching match:", error);
+			}
+		};
+
+		fetchMatch();
+	}, [match]);
+
 	// Set up real-time listener for match updates
 	useEffect(() => {
-		if (!eventId || !event?.TournamentId || !initialMatch?.id) return;
+		if (!eventIdParam || !event?.TournamentId || !matchIdParam) return;
 
 		const matchRef = doc(
 			db,
-			`Events/${eventId}/TournamentData/${event.TournamentId}/matches/${initialMatch.id}`
+			`Events/${eventIdParam}/TournamentData/${event.TournamentId}/matches/${matchIdParam}`
 		);
 
 		const unsubscribe = onSnapshot(
@@ -75,9 +109,9 @@ const PremierPadelMatch = () => {
 						setSummaryTime(updatedMatch.ChoosenTime);
 					if (updatedMatch.location)
 						setSummaryLocation(updatedMatch.location);
-          if (updatedMatch.Location) {
-            setSummaryLocation(updatedMatch.Location);
-          }
+					if (updatedMatch.Location) {
+						setSummaryLocation(updatedMatch.Location);
+					}
 				}
 			},
 			(error) => {
@@ -86,12 +120,7 @@ const PremierPadelMatch = () => {
 		);
 
 		return () => unsubscribe();
-	}, [eventId, event?.TournamentId, initialMatch?.id, db]);
-
-	useEffect(() => {
-		// get event from redux
-		setEvent(events.filter((i) => i.id === eventId)[0]);
-	}, [events]);
+	}, [db, eventIdParam, event?.TournamentId, matchIdParam]);
 
 	useEffect(() => {
 		if (match && event && user) {
@@ -133,7 +162,7 @@ const PremierPadelMatch = () => {
 				setDoc(
 					doc(
 						db,
-						`Events/${eventId}/TournamentData/${event.TournamentId}/matches/${match.id}`
+						`Events/${eventIdParam}/TournamentData/${event.TournamentId}/matches/${match.id}`
 					),
 					{ teams: teamsPayload },
 					{ merge: true }
@@ -155,14 +184,14 @@ const PremierPadelMatch = () => {
 	}, [match, event, user]);
 
 	const handleSubmitAvailability = async (payload) => {
-		if (!eventId || !event?.TournamentId || !match?.id || !currentTeam) {
+		if (!eventIdParam || !event?.TournamentId || !match?.id || !currentTeam) {
 			throw new Error("Missing data to update scheduling");
 		}
 
 		await setDoc(
 			doc(
 				db,
-				`Events/${eventId}/TournamentData/${event.TournamentId}/matches/${match.id}`
+				`Events/${eventIdParam}/TournamentData/${event.TournamentId}/matches/${match.id}`
 			),
 			{
 				...match,
@@ -175,12 +204,12 @@ const PremierPadelMatch = () => {
 	};
 
 	const handleLocationUpdate = async (loc) => {
-		if (!eventId || !event?.TournamentId || !match?.id) {
+		if (!eventIdParam || !event?.TournamentId || !match?.id) {
 			throw new Error("Missing data to update location");
 		}
 		var matchRef = doc(
 			db,
-			`Events/${eventId}/TournamentData/${event.TournamentId}/matches/${match.id}`
+			`Events/${eventIdParam}/TournamentData/${event.TournamentId}/matches/${match.id}`
 		);
 
 		const updates = {
@@ -188,6 +217,22 @@ const PremierPadelMatch = () => {
 		};
 
 		await updateDoc(matchRef, updates);
+	};
+
+	const handleResults = async (resultsPayload) => {
+		if (!eventIdParam || !event?.TournamentId || !match?.id) {
+			throw new Error("Missing data to update results");
+		}
+		var matchRef = doc(
+			db,
+			`Events/${eventIdParam}/TournamentData/${event.TournamentId}/matches/${match.id}`
+		);
+		const updates = {
+			results: resultsPayload
+		};
+		console.log(updates);
+
+		/* await updateDoc(matchRef, updates); */
 	};
 
 	return (
@@ -297,7 +342,7 @@ const PremierPadelMatch = () => {
 										// update match in firebase with confirmed date and time
 										var matchRef = doc(
 											db,
-											`Events/${eventId}/TournamentData/${event.TournamentId}/matches/${match.id}`
+											`Events/${eventIdParam}/TournamentData/${event.TournamentId}/matches/${match.id}`
 										);
 
 										const updates = {
@@ -315,7 +360,13 @@ const PremierPadelMatch = () => {
 								/>
 							</>
 						)}
-						{/* {activeTab === 2 && <ResultsTab />} */}
+						{activeTab === 2 && (
+							<Results
+								match={match}
+								mainColor={mainColor}
+								onSubmit={handleResults}
+							/>
+						)}
 					</Box>
 				</Container>
 			</Box>
