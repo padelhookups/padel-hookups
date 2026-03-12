@@ -1,577 +1,612 @@
 import { BracketsManager } from "brackets-manager";
 import { FirestoreAdapter } from "./FirestoreAdapter";
-import StatisticsActions from './StatisticsUtils';
+import StatisticsActions from "./StatisticsUtils";
 import BadgesActions from "./BadgesUtils";
 
 import {
-  addDoc,
-  arrayUnion,
-  arrayRemove,
-  collection,
-  doc,
-  deleteDoc,
-  getFirestore,
-  Timestamp,
-  updateDoc,
-  setDoc,
-  query,
-  where,
-  getDoc,
-  getDocs,
+	addDoc,
+	arrayUnion,
+	arrayRemove,
+	collection,
+	doc,
+	deleteDoc,
+	getFirestore,
+	Timestamp,
+	updateDoc,
+	setDoc,
+	query,
+	where,
+	getDoc,
+	getDocs
 } from "firebase/firestore";
 import useAuth from "../utils/useAuth";
 
 const useEventActions = () => {
-  const { user } = useAuth();
-  const db = getFirestore();
+	const { user } = useAuth();
+	const db = getFirestore();
 
-  const {
-    addPlayedEvent
-  } = StatisticsActions();
-  const {
-    addFirstMixPlayedBadge,
-    addFirstTourEventPlayedBadge
-  } = BadgesActions();
+	const { addPlayedEvent } = StatisticsActions();
+	const { addFirstMixPlayedBadge, addFirstTourEventPlayedBadge } =
+		BadgesActions();
 
-  const createMatchsRobinHood = async (eventId) => {
-    const db = getFirestore();
+	const createMatchsRobinHood = async (eventId) => {
+		const db = getFirestore();
 
-    const tournamentCol = collection(db, `Events/${eventId}/TournamentData`);
-    const tournamentRef = await addDoc(tournamentCol, {
-      createdAt: Date.now(),
-      eventId,
-    });
-    const tournamentId = tournamentRef.id;
+		const tournamentCol = collection(
+			db,
+			`Events/${eventId}/TournamentData`
+		);
+		const tournamentRef = await addDoc(tournamentCol, {
+			createdAt: Date.now(),
+			eventId
+		});
+		const tournamentId = tournamentRef.id;
 
-    // Get Event to get fresh pairs
-    const eventSnap = await getDoc(doc(db, `Events/${eventId}`));
-    const pairs = eventSnap.data().Pairs;
-    const players = eventSnap.data().PlayersIds;
+		// Get Event to get fresh pairs
+		const eventSnap = await getDoc(doc(db, `Events/${eventId}`));
+		const pairs = eventSnap.data().Pairs;
+		const players = eventSnap.data().PlayersIds;
 
-    // 2️⃣ Create adapter and manager
-    const adapter = new FirestoreAdapter(
-      db,
-      `Events/${eventId}/TournamentData/${tournamentId}`,
-      tournamentId
-    );
-    const manager = new BracketsManager(adapter);
+		// 2️⃣ Create adapter and manager
+		const adapter = new FirestoreAdapter(
+			db,
+			`Events/${eventId}/TournamentData/${tournamentId}`,
+			tournamentId
+		);
+		const manager = new BracketsManager(adapter);
 
-    console.log('pairs', pairs);
+		console.log("pairs", pairs);
 
-    const seeding = pairs.map((pair, i) => ({
-      id: i + 1, // manager-side temporary ID
-      name: pair.DisplayName, // display name
-      player1Id: pair.Player1Id,
-      player2Id: pair.Player2Id,
-    }));
+		const seeding = pairs.map((pair, i) => ({
+			id: i + 1, // manager-side temporary ID
+			name: pair.DisplayName, // display name
+			player1Id: pair.Player1Id,
+			player2Id: pair.Player2Id
+		}));
 
-    // 4) create stage with seeding set to those participant ids
+		// 4) create stage with seeding set to those participant ids
 
-    const stage = await manager.create.stage({
-      name: "Padel Event",
-      tournamentId: 1,
-      type: "round_robin",
-      settings: {
-        groupCount: 1,
-        size: pairs.length,
-        seedOrdering: ["groups.bracket_optimized"],
-      },
-      seeding: seeding,
-    });
+		const stage = await manager.create.stage({
+			name: "Padel Event",
+			tournamentId: 1,
+			type: "round_robin",
+			settings: {
+				groupCount: 1,
+				size: pairs.length,
+				seedOrdering: ["groups.bracket_optimized"]
+			},
+			seeding: seeding
+		});
 
-    console.log("state", stage);
-    const eventDocRef = doc(db, `Events/${eventId}`);
-    await updateDoc(eventDocRef, {
-      ModifiedAt: Timestamp.fromDate(new Date()),
-      TournamentId: tournamentId,
-      PairsCreated: true,
-      TournamentStarted: true,
-    });
+		console.log("state", stage);
+		const eventDocRef = doc(db, `Events/${eventId}`);
+		await updateDoc(eventDocRef, {
+			ModifiedAt: Timestamp.fromDate(new Date()),
+			TournamentId: tournamentId,
+			PairsCreated: true,
+			TournamentStarted: true
+		});
 
-    await addPlayedEvent(players, 'Mix');
-    await addFirstMixPlayedBadge(players);
-  };
+		await addPlayedEvent(players, "Mix");
+		await addFirstMixPlayedBadge(players);
+	};
 
-  const createMatchsElimination = async (eventId) => {
-    const db = getFirestore();
+	const createMatchsElimination = async (eventId) => {
+		const db = getFirestore();
 
-    // Get Event to get fresh pairs
-    const eventDocRef = doc(db, `Events/${eventId}`);
-    const eventSnap = await getDoc(eventDocRef);
-    const pairs = eventSnap.data().Pairs;
-    const players = eventSnap.data().PlayersIds;
+		// Get Event to get fresh pairs
+		const eventDocRef = doc(db, `Events/${eventId}`);
+		const eventSnap = await getDoc(eventDocRef);
+		const pairs = eventSnap.data().Pairs;
+		const players = eventSnap.data().PlayersIds;
 
-    // 1️⃣ Create a "TournamentData" document for this event
-    const tournamentCol = collection(db, `Events/${eventId}/TournamentData`);
-    const tournamentRef = await addDoc(tournamentCol, {
-      createdAt: Date.now(),
-      eventId,
-    });
-    const tournamentId = tournamentRef.id;
+		// 1️⃣ Create a "TournamentData" document for this event
+		const tournamentCol = collection(
+			db,
+			`Events/${eventId}/TournamentData`
+		);
+		const tournamentRef = await addDoc(tournamentCol, {
+			createdAt: Date.now(),
+			eventId
+		});
+		const tournamentId = tournamentRef.id;
 
-    await updateDoc(eventDocRef, {
-      PairsCreated: true,
-      TournamentStarted: true,
-      ModifiedAt: Timestamp.fromDate(new Date()),
-      TournamentId: tournamentId,
-    });
+		await updateDoc(eventDocRef, {
+			PairsCreated: true,
+			TournamentStarted: true,
+			ModifiedAt: Timestamp.fromDate(new Date()),
+			TournamentId: tournamentId
+		});
 
-    // 2️⃣ Create adapter and manager
-    const adapter = new FirestoreAdapter(
-      db,
-      `Events/${eventId}/TournamentData/${tournamentId}`,
-      tournamentId
-    );
-    const manager = new BracketsManager(adapter);
+		// 2️⃣ Create adapter and manager
+		const adapter = new FirestoreAdapter(
+			db,
+			`Events/${eventId}/TournamentData/${tournamentId}`,
+			tournamentId
+		);
+		const manager = new BracketsManager(adapter);
 
-    const seeding = pairs.map((pair, i) => ({
-      id: i + 1, // manager-side temporary ID
-      name: pair.DisplayName, // display name
-    }));
+		const seeding = pairs.map((pair, i) => ({
+			id: i + 1, // manager-side temporary ID
+			name: pair.DisplayName // display name
+		}));
 
-    const groupCount = getNumberOfGroups(pairs.length);
+		const groupCount = getNumberOfGroups(pairs.length);
 
-    const groupStage = await manager.create.stage({
-      name: "Group Stage",
-      tournamentId: tournamentId,
-      type: "round_robin",
-      settings: {
-        groupCount: groupCount,
-        size: pairs.length,
-        seedOrdering: ["groups.bracket_optimized"],
-      },
-      seeding: seeding,
-    });
+		const groupStage = await manager.create.stage({
+			name: "Group Stage",
+			tournamentId: tournamentId,
+			type: "round_robin",
+			settings: {
+				groupCount: groupCount,
+				size: pairs.length,
+				seedOrdering: ["groups.bracket_optimized"]
+			},
+			seeding: seeding
+		});
 
-    await addPlayedEvent(players, 'Tour');
-    await addFirstTourEventPlayedBadge(players);
-  };
+		await addPlayedEvent(players, "Tour");
+		await addFirstTourEventPlayedBadge(players);
+	};
 
-  const createBracketsElimination = async (eventId, tournamentId, pairs) => {
-    const db = getFirestore();
+	const createBracketsElimination = async (eventId, tournamentId, pairs) => {
+		const db = getFirestore();
 
-    // 2️⃣ Create adapter and manager
-    const adapter = new FirestoreAdapter(
-      db,
-      `Events/${eventId}/TournamentData/${tournamentId}`,
-      tournamentId
-    );
-    const manager = new BracketsManager(adapter);
+		// 2️⃣ Create adapter and manager
+		const adapter = new FirestoreAdapter(
+			db,
+			`Events/${eventId}/TournamentData/${tournamentId}`,
+			tournamentId
+		);
+		const manager = new BracketsManager(adapter);
 
-    const seeding = pairs.map((pair, i) => ({
-      id: i + 1, // manager-side temporary ID
-      name: pair.DisplayName, // display name
-    }));
+		const seeding = pairs.map((pair, i) => ({
+			id: i + 1, // manager-side temporary ID
+			name: pair.DisplayName // display name
+		}));
 
-    const eliminationStage = await manager.create.stage({
-      tournamentId: tournamentId,
-      name: "Elimination Stage",
-      type: "single_elimination",
-      settings: {
-        size: pairs.length,
-        seedOrdering: ["inner_outer"], // <-- valid now
-        balanceByes: true,
-      },
-      seeding: seeding,
-    });
+		const eliminationStage = await manager.create.stage({
+			tournamentId: tournamentId,
+			name: "Elimination Stage",
+			type: "single_elimination",
+			settings: {
+				size: pairs.length,
+				seedOrdering: ["inner_outer"], // <-- valid now
+				balanceByes: true
+			},
+			seeding: seeding
+		});
 
-    console.log(eliminationStage);
-  };
+		console.log(eliminationStage);
+	};
 
-  const createPremierPadelBrackets = async (eventId) => {
-    const db = getFirestore();
+	const createPremierPadelBrackets = async (eventId) => {
+		const db = getFirestore();
 
-    // Get Event to get fresh pairs
-    const eventDocRef = doc(db, `Events/${eventId}`);
-    const eventSnap = await getDoc(eventDocRef);
-    const event = { ...eventSnap.data(), id: eventId };
-    const pairs = event.Pairs;
-    //const players = eventSnap.data().PlayersIds;
+		// Get Event to get fresh pairs
+		const eventDocRef = doc(db, `Events/${eventId}`);
+		const eventSnap = await getDoc(eventDocRef);
+		const event = { ...eventSnap.data(), id: eventId };
+		const pairs = event.Pairs;
+		//const players = eventSnap.data().PlayersIds;
 
-    // 1️⃣ Create a "TournamentData" document for this event
-    const tournamentCol = collection(db, `Events/${eventId}/TournamentData`);
-    const tournamentRef = await addDoc(tournamentCol, {
-      createdAt: Date.now(),
-      eventId,
-    });
-    const tournamentId = tournamentRef.id;
+		// 1️⃣ Create a "TournamentData" document for this event
+		const tournamentCol = collection(
+			db,
+			`Events/${eventId}/TournamentData`
+		);
+		const tournamentRef = await addDoc(tournamentCol, {
+			createdAt: Date.now(),
+			eventId
+		});
+		const tournamentId = tournamentRef.id;
 
-    await updateDoc(eventDocRef, {
-      /*  PairsCreated: true,
+		await updateDoc(eventDocRef, {
+			/*  PairsCreated: true,
        TournamentStarted: true, */
-      ModifiedAt: Timestamp.fromDate(new Date()),
-      TournamentId: tournamentId,
-    });
+			ModifiedAt: Timestamp.fromDate(new Date()),
+			TournamentId: tournamentId
+		});
 
-    // 2️⃣ Create adapter and manager
-    const adapter = new FirestoreAdapter(
-      db,
-      `Events/${eventId}/TournamentData/${tournamentId}`,
-      tournamentId
-    );
-    const manager = new BracketsManager(adapter);
+		// 2️⃣ Create adapter and manager
+		const adapter = new FirestoreAdapter(
+			db,
+			`Events/${eventId}/TournamentData/${tournamentId}`,
+			tournamentId
+		);
+		const manager = new BracketsManager(adapter);
 
-    console.log(pairs);
+		console.log(pairs);
 
+		const seeding = pairs.map((pair, i) => ({
+			id: i + 1, // manager-side temporary ID
+			name: pair.DisplayName // display name
+		}));
 
-    const seeding = pairs.map((pair, i) => ({
-      id: i + 1, // manager-side temporary ID
-      name: pair.DisplayName, // display name
-    }));
+		console.log(seeding);
 
-    console.log(seeding);
+		const eliminationStage = await manager.create.stage({
+			tournamentId: tournamentId,
+			name: "Elimination Stage",
+			type: "single_elimination",
+			settings: {
+				size: pairs.length,
+				seedOrdering: ["inner_outer"],
+				balanceByes: true
+			},
+			seeding: seeding
+		});
 
+		console.log(eliminationStage);
+		await updateMatchsDate(event, tournamentId, manager);
+		await updateRoundsNumber(event, tournamentId, manager);
+	};
 
-    const eliminationStage = await manager.create.stage({
-      tournamentId: tournamentId,
-      name: "Elimination Stage",
-      type: "single_elimination",
-      settings: {
-        size: pairs.length,
-        seedOrdering: ["inner_outer"],
-        balanceByes: true,
-      },
-      seeding: seeding,
-    });
+	const updateMatchsDate = async (event, tournamentId, manager) => {
+		// Loop All games
+		const stage = await manager.get.stageData();
+		const rounds = stage.round;
+		const matches = stage.match;
 
-    console.log(eliminationStage);
-    await updateMatchsDate(event, tournamentId, manager);
-    await updateRoundsNumber(event, tournamentId,  manager);
-  }
+		console.log(matches);
+		console.log(rounds);
+		const startDate = event.Date.toDate();
+		console.log(startDate);
 
-  const updateMatchsDate = async (event, tournamentId,  manager) => {
-    // Loop All games
-    const stage = await manager.get.stageData();
-    const rounds = stage.round;
-    const matches = stage.match;
+		// so if tournament start at day X:
+		// round 1 starts at day X and ends 2 weeks after,
+		// round 2 starts 2 weeks after and ends 4 weeks after, etc.
+		const roundDuration = 14;
+		matches.forEach(async (match) => {
+			const roundNumber = rounds.filter((r) => r.id === match.round_id)[0]
+				.number;
+			const matchStartDate = new Date(
+				startDate.getTime() +
+					(roundNumber - 1) * roundDuration * 24 * 60 * 60 * 1000
+			);
+			const matchFinalDate = new Date(
+				startDate.getTime() +
+					roundNumber * roundDuration * 24 * 60 * 60 * 1000
+			);
+			const matchDocRef = doc(
+				db,
+				`Events/${event.id}/TournamentData/${tournamentId}/matches/${match.id}`
+			);
+			await updateDoc(matchDocRef, {
+				StartDateToPlay: Timestamp.fromDate(matchStartDate),
+				FinalDateToPlay: Timestamp.fromDate(matchFinalDate)
+			});
+			console.log(matchStartDate, matchFinalDate);
+		});
+	};
 
-    console.log(matches);
-    console.log(rounds);
-    const startDate = event.Date.toDate();
-    console.log(startDate);
+	const updateRoundsNumber = async (event, tournamentId, manager) => {
+		const stage = await manager.get.stageData();
+		const rounds = stage.round;
+		const matches = stage.match;
+		matches.forEach(async (match) => {
+			const roundNumber = rounds.filter((r) => r.id === match.round_id)[0]
+				.number;
+			const matchDocRef = doc(
+				db,
+				`Events/${event.id}/TournamentData/${tournamentId}/matches/${match.id}`
+			);
+			await updateDoc(matchDocRef, {
+				roundNumber: roundNumber
+			});
+		});
+	};
 
-    // so if tournament start at day X:
-    // round 1 starts at day X and ends 2 weeks after,
-    // round 2 starts 2 weeks after and ends 4 weeks after, etc.
-    const roundDuration = 14;
-    matches.forEach(async (match) => {
-      const roundNumber = rounds.filter(r => r.id === match.round_id)[0].number;
-      const matchStartDate = new Date(
-        startDate.getTime() + (roundNumber - 1) * roundDuration * 24 * 60 * 60 * 1000
-      );
-      const matchFinalDate = new Date(
-        startDate.getTime() + roundNumber * roundDuration * 24 * 60 * 60 * 1000
-      );
-      const matchDocRef = doc(
-        db,
-        `Events/${event.id}/TournamentData/${tournamentId}/matches/${match.id}`
-      );
-      await updateDoc(matchDocRef, {
-        StartDateToPlay: Timestamp.fromDate(matchStartDate),
-        FinalDateToPlay: Timestamp.fromDate(matchFinalDate),
-      });
-      console.log(matchStartDate, matchFinalDate);
-      
-    });
-  }
+	const registerFromEvent = async (
+		eventSelectedId,
+		selectedUser,
+		isGuest,
+		registerItSelf
+	) => {
+		let finalUser = selectedUser || user.uid;
+		const userDocRef = doc(db, `Users/${finalUser}`);
+		const eventDocRef = doc(db, `Events/${eventSelectedId}`);
+		const userLoggedIn = doc(db, `Users/${user.uid}`);
 
-  const updateRoundsNumber = async (event, tournamentId, manager) => {
-    const stage = await manager.get.stageData();
-    const rounds = stage.round;
-    const matches = stage.match;
-    matches.forEach(async (match) => {
-      const roundNumber = rounds.filter(r => r.id === match.round_id)[0].number;
-      const matchDocRef = doc(
-        db,
-        `Events/${event.id}/TournamentData/${tournamentId}/matches/${match.id}`
-      );
-      await updateDoc(matchDocRef, {
-        roundNumber: roundNumber,
-      });
-    });
-  }
+		if (isGuest) {
+			// create random id for guest user
+			finalUser = `guest_${Math.random().toString(36).substr(2, 9)}`;
+		}
 
-  const registerFromEvent = async (
-    eventSelectedId,
-    selectedUser,
-    isGuest,
-    registerItSelf
-  ) => {
-    let finalUser = selectedUser || user.uid;
-    const userDocRef = doc(db, `Users/${finalUser}`);
-    const eventDocRef = doc(db, `Events/${eventSelectedId}`);
+		await setDoc(doc(db, `Events/${eventSelectedId}/Players/`, finalUser), {
+			UserId: !isGuest ? userDocRef : null,
+			EventId: eventDocRef,
+			CreatedAt: Timestamp.fromDate(new Date()),
+			Name: isGuest ? selectedUser : null,
+			IsGuest: isGuest || false
+		});
 
-    if (isGuest) {
-      // create random id for guest user
-      finalUser = `guest_${Math.random().toString(36).substr(2, 9)}`;
-    }
+		await updateDoc(eventDocRef, {
+			ModifiedAt: Timestamp.fromDate(new Date()),
+			PlayersIds: arrayUnion(
+				!isGuest
+					? userDocRef
+					: doc(db, `Events/${eventSelectedId}/Players/`, finalUser),
+				registerItSelf ? userLoggedIn : null
+			),
+			Guests: isGuest
+				? arrayUnion({
+						Name: selectedUser,
+						IsGuest: true,
+						CreatedAt: Timestamp.fromDate(new Date()),
+						UserId: finalUser
+					})
+				: arrayRemove(null)
+		});
 
-    await setDoc(doc(db, `Events/${eventSelectedId}/Players/`, finalUser), {
-      UserId: !isGuest ? userDocRef : null,
-      EventId: eventDocRef,
-      CreatedAt: Timestamp.fromDate(new Date()),
-      Name: isGuest ? selectedUser : null,
-      IsGuest: isGuest || false,
-    });
+		if (registerItSelf) {
+			// get doc from firebase
+			const userSnap = await getDoc(userDocRef);
+			const userData = userSnap.data();
 
-    await updateDoc(eventDocRef, {
-      ModifiedAt: Timestamp.fromDate(new Date()),
-      PlayersIds: arrayUnion(
-        !isGuest
-          ? userDocRef
-          : doc(db, `Events/${eventSelectedId}/Players/`, finalUser)
-      ),
-      Guests: isGuest
-        ? arrayUnion({
-          Name: selectedUser,
-          IsGuest: true,
-          CreatedAt: Timestamp.fromDate(new Date()),
-          UserId: finalUser,
-        })
-        : arrayRemove(null),
-    });
+			await setDoc(
+				doc(db, `Events/${eventSelectedId}/Players/`, user.uid),
+				{
+					UserId: userLoggedIn,
+					EventId: eventDocRef,
+					CreatedAt: Timestamp.fromDate(new Date()),
+					Name: user.Name,
+					IsGuest: false
+				}
+			);
+			const pair = {
+				Player1Id: userLoggedIn.id,
+				Player2Id: userDocRef.id,
+				DisplayName: `${user.Name} & ${userData.Name}`
+			};
+			await addSinglePair(pair, eventSelectedId, false);
+		}
+		console.log("registerFromEvent FINAL");
+	};
 
-    console.log("registerFromEvent FINAL");
-  };
+	const unregisterFromEvent = async (
+		eventSelectedId,
+		selectedUser,
+		isGuest
+	) => {
+		let finalUser = selectedUser || user.uid;
+		let userDocRef = doc(db, `Users/${finalUser}`);
+		const eventDocRef = doc(db, `Events/${eventSelectedId}`);
 
-  const unregisterFromEvent = async (
-    eventSelectedId,
-    selectedUser,
-    isGuest
-  ) => {
-    let finalUser = selectedUser || user.uid;
-    let userDocRef = doc(db, `Users/${finalUser}`);
-    const eventDocRef = doc(db, `Events/${eventSelectedId}`);
+		if (isGuest) {
+			// create random id for guest user
+			userDocRef = doc(
+				db,
+				`Events/${eventSelectedId}/Players/${finalUser}`
+			);
+		}
 
-    if (isGuest) {
-      // create random id for guest user
-      userDocRef = doc(db, `Events/${eventSelectedId}/Players/${finalUser}`);
-    }
+		await deleteDoc(
+			doc(db, `Events/${eventSelectedId}/Players/`, finalUser)
+		);
 
-    await deleteDoc(doc(db, `Events/${eventSelectedId}/Players/`, finalUser));
+		if (isGuest) {
+			// For guests, fetch current guests array and filter out the matching one
+			const eventSnap = await getDoc(eventDocRef);
+			const currentGuests = eventSnap.data()?.Guests || [];
+			const updatedGuests = currentGuests.filter(
+				(guest) => guest.UserId !== finalUser
+			);
 
-    if (isGuest) {
-      // For guests, fetch current guests array and filter out the matching one
-      const eventSnap = await getDoc(eventDocRef);
-      const currentGuests = eventSnap.data()?.Guests || [];
-      const updatedGuests = currentGuests.filter(
-        (guest) => guest.UserId !== finalUser
-      );
+			await updateDoc(eventDocRef, {
+				ModifiedAt: Timestamp.fromDate(new Date()),
+				PlayersIds: arrayRemove(userDocRef),
+				Guests: updatedGuests
+			});
+		} else {
+			await updateDoc(eventDocRef, {
+				ModifiedAt: Timestamp.fromDate(new Date()),
+				PlayersIds: arrayRemove(userDocRef)
+			});
+		}
+	};
 
-      await updateDoc(eventDocRef, {
-        ModifiedAt: Timestamp.fromDate(new Date()),
-        PlayersIds: arrayRemove(userDocRef),
-        Guests: updatedGuests,
-      });
-    } else {
-      await updateDoc(eventDocRef, {
-        ModifiedAt: Timestamp.fromDate(new Date()),
-        PlayersIds: arrayRemove(userDocRef),
-      });
-    }
-  };
+	const addSinglePair = async (pair, eventId, addToPlayerIds) => {
+		const eventDocRef = doc(db, `Events/${eventId}`);
 
-  const addSinglePair = async (pair, eventId, addToPlayerIds) => {
-    const eventDocRef = doc(db, `Events/${eventId}`);
+		if (addToPlayerIds) {
+			await updateDoc(eventDocRef, {
+				ModifiedAt: Timestamp.fromDate(new Date()),
+				PlayersIds: arrayUnion(pair.Player1Id, pair.Player2Id),
+				PlayersWithPairsIds: arrayUnion(pair.Player1Id, pair.Player2Id),
+				Pairs: arrayUnion(pair)
+			});
+		} else {
+			await updateDoc(eventDocRef, {
+				ModifiedAt: Timestamp.fromDate(new Date()),
+				PlayersWithPairsIds: arrayUnion(pair.Player1Id, pair.Player2Id),
+				Pairs: arrayUnion(pair)
+			});
+		}
+	};
 
-    if (addToPlayerIds) {
-      await updateDoc(eventDocRef, {
-        ModifiedAt: Timestamp.fromDate(new Date()),
-        PlayersIds: arrayUnion(pair.Player1Id, pair.Player2Id),
-        PlayersWithPairsIds: arrayUnion(pair.Player1Id, pair.Player2Id),
-        Pairs: arrayUnion(pair),
-      });
-    } else {
-      await updateDoc(eventDocRef, {
-        ModifiedAt: Timestamp.fromDate(new Date()),
-        PlayersWithPairsIds: arrayUnion(pair.Player1Id, pair.Player2Id),
-        Pairs: arrayUnion(pair),
-      });
-    }
+	const createPairsForEvent = async (players, eventId) => {
+		const shuffled = players
+			.map((value) => ({ value, sort: Math.random() }))
+			.sort((a, b) => a.sort - b.sort)
+			.map(({ value }) => value);
 
-  };
+		console.log("shuffled", shuffled);
 
-  const createPairsForEvent = async (players, eventId) => {
-    const shuffled = players
-      .map((value) => ({ value, sort: Math.random() }))
-      .sort((a, b) => a.sort - b.sort)
-      .map(({ value }) => value);
+		const pairs = shuffled.reduce((acc, player, index, arr) => {
+			if (index % 2 === 0) {
+				acc.push({
+					DisplayName: player?.Name + " & " + arr[index + 1]?.Name,
+					Player1Id: player.id || player.UserId,
+					Player2Id: arr[index + 1]?.id || arr[index + 1]?.UserId,
+					CreatedAt: new Date().toISOString()
+				});
+			}
+			return acc;
+		}, []);
+		console.log("pairs", pairs);
 
-    console.log("shuffled", shuffled);
+		const eventDocRef = doc(db, `Events/${eventId}`);
+		await updateDoc(eventDocRef, {
+			//PairsCreated: true,
+			ModifiedAt: Timestamp.fromDate(new Date()),
+			//TournamentId: tournamentId,
+			PlayersWithPairsIds: arrayUnion(
+				...pairs.flatMap((pair) => [pair.Player1Id, pair.Player2Id])
+			),
+			Pairs: arrayUnion(...pairs)
+		});
+	};
 
-    const pairs = shuffled.reduce((acc, player, index, arr) => {
-      if (index % 2 === 0) {
-        acc.push({
-          DisplayName: player?.Name + " & " + arr[index + 1]?.Name,
-          Player1Id: player.id || player.UserId,
-          Player2Id: arr[index + 1]?.id || arr[index + 1]?.UserId,
-          CreatedAt: new Date().toISOString(),
-        });
-      }
-      return acc;
-    }, []);
-    console.log("pairs", pairs);
+	const deleteAllGamesForEvent = async (eventId) => {
+		// DELETE all sub collections "Games" under each tournament document
 
-    const eventDocRef = doc(db, `Events/${eventId}`);
-    await updateDoc(eventDocRef, {
-      //PairsCreated: true,
-      ModifiedAt: Timestamp.fromDate(new Date()),
-      //TournamentId: tournamentId,
-      PlayersWithPairsIds: arrayUnion(
-        ...pairs.flatMap((pair) => [pair.Player1Id, pair.Player2Id])
-      ),
-      Pairs: arrayUnion(...pairs),
-    });
-  };
+		const tournamentDataCol = collection(
+			db,
+			`Events/${eventId}/TournamentData`
+		);
+		const tournamentDataSnap = await getDocs(tournamentDataCol);
+		for (const tournamentDoc of tournamentDataSnap.docs) {
+			const gamesCol = collection(
+				db,
+				`Events/${eventId}/TournamentData/${tournamentDoc.id}/matches`
+			);
+			const gamesSnap = await getDocs(gamesCol);
+			gamesSnap.forEach((gameDoc) => {
+				deleteDoc(gameDoc.ref);
+			});
 
-  const deleteAllGamesForEvent = async (eventId) => {
-    // DELETE all sub collections "Games" under each tournament document
+			const groupsCol = collection(
+				db,
+				`Events/${eventId}/TournamentData/${tournamentDoc.id}/groups`
+			);
+			const groupsSnap = await getDocs(groupsCol);
+			groupsSnap.forEach((gameDoc) => {
+				deleteDoc(gameDoc.ref);
+			});
 
-    const tournamentDataCol = collection(
-      db,
-      `Events/${eventId}/TournamentData`
-    );
-    const tournamentDataSnap = await getDocs(tournamentDataCol);
-    for (const tournamentDoc of tournamentDataSnap.docs) {
-      const gamesCol = collection(
-        db,
-        `Events/${eventId}/TournamentData/${tournamentDoc.id}/matches`
-      );
-      const gamesSnap = await getDocs(gamesCol);
-      gamesSnap.forEach((gameDoc) => {
-        deleteDoc(gameDoc.ref);
-      });
+			const participantsCol = collection(
+				db,
+				`Events/${eventId}/TournamentData/${tournamentDoc.id}/participants`
+			);
+			const participantsSnap = await getDocs(participantsCol);
+			participantsSnap.forEach((gameDoc) => {
+				deleteDoc(gameDoc.ref);
+			});
 
-      const groupsCol = collection(
-        db,
-        `Events/${eventId}/TournamentData/${tournamentDoc.id}/groups`
-      );
-      const groupsSnap = await getDocs(groupsCol);
-      groupsSnap.forEach((gameDoc) => {
-        deleteDoc(gameDoc.ref);
-      });
+			const stagesCol = collection(
+				db,
+				`Events/${eventId}/TournamentData/${tournamentDoc.id}/stages`
+			);
+			const stagesSnap = await getDocs(stagesCol);
+			stagesSnap.forEach((gameDoc) => {
+				deleteDoc(gameDoc.ref);
+			});
 
-      const participantsCol = collection(
-        db,
-        `Events/${eventId}/TournamentData/${tournamentDoc.id}/participants`
-      );
-      const participantsSnap = await getDocs(participantsCol);
-      participantsSnap.forEach((gameDoc) => {
-        deleteDoc(gameDoc.ref);
-      });
+			const roundsCol = collection(
+				db,
+				`Events/${eventId}/TournamentData/${tournamentDoc.id}/rounds`
+			);
+			const roundsSnap = await getDocs(roundsCol);
+			roundsSnap.forEach((gameDoc) => {
+				deleteDoc(gameDoc.ref);
+			});
+		}
 
-      const stagesCol = collection(
-        db,
-        `Events/${eventId}/TournamentData/${tournamentDoc.id}/stages`
-      );
-      const stagesSnap = await getDocs(stagesCol);
-      stagesSnap.forEach((gameDoc) => {
-        deleteDoc(gameDoc.ref);
-      });
+		const q = query(
+			collection(db, `Events/${eventId}/TournamentData`),
+			where("eventId", "==", eventId)
+		);
+		const querySnapshot = await getDocs(q);
+		querySnapshot.forEach((doc) => {
+			deleteDoc(doc.ref);
+		});
 
-      const roundsCol = collection(
-        db,
-        `Events/${eventId}/TournamentData/${tournamentDoc.id}/rounds`
-      );
-      const roundsSnap = await getDocs(roundsCol);
-      roundsSnap.forEach((gameDoc) => {
-        deleteDoc(gameDoc.ref);
-      });
-    }
+		const eventDocRef = doc(db, `Events/${eventId}`);
+		await updateDoc(eventDocRef, {
+			ModifiedAt: Timestamp.fromDate(new Date()),
+			TournamentId: null,
+			PairsCreated: false,
+			TournamentStarted: false,
+			WonStatisticsUpdated: false
+		});
+	};
 
-    const q = query(
-      collection(db, `Events/${eventId}/TournamentData`),
-      where("eventId", "==", eventId)
-    );
-    const querySnapshot = await getDocs(q);
-    querySnapshot.forEach((doc) => {
-      deleteDoc(doc.ref);
-    });
+	const deletePairFromEvent = async (eventId, player1Id, player2Id) => {
+		const eventDocRef = doc(db, `Events/${eventId}`);
+		const eventSnap = await getDoc(eventDocRef);
+		const pairs = eventSnap.data().Pairs;
 
-    const eventDocRef = doc(db, `Events/${eventId}`);
-    await updateDoc(eventDocRef, {
-      ModifiedAt: Timestamp.fromDate(new Date()),
-      TournamentId: null,
-      PairsCreated: false,
-      TournamentStarted: false,
-      WonStatisticsUpdated: false
-    });
-  };
+		console.log("pairs", pairs);
 
-  const deletePairFromEvent = async (eventId, player1Id, player2Id) => {
-    const eventDocRef = doc(db, `Events/${eventId}`);
-    const eventSnap = await getDoc(eventDocRef);
-    const pairs = eventSnap.data().Pairs;
+		const pairsToKeep = pairs.filter(
+			(pair) =>
+				pair.Player1Id !== player1Id && pair.Player2Id !== player2Id
+		);
+		console.log("pairs to keep", pairsToKeep);
 
-    console.log("pairs", pairs);
+		const playersDocToDelete = query(
+			collection(db, `Events/${eventId}/Players`),
+			where("UserId", "in", [player1Id, player2Id])
+		);
+		const playersSnap = await getDocs(playersDocToDelete);
+		playersSnap.forEach((playerDoc) => {
+			deleteDoc(playerDoc.ref);
+		});
 
-    const pairsToKeep = pairs.filter(
-      (pair) => pair.Player1Id !== player1Id && pair.Player2Id !== player2Id
-    );
-    console.log("pairs to keep", pairsToKeep);
+		const docPlayer1Ref = player1Id.startsWith("guest_")
+			? doc(db, `Events/${eventId}/Players/${player1Id}`)
+			: doc(db, `Users/${player1Id}`);
+		const docPlayer2Ref = player2Id.startsWith("guest_")
+			? doc(db, `Events/${eventId}/Players/${player2Id}`)
+			: doc(db, `Users/${player2Id}`);
 
-    const playersDocToDelete = query(
-      collection(db, `Events/${eventId}/Players`),
-      where("UserId", "in", [player1Id, player2Id])
-    );
-    const playersSnap = await getDocs(playersDocToDelete);
-    playersSnap.forEach((playerDoc) => {
-      deleteDoc(playerDoc.ref);
-    });
+		console.log(docPlayer1Ref, docPlayer2Ref);
 
-    const docPlayer1Ref = player1Id.startsWith("guest_")
-      ? doc(db, `Events/${eventId}/Players/${player1Id}`)
-      : doc(db, `Users/${player1Id}`);
-    const docPlayer2Ref = player2Id.startsWith("guest_")
-      ? doc(db, `Events/${eventId}/Players/${player2Id}`)
-      : doc(db, `Users/${player2Id}`);
+		await updateDoc(eventDocRef, {
+			ModifiedAt: Timestamp.fromDate(new Date()),
+			Pairs: pairsToKeep,
+			PlayersIds: arrayRemove(player1Id, player2Id),
+			// remove the raw player IDs from PlayersWithPairsIds (stored as IDs)
+			PlayersWithPairsIds: arrayRemove(player1Id, player2Id)
+		});
+	};
 
-    console.log(docPlayer1Ref, docPlayer2Ref);
+	function getNumberOfGroups(totalPairs) {
+		let groupSize;
 
-    await updateDoc(eventDocRef, {
-      ModifiedAt: Timestamp.fromDate(new Date()),
-      Pairs: pairsToKeep,
-      PlayersIds: arrayRemove(player1Id, player2Id),
-      // remove the raw player IDs from PlayersWithPairsIds (stored as IDs)
-      PlayersWithPairsIds: arrayRemove(player1Id, player2Id),
-    });
-  };
+		if (totalPairs % 4 === 0) groupSize = 4;
+		else if (totalPairs % 3 === 0) groupSize = 3;
+		else groupSize = 2;
 
-  function getNumberOfGroups(totalPairs) {
-    let groupSize;
+		return totalPairs / groupSize;
+	}
 
-    if (totalPairs % 4 === 0) groupSize = 4;
-    else if (totalPairs % 3 === 0) groupSize = 3;
-    else groupSize = 2;
+	const deleteEvent = async (eventId) => {
+		try {
+			await deleteAllGamesForEvent(eventId);
+			const eventDocRef = doc(db, `Events/${eventId}`);
+			await deleteDoc(eventDocRef);
+		} catch (error) {
+			console.error("Error deleting event:", error);
+			throw error;
+		}
+	};
 
-    return totalPairs / groupSize;
-  }
-
-  const deleteEvent = async (eventId) => {
-    try {
-      await deleteAllGamesForEvent(eventId);
-      const eventDocRef = doc(db, `Events/${eventId}`);
-      await deleteDoc(eventDocRef);
-    } catch (error) {
-      console.error("Error deleting event:", error);
-      throw error;
-    }
-  };
-
-  return {
-    addSinglePair,
-    createMatchsRobinHood,
-    createMatchsElimination,
-    createBracketsElimination,
-    createPremierPadelBrackets,
-    registerFromEvent,
-    unregisterFromEvent,
-    createPairsForEvent,
-    deleteAllGamesForEvent,
-    deletePairFromEvent,
-    deleteEvent,
-    updateMatchsDate
-  };
+	return {
+		addSinglePair,
+		createMatchsRobinHood,
+		createMatchsElimination,
+		createBracketsElimination,
+		createPremierPadelBrackets,
+		registerFromEvent,
+		unregisterFromEvent,
+		createPairsForEvent,
+		deleteAllGamesForEvent,
+		deletePairFromEvent,
+		deleteEvent,
+		updateMatchsDate
+	};
 };
 
 export default useEventActions;
