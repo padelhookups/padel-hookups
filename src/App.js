@@ -164,7 +164,7 @@ function App() {
 							}
 						/>
 						<Route
-							path='/PremierPadelMatch/:matchId'
+							path='/PremierPadelMatch/:eventId/:matchId'
 							element={
 								<ProtectedRoute user={user}>
 									<PremierPadelMatch />

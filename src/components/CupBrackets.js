@@ -217,16 +217,9 @@ const CupBrackets = ({ eventId, tournamentId, sponsorColor }) => {
 			{
 				clear: true,
 				onMatchClick: (match) => {
-					console.log("A match was clicked", match);
-					// NEW LOGIC
-					// navigate to PremierPadelMatch
-					const safeMatch = JSON.parse(JSON.stringify(match));
-
-					navigate(`/PremierPadelMatch/${match.id}`, {
+					navigate(`/PremierPadelMatch/${eventId}/${match.id}`, {
 						state: {
-							eventId: eventId,
-							mainColor: sponsorColor,
-							match: safeMatch
+							mainColor: sponsorColor
 						}
 					});
 				},
