@@ -131,7 +131,7 @@ const SearchPlayer = ({ open, onClose, playersIds, mode, sponsorColor }) => {
             const isExisting = options.some(
               (option) => inputValue === option.label
             );
-            if (inputValue !== "" && !isExisting) {
+            if (inputValue !== "" && !isExisting && user.isAdmin) {
               filtered.push({
                 inputValue,
                 label: `Add "${inputValue}"`,
