@@ -5,7 +5,9 @@ import {
     query,
     where,
     orderBy,
-    Timestamp
+    Timestamp,
+    deleteDoc,
+    doc
 } from "firebase/firestore";
 import firebase from "../../firebase-config";
 import {
@@ -25,7 +27,7 @@ import {
     IconButton,
     Tooltip
 } from "@mui/material";
-import { Person, Search, Refresh } from "@mui/icons-material";
+import { Person, Search, Refresh, Delete } from "@mui/icons-material";
 
 const Invitations = () => {
     const db = firebase.db;
@@ -33,6 +35,15 @@ const Invitations = () => {
     const [invites, setInvites] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
+
+    const deleteInvite = async (id) => {
+        try {
+            await deleteDoc(doc(db, "Invites", id));
+            setInvites((prev) => prev.filter((inv) => inv.id !== id));
+        } catch (e) {
+            console.error("Error deleting invite:", e);
+        }
+    };
 
     const fetchInvites = useCallback(async () => {
         try {
@@ -123,7 +134,18 @@ const Invitations = () => {
                                         : null;
                                 return (
                                     <React.Fragment key={inv.id}>
-                                        <ListItem sx={{ py: 2 }}>
+                                        <ListItem
+                                            sx={{ py: 2 }}
+                                            secondaryAction={
+                                                <Tooltip title='Delete invite'>
+                                                    <IconButton
+                                                        edge='end'
+                                                        color='error'
+                                                        onClick={() => deleteInvite(inv.id)}>
+                                                        <Delete />
+                                                    </IconButton>
+                                                </Tooltip>
+                                            }>
                                             <Avatar
                                                 sx={{
                                                     bgcolor: "primary.main",
