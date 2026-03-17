@@ -15,7 +15,14 @@ import reportWebVitals from "./reportWebVitals";
 const theme = createTheme({
   palette: {
     primary: {
-      main: "#b88f34", // Your new primary color (e.g., blue)
+      //main: "#b88f34", // Your new primary color (e.g., blue)
+      main: "#E3F77E"
+      //main: "#105DCE", // Your new primary color (e.g., blue)
+    },
+    text: {
+      primary: "#105DCE",
+      secondary: "#4B5563",
+      disabled: "#9CA3AF",
     },
   },
   typography: {
