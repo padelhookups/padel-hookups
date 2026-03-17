@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   fetchUsers,
@@ -100,7 +100,7 @@ const SearchPlayer = ({ open, onClose, playersIds, mode, sponsorColor }) => {
               <Person fontSize="small" />
             </Avatar>
             <Typography variant="h6" fontWeight="bold">
-              {user.Name}
+              {user?.Name || "Player"}
             </Typography>
           </Stack>
         )}
@@ -131,7 +131,8 @@ const SearchPlayer = ({ open, onClose, playersIds, mode, sponsorColor }) => {
             const isExisting = options.some(
               (option) => inputValue === option.label
             );
-            if (inputValue !== "" && !isExisting && user.isAdmin) {
+            
+            if (inputValue !== "" && !isExisting && user?.IsAdmin) {
               filtered.push({
                 inputValue,
                 label: `Add "${inputValue}"`,
