@@ -37,7 +37,13 @@ import {
   CircularProgress,
 } from "@mui/material";
 
-import { Add, Group } from "@mui/icons-material";
+import {
+  Add,
+  Group,
+  OpenInNew,
+  PictureAsPdf,
+  UploadFile,
+} from "@mui/icons-material";
 
 import ConfirmationModal from "../components/ConfirmationModal";
 import SuccessModal from "../components/SuccessModal";
@@ -45,28 +51,40 @@ import SearchPlayer from "../components/SearchPlayer";
 import CupBrackets from "../components/CupBrackets";
 import { Person, Delete as DeleteIcon } from "@mui/icons-material";
 
-const SponsorBanner = ({ mainSponsor, logoSponsor }) => (
+const SponsorBanner = ({
+  mainSponsor,
+  logoSponsor,
+  rulesPdfUrl,
+  onPreviewRules,
+  sponsorColor,
+}) => (
   <Paper sx={{ p: 2, mb: 2 }} elevation={1}>
-    <Stack direction="row" alignItems="center" spacing={2}>
+    <Stack
+      direction={{ xs: "column", sm: "row" }}
+      alignItems={{ xs: "flex-start", sm: "center" }}
+      spacing={2}
+    >
       <Box sx={{ flex: 1 }}>
         <Typography variant="subtitle2" color="text.secondary">
           Main Sponsor
         </Typography>
         <Typography variant="h6" fontWeight={700}>
-          {mainSponsor}
+          {mainSponsor || "No sponsor yet"}
         </Typography>
       </Box>
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-        <Typography variant="subtitle2" color="text.secondary">
-          Logo Sponsor
-        </Typography>
-        <Avatar
-          src={logoSponsor}
-          sx={{ bgcolor: "transparent", width: 56, height: 56, fontSize: 20 }}
-        >
-          {logoSponsor ? "" : "L"}
-        </Avatar>
-      </Box>
+      <Stack direction="row" alignItems="center" spacing={2}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Typography variant="subtitle2" color="text.secondary">
+            Logo Sponsor
+          </Typography>
+          <Avatar
+            src={logoSponsor}
+            sx={{ bgcolor: "transparent", width: 56, height: 56, fontSize: 20 }}
+          >
+            {logoSponsor ? "" : "L"}
+          </Avatar>
+        </Box>        
+      </Stack>
     </Stack>
   </Paper>
 );
@@ -111,6 +129,12 @@ const EventCup = () => {
   const [sponsorLogoPreview, setSponsorLogoPreview] = useState("");
   const [savingSponsor, setSavingSponsor] = useState(false);
   const [manageSponsorOpen, setManageSponsorOpen] = useState(false);
+  const [rulesPdfFile, setRulesPdfFile] = useState(null);
+  const [rulesPdfUrl, setRulesPdfUrl] = useState("");
+  const [rulesPdfName, setRulesPdfName] = useState("");
+  const [savingRules, setSavingRules] = useState(false);
+  const [manageRulesOpen, setManageRulesOpen] = useState(false);
+  const [previewRulesOpen, setPreviewRulesOpen] = useState(false);
 
   useEffect(() => {
     if (!initialFetchDone.current) {
@@ -134,6 +158,12 @@ const EventCup = () => {
     setSponsorName(main);
     setSponsorColor(color);
     setSponsorLogoPreview(logo);
+  }, [event]);
+
+  useEffect(() => {
+    setRulesPdfUrl(event?.RulesPdfUrl || "");
+    setRulesPdfName(event?.RulesPdfName || "");
+    setRulesPdfFile(null);
   }, [event]);
 
   useEffect(() => {
@@ -238,6 +268,21 @@ const EventCup = () => {
     return playersToExcludeIds;
   }, [event?.PlayersIds, event?.PlayersWithPairsIds, user]);
 
+  const uploadRulesPdfToStorage = async (file) => {
+    const storage = getStorage();
+    const sanitizedName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const storageRef = ref(
+      storage,
+      `Events/${event.id}/Rules/${Date.now()}-${sanitizedName}`,
+    );
+
+    await uploadBytes(storageRef, file, {
+      contentType: file.type || "application/pdf",
+    });
+
+    return getDownloadURL(storageRef);
+  };
+
   const TabPanel = ({ children, value, index }) => (
     <div
       hidden={value !== index}
@@ -332,7 +377,26 @@ const EventCup = () => {
             <SponsorBanner
               mainSponsor={event.MainSponsor}
               logoSponsor={event.LogoSponsor}
+              rulesPdfUrl={rulesPdfUrl}
+              sponsorColor={sponsorColor}
+              onPreviewRules={() => setPreviewRulesOpen(true)}
             />
+            {rulesPdfUrl && (
+              <Box sx={{ mb: 2 }}>
+                <Button
+                  variant="outlined"
+                  fullWidth
+                  startIcon={<PictureAsPdf />}
+                  sx={{
+                    borderColor: sponsorColor || sponsorColor || "primary.main",
+                    color: sponsorColor || sponsorColor || "primary.main",
+                  }}
+                  onClick={() => setPreviewRulesOpen(true)}
+                >
+                  View Tournament Rules
+                </Button>
+              </Box>
+            )}
             <Paper elevation={1} sx={{ p: 2 }}>
               <Typography variant="body1" color="text.secondary">
                 {event.description || "Cup overview and details."}
@@ -411,17 +475,31 @@ const EventCup = () => {
 
             {user?.IsAdmin && (
               <Box sx={{ mt: 2 }}>
-                <Button
-                  variant="outlined"
-                  fullWidth
-                  sx={{
-                    borderColor: sponsorColor || sponsorColor || "primary.main",
-                    color: sponsorColor || sponsorColor || "primary.main",
-                  }}
-                  onClick={() => setManageSponsorOpen(true)}
-                >
-                  Manage Sponsor
-                </Button>
+                <Stack spacing={1}>
+                  <Button
+                    variant="outlined"
+                    fullWidth
+                    sx={{
+                      borderColor: sponsorColor || sponsorColor || "primary.main",
+                      color: sponsorColor || sponsorColor || "primary.main",
+                    }}
+                    onClick={() => setManageSponsorOpen(true)}
+                  >
+                    Manage Sponsor
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    fullWidth
+                    startIcon={<UploadFile />}
+                    sx={{
+                      borderColor: sponsorColor || sponsorColor || "primary.main",
+                      color: sponsorColor || sponsorColor || "primary.main",
+                    }}
+                    onClick={() => setManageRulesOpen(true)}
+                  >
+                    Manage Rules PDF
+                  </Button>
+                </Stack>
               </Box>
             )}
             <Box sx={{ mt: 2 }}>
@@ -1001,6 +1079,7 @@ const EventCup = () => {
             <Button
               fullWidth
               variant="contained"
+              disabled={savingSponsor}
               sx={{
                 bgcolor: sponsorColor || sponsorColor || "primary.main",
                 color: "white",
@@ -1024,10 +1103,224 @@ const EventCup = () => {
                 setSavingSponsor(false);
               }}
             >
-              <Typography color="white">Save Sponsor</Typography>
+              <Typography color="white">
+                {savingSponsor ? "Saving..." : "Save Sponsor"}
+              </Typography>
             </Button>
           </Stack>
         </DialogActions>
+      </Dialog>
+      <Dialog
+        fullWidth
+        maxWidth="sm"
+        open={manageRulesOpen}
+        onClose={() => setManageRulesOpen(false)}
+      >
+        <DialogTitle>Manage Rules PDF</DialogTitle>
+        <DialogContent>
+          <Paper elevation={0} sx={{ p: 2 }}>
+            <Stack spacing={2}>
+              <Typography variant="body2" color="text.secondary">
+                Upload the PDF with the tournament rules. All users will be able
+                to preview it from the rules icon.
+              </Typography>
+
+              <Box>
+                <input
+                  accept="application/pdf,.pdf"
+                  style={{ display: "none" }}
+                  id="rules-pdf-input-modal"
+                  type="file"
+                  onChange={(e) => {
+                    const file = e.target.files && e.target.files[0];
+
+                    if (!file) {
+                      return;
+                    }
+
+                    const isPdf =
+                      file.type === "application/pdf" ||
+                      file.name.toLowerCase().endsWith(".pdf");
+
+                    if (!isPdf) {
+                      alert("Please select a PDF file.");
+                      e.target.value = "";
+                      return;
+                    }
+
+                    setRulesPdfFile(file);
+                    setRulesPdfName(file.name);
+                  }}
+                />
+                <label htmlFor="rules-pdf-input-modal">
+                  <Button
+                    variant="outlined"
+                    component="span"
+                    startIcon={<UploadFile />}
+                    sx={{
+                      borderColor: sponsorColor || "primary.main",
+                      color: sponsorColor || "primary.main",
+                    }}
+                  >
+                    Select PDF
+                  </Button>
+                </label>
+              </Box>
+
+              <Paper variant="outlined" sx={{ p: 2 }}>
+                <Stack direction="row" spacing={1.5} alignItems="center">
+                  <PictureAsPdf sx={{ color: "error.main" }} />
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography variant="subtitle2">Current File</Typography>
+                    <Typography variant="body2" color="text.secondary" noWrap>
+                      {rulesPdfName || "No rules PDF uploaded yet"}
+                    </Typography>
+                  </Box>
+                </Stack>
+              </Paper>
+
+              {rulesPdfUrl && (
+                <Button
+                  variant="text"
+                  startIcon={<OpenInNew />}
+                  sx={{
+                    width: "fit-content",
+                    color: sponsorColor || "primary.main",
+                  }}
+                  onClick={() => setPreviewRulesOpen(true)}
+                >
+                  Preview current PDF
+                </Button>
+              )}
+            </Stack>
+          </Paper>
+        </DialogContent>
+        <DialogActions>
+          <Stack direction="column" spacing={2} sx={{ width: "100%", px: 0 }}>
+            <Button
+              variant="outlined"
+              fullWidth
+              sx={{
+                borderColor: sponsorColor || "primary.main",
+                color: sponsorColor || "primary.main",
+              }}
+              onClick={() => setManageRulesOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              fullWidth
+              variant="outlined"
+              disabled={savingRules || (!rulesPdfUrl && !rulesPdfFile)}
+              sx={{ borderColor: "error.main", color: "error.main" }}
+              onClick={async () => {
+                if (!event?.id) return;
+
+                try {
+                  setSavingRules(true);
+                  const eventRef = doc(db, `Events/${event.id}`);
+                  await updateDoc(eventRef, {
+                    RulesPdfUrl: null,
+                    RulesPdfName: null,
+                    ModifiedAt: new Date(),
+                  });
+
+                  setRulesPdfFile(null);
+                  setRulesPdfName("");
+                  setRulesPdfUrl("");
+                  dispatch(fetchEvents({ db, forceRefresh: false }));
+                  setManageRulesOpen(false);
+                  setPreviewRulesOpen(false);
+                } catch (err) {
+                  console.error("remove rules pdf error", err);
+                }
+
+                setSavingRules(false);
+              }}
+            >
+              Remove Rules PDF
+            </Button>
+            <Button
+              fullWidth
+              variant="contained"
+              disabled={savingRules || (!rulesPdfFile && !rulesPdfUrl)}
+              sx={{
+                bgcolor: sponsorColor || sponsorColor || "primary.main",
+                color: "white",
+              }}
+              onClick={async () => {
+                if (!event?.id) return;
+
+                try {
+                  setSavingRules(true);
+
+                  let nextRulesPdfUrl = rulesPdfUrl || null;
+                  let nextRulesPdfName = rulesPdfName || null;
+
+                  if (rulesPdfFile) {
+                    nextRulesPdfUrl = await uploadRulesPdfToStorage(rulesPdfFile);
+                    nextRulesPdfName = rulesPdfFile.name;
+                  }
+
+                  const eventRef = doc(db, `Events/${event.id}`);
+                  await updateDoc(eventRef, {
+                    RulesPdfUrl: nextRulesPdfUrl,
+                    RulesPdfName: nextRulesPdfName,
+                    ModifiedAt: new Date(),
+                  });
+
+                  setRulesPdfUrl(nextRulesPdfUrl || "");
+                  setRulesPdfName(nextRulesPdfName || "");
+                  setRulesPdfFile(null);
+                  dispatch(fetchEvents({ db, forceRefresh: false }));
+                  setManageRulesOpen(false);
+                } catch (err) {
+                  console.error("save rules pdf error", err);
+                }
+
+                setSavingRules(false);
+              }}
+            >
+              {savingRules ? "Saving..." : "Save Rules PDF"}
+            </Button>
+          </Stack>
+        </DialogActions>
+      </Dialog>
+      <Dialog
+        fullWidth
+        maxWidth="md"
+        open={previewRulesOpen}
+        onClose={() => setPreviewRulesOpen(false)}
+      >
+        <DialogTitle>Rules Preview</DialogTitle>
+        <DialogContent dividers>
+          {rulesPdfUrl ? (
+            <Stack spacing={2}>
+              <Box
+                component="iframe"
+                src={rulesPdfUrl}
+                title="Rules PDF preview"
+                sx={{ width: "100%", height: "70vh", border: 0 }}
+              />
+              <Button
+                variant="outlined"
+                startIcon={<OpenInNew />}
+                sx={{
+                  alignSelf: "flex-start",
+                  borderColor: sponsorColor || "primary.main",
+                  color: sponsorColor || "primary.main",
+                }}
+                onClick={() => window.open(rulesPdfUrl, "_blank", "noopener,noreferrer")}
+              >
+                Open in new tab
+              </Button>
+            </Stack>
+          ) : (
+            <Typography color="text.secondary">
+              No rules PDF is available for this event yet.
+            </Typography>
+          )}
+        </DialogContent>
       </Dialog>
       {user?.IsAdmin && (
         <Fab
