@@ -217,7 +217,7 @@ const Home = () => {
 			case "Tournament":
 				return "error";
 			case "Friendly":
-				return "success";
+				return "friendly";
 			case "Training":
 				return "info";
 			default:
@@ -244,7 +244,7 @@ const Home = () => {
 				<>
 					<Paper
 						sx={{
-							bgcolor: "#b88f34",
+							bgcolor: "primary.main",
 							color: "white",
 							textAlign: "start",
 							height: "125px",
@@ -275,7 +275,8 @@ const Home = () => {
 						<TabContext value={activeTab}>
 							<TabList
 								onChange={(e, v) => setActiveTab(v)}
-								variant='fullWidth'>
+								variant='fullWidth'
+								sx={{ bgcolor: "secondary.main" }}>
 								<Tab label='Tour 2026' value='tour' />
 								{/* ||
 								user?.IsTester  */}
@@ -315,7 +316,7 @@ const Home = () => {
 				<>
 					<Paper
 						sx={{
-							bgcolor: "#b88f34",
+							bgcolor: "primary.main",
 							color: "white",
 							textAlign: "center",
 							height: "14em",

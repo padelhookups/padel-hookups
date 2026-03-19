@@ -103,8 +103,8 @@ export default function ConfirmEditModal({
 											cx='32'
 											cy='32'
 											r='28'
-											fill='#b88f34'
-											stroke='#a67c2a'
+											fill='#105DCE'
+											stroke='#105DCE'
 											strokeWidth='3'
 										/>
 									</svg>
@@ -135,7 +135,7 @@ export default function ConfirmEditModal({
 									top: "0%",
 									transform: "translate(-50%, -50%)",
 									animation: "settingsRotate 4s linear infinite",
-									color: "#b88f34"
+									color: "primary.main"
 								}}>
 								{/* Small Padel Ball */}
 								<Box
@@ -188,7 +188,8 @@ export default function ConfirmEditModal({
 									width: "80px",
 									height: "80px",
 									borderRadius: "50%",
-									border: "3px solid #b88f34",
+									border: "3px solid",
+									borderColor: "primary.main",
 									left: "50%",
 									top: "43%",
 									transform: "translate(-50%, -50%)",
@@ -205,7 +206,7 @@ export default function ConfirmEditModal({
 						component='h2'
 						sx={{
 							fontWeight: "bold",
-							color: "#b88f34",
+							color: "primary.main",
 							mb: 2
 						}}>
 						{title}

@@ -32,7 +32,7 @@ const ProfileDetails = ({ user, dateOfBirth, onEditClick }) => {
         <List>
           <ListItem>
             <ListItemIcon>
-              <Person />
+              <Person color="primary" />
             </ListItemIcon>
             <ListItemText
               primary='Display Name'
@@ -42,7 +42,7 @@ const ProfileDetails = ({ user, dateOfBirth, onEditClick }) => {
           <Divider />
           <ListItem>
             <ListItemIcon>
-              <Cake />
+              <Cake color="primary" />
             </ListItemIcon>
             <ListItemText
               primary='Date of Birth'
@@ -56,7 +56,7 @@ const ProfileDetails = ({ user, dateOfBirth, onEditClick }) => {
           <Divider />
           <ListItem>
             <ListItemIcon>
-              <CalendarToday />
+              <CalendarToday color="primary" />
             </ListItemIcon>
             <ListItemText
               primary='Member Since'
@@ -72,7 +72,7 @@ const ProfileDetails = ({ user, dateOfBirth, onEditClick }) => {
           <Divider />
           <ListItem>
             <ListItemIcon>
-              <WavingHand />
+              <WavingHand color="primary" />
             </ListItemIcon>
             <ListItemText
               primary="Best Hand"
@@ -82,7 +82,7 @@ const ProfileDetails = ({ user, dateOfBirth, onEditClick }) => {
           <Divider />
           <ListItem>
             <ListItemIcon>
-              <ShowChart />
+              <ShowChart color="primary" />
             </ListItemIcon>
             <ListItemText
               primary="Player Level"

@@ -106,7 +106,7 @@ const EventCup = () => {
   const [type, setType] = useState("joinGame");
   const [modeToSearchPlayer, setModeToSearchPlayer] = useState("single");
   const [sponsorName, setSponsorName] = useState("");
-  const [sponsorColor, setSponsorColor] = useState("#b88f34");
+  const [sponsorColor, setSponsorColor] = useState("#105DCE");
   const [sponsorLogoFile, setSponsorLogoFile] = useState(null);
   const [sponsorLogoPreview, setSponsorLogoPreview] = useState("");
   const [savingSponsor, setSavingSponsor] = useState(false);
@@ -129,7 +129,7 @@ const EventCup = () => {
   useEffect(() => {
     // Prefill sponsor fields from event or cup
     const main = event?.MainSponsor || "";
-    const color = event?.SponsorColor || "#b88f34";
+    const color = event?.SponsorColor || "#105DCE";
     const logo = event?.LogoSponsor || "";
     setSponsorName(main);
     setSponsorColor(color);
@@ -272,7 +272,7 @@ const EventCup = () => {
     <>
       <Paper
         sx={{
-          bgcolor: sponsorColor || sponsorColor || "#b88f34",
+          bgcolor: sponsorColor || sponsorColor || "#105DCE",
           color: "white",
           textAlign: "start",
           pt: "env(safe-area-inset-top)",
@@ -988,7 +988,7 @@ const EventCup = () => {
                   });
                   setSponsorName("");
                   setSponsorLogoPreview("");
-                  setSponsorColor(sponsorColor || "#b88f34");
+                  setSponsorColor(sponsorColor || "#105DCE");
                   dispatch(fetchEvents({ db, forceRefresh: false }));
                   setManageSponsorOpen(false);
                 } catch (err) {

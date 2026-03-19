@@ -158,7 +158,7 @@ const Benefits = () => {
 			<Paper
 				sx={{
 					borderRadius: 0,
-					bgcolor: "#b88f34",
+					bgcolor: "primary.main",
 					color: "white",
 					height: 150,
 					/* Push header below iOS notch */
@@ -263,7 +263,8 @@ const Benefits = () => {
 									<CardContent
 										sx={{
 											flexGrow: 1,
-											borderLeft: "5px solid #b88f34",
+											borderLeft: "5px solid",
+											borderColor: "primary.main",
 											pt: 3,
 											/* minHeight: {
 												xs: "150px",  // mobile

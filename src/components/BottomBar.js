@@ -10,22 +10,22 @@ const BottomBar = () => {
 	const menuItems = [
 		{
 			path: "/Home",
-			icon: <Home />,
+			icon: <Home color='inherit' />,
 			label: "Home"
 		},
 		{
 			path: "/Community",
-			icon: <Group />,
+			icon: <Group color='inherit' />,
 			label: "Community"
 		},
 		{
 			path: "/Profile",
-			icon: <Person />,
+			icon: <Person color='inherit' />,
 			label: "Profile"
 		},
 		{
 			path: "/Settings",
-			icon: <Settings />,
+			icon: <Settings color='inherit' />,
 			label: "Settings"
 		}
 	];
@@ -45,7 +45,7 @@ const BottomBar = () => {
 				bottom: 0,
 				left: 0,
 				right: 0,
-				zIndex: 1000,
+				zIndex: 1000
 			}}
 			elevation={8}>
 			<BottomNavigation
@@ -53,10 +53,11 @@ const BottomBar = () => {
 				onChange={handleChange}
 				showLabels
 				sx={{
+					bgcolor: "primary.main",
 					height: 60,
 					minHeight: 60,
 					"& .MuiBottomNavigationAction-root": {
-						minWidth: "auto",
+						minWidth: "auto"
 					}
 				}}>
 				{menuItems.map((item, index) => (
@@ -64,6 +65,10 @@ const BottomBar = () => {
 						key={item.path}
 						label={item.label}
 						icon={item.icon}
+						sx={{
+							color: "secondary.main",
+							"&.Mui-selected": { color: "primary.main", bgcolor: "secondary.main" },
+						}}
 					/>
 				))}
 			</BottomNavigation>

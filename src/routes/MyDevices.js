@@ -75,7 +75,7 @@ const MyDevices = () => {
       <Paper
         sx={{
           borderRadius: 0,
-          bgcolor: "#b88f34",
+          bgcolor: "primary.main",
           color: "white",
           pt: "env(safe-area-inset-top)"
         }}
