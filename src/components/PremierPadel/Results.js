@@ -33,7 +33,6 @@ const Results = ({ match, onSubmit, mainColor }) => {
 	const [showResults, setShowResults] = useState(true);
 	const [phase, setPhase] = useState("entry"); // entry | pending
 	const [scores, setScores] = useState(initialScores());
-	const [showSuperTB, setShowSuperTB] = useState(false);
 
 	useEffect(() => {
 		if (match.Location) {
@@ -58,8 +57,7 @@ const Results = ({ match, onSubmit, mainColor }) => {
 	const s1w = getSetWinner(1),
 		s2w = getSetWinner(2);
 	const autoSuperTB = !!(s1w && s2w && s1w !== s2w);
-	const superTBActive = showSuperTB || autoSuperTB;
-	const setsToCount = superTBActive ? [1, 2, 3] : [1, 2];
+	const setsToCount = autoSuperTB ? [1, 2, 3] : [1, 2];
 
 	const winsA = setsToCount.filter((s) => getSetWinner(s) === "a").length;
 	const winsB = setsToCount.filter((s) => getSetWinner(s) === "b").length;
@@ -101,7 +99,6 @@ const Results = ({ match, onSubmit, mainColor }) => {
 
 	function handleCancel() {
 		setScores(initialScores());
-		setShowSuperTB(false);
 		setPhase("entry");
 	}
 
@@ -184,7 +181,7 @@ const Results = ({ match, onSubmit, mainColor }) => {
 						</Box>
 
 						{/* Set rows */}
-						{SETS.filter((s) => s.key < 3 || superTBActive).map(
+						{SETS.filter((s) => s.key < 3 || autoSuperTB).map(
 							(set, idx, arr) => (
 								<Box
 									key={set.key}
@@ -222,7 +219,7 @@ const Results = ({ match, onSubmit, mainColor }) => {
 					</Box>
 
 					{/* Super tiebreak toggle */}
-					{!autoSuperTB && (
+					{/* {!autoSuperTB && (
 						<Box px={2} pt={1.5}>
 							<Button
 								onClick={() => setShowSuperTB((v) => !v)}
@@ -241,13 +238,10 @@ const Results = ({ match, onSubmit, mainColor }) => {
 										color: mainColor,
 										background: "#fdf8ee"
 									}
-								}}>
-								{showSuperTB
-									? "− Remove Super Tiebreak"
-									: "+ Add Super Tiebreak"}
+								}}>								
 							</Button>
 						</Box>
-					)}
+					)} */}
 
 					{/* Winner preview */}
 					{hasAnyScore && (
