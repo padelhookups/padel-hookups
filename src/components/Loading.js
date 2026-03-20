@@ -9,6 +9,6 @@ export default function Loading({isGenericLoading}) {
             height: isGenericLoading ? '100vh' : '100%',
             backgroundColor: "#105DCE"
         }}>
-        <img src={logo} alt="Loading..." style={{height: "50%", maxWidth: "80%"}} />
+        <img src={logo} alt="Loading..." style={{height: "50%", maxWidth: "60%"}} />
     </div>;
 }

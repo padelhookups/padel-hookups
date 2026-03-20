@@ -107,7 +107,7 @@ function App() {
 		// so they can access it later if they change their mind
 	};
 
-	if (loading) {
+	if (!loading) {
 		// You can show a spinner or skeleton here while auth state loads
 		return <Loading isGenericLoading={true} />;
 	}
