@@ -9,7 +9,7 @@ export default function NotificationPermissionModal({
 	_description = "Turn on notifications to receive match updates, invites, and important alerts.",
 	_confirmText = "Allow Notifications",
 	_cancelText = "Not Now",
-	_primaryColor = "#b88f34",
+	_primaryColor = "#105DCE",
 	_showAnimation = true,
 	notificationsChecked
 }) {

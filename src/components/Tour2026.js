@@ -160,7 +160,7 @@ const Tour2026 = ({
                             color={getColor(event.Type)}
                             size="small"
                             label={event.Type}
-                            sx={{ width: "100%" }}
+                            sx={{ width: "100%", color: "white" }}
                           />
                           {event.RecordGames && <span>🎥</span>}
                         </Box>

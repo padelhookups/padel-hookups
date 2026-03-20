@@ -12,11 +12,23 @@ import store from "./redux/store";
 import "./index.css";
 import reportWebVitals from "./reportWebVitals";
 
-const theme = createTheme({
+let theme = createTheme({
   palette: {
     primary: {
-      main: "#b88f34", // Your new primary color (e.g., blue)
+      //main: "#b88f34", // Your new primary color (e.g., blue)
+      main: "#105DCE", // Your new primary color (e.g., blue)
     },
+    secondary: {
+      main: "#E3F77E", // Your new secondary color (e.g., gray)
+    },
+    text: {
+      primary: "#105DCE",
+      secondary: "#4B5563",
+      disabled: "#9CA3AF",
+    },
+    error: {
+      main: "#ff5757", // Your new error color (e.g., red)
+    }
   },
   typography: {
     fontFamily: '"Segoe UI", sans-serif',
@@ -35,6 +47,15 @@ const theme = createTheme({
         underline: "none", // Prevents default underline
       },
     },
+  },
+});
+
+theme = createTheme(theme, {
+  palette: {
+    friendly: theme.palette.augmentColor({
+      color: { main: "#FFBD59" },
+      name: "friendly",
+    }),
   },
 });
 

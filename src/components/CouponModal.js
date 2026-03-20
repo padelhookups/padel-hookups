@@ -110,8 +110,8 @@ export default function CouponModal({
 											cx='32'
 											cy='32'
 											r='28'
-											fill='#b88f34'
-											stroke='#a67c2a'
+											fill='#105DCE'
+											stroke='#105DCE'
 											strokeWidth='3'
 										/>
 									</svg>
@@ -141,7 +141,7 @@ export default function CouponModal({
 									transform: "translate(-50%, -50%)",
 									animation:
 										"settingsRotate 4s linear infinite",
-									color: "#b88f34"
+									color: "primary.main"
 								}}>
 								<SportsBaseballOutlined
 									sx={{
@@ -149,7 +149,7 @@ export default function CouponModal({
 										top: -10,
 										left: 10,
 										fontSize: 16,
-										color: "#facc15",
+										color: "primary.main",
 										opacity: 0.7,
 										animation: "bounce 2s infinite 0.5s"
 									}}
@@ -162,7 +162,8 @@ export default function CouponModal({
 									width: "80px",
 									height: "80px",
 									borderRadius: "50%",
-									border: "3px solid #b88f34",
+									border: "3px solid",
+									borderColor: "primary.main",
 									left: "50%",
 									top: "43%",
 									transform: "translate(-50%, -50%)",
@@ -177,7 +178,7 @@ export default function CouponModal({
 					<Typography
 						variant='h4'
 						component='h2'
-						sx={{ fontWeight: "bold", color: "#b88f34", mb: 2 }}>
+						sx={{ fontWeight: "bold", color: "primary.main", mb: 2 }}>
 						{modalTitle}
 					</Typography>
 
@@ -259,7 +260,7 @@ export default function CouponModal({
 								startIcon={<ContentCopy />}
 								sx={{
 									background:
-										"linear-gradient(45deg, #b88f34 30%, rgba(184, 143, 52, 0.9) 90%)",
+										"linear-gradient(45deg,  primary.main 30%, primary.main 90%)",
 									color: "white",
 									fontWeight: 600,
 									py: 1.5,
@@ -268,7 +269,7 @@ export default function CouponModal({
 									fontSize: "1rem",
 									"&:hover": {
 										background:
-											"linear-gradient(45deg, rgba(184, 143, 52, 0.9) 30%, #b88f34 90%)",
+											"linear-gradient(45deg, primary.main 30%, primary.main 90%)",
 										boxShadow:
 											"0 8px 25px rgba(184, 143, 52, 0.3)"
 									}

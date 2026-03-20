@@ -12,7 +12,7 @@ export default function InstallAppModal({
 	_type = "install", // "install" or "open"
 	_showAnimation = true,
 	_features = null, // null for default, [] for none, or custom array
-	_primaryColor = "#b88f34"
+	_primaryColor = "#105DCE" // Accepts any valid CSS color or theme color
 }) {
 	const isInstallType = _type === "install";
 	const isOpenType = _type === "open";

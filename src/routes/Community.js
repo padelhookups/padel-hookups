@@ -544,7 +544,7 @@ const Community = () => {
         <>
             <Paper
                 sx={{
-                    bgcolor: "#b88f34",
+                    bgcolor: "primary.main",
                     color: "white",
                     textAlign: "start",
                     height: 80,
@@ -559,7 +559,7 @@ const Community = () => {
                     }}>
                     <Search>
                         <SearchIconWrapper>
-                            <SearchIcon />
+                            <SearchIcon color="secondary"/>
                         </SearchIconWrapper>
                         <StyledInputBase
                             placeholder='Search…'
@@ -569,12 +569,12 @@ const Community = () => {
                         />
                     </Search>
                     <LocalOffer
-                        sx={{ ml: 2 }}
+                        sx={{ ml: 2, color: "secondary.main" }}
                         onClick={() => {
                             navigate("/Benefits");
                         }}
                     />
-                    <Notifications sx={{ ml: 2 }} />
+                    <Notifications sx={{ ml: 2, color: "secondary.main" }}/>
                 </Box>
             </Paper>
 
@@ -819,7 +819,7 @@ const Community = () => {
                                                 <Avatar
                                                     src={userPhoto || undefined}
                                                     sx={{
-                                                        bgcolor: "#b88f34"
+                                                        bgcolor: "primary.main",
                                                     }}></Avatar>
                                             }
                                             action={
@@ -924,15 +924,15 @@ const Community = () => {
             {/* Admin Floating Action Button */}
             {user?.IsAdmin && !showResults && (
                 <Fab
-                    color='primary'
+                    color='secondary'
                     aria-label='add'
                     sx={{
                         position: "fixed",
                         bottom: 80,
                         right: 16,
-                        bgcolor: "#b88f34",
+                        bgcolor: "primary.main",
                         "&:hover": {
-                            bgcolor: "#9a7628"
+                            bgcolor: "primary.main"
                         }
                     }}
                     onClick={() => setOpenPostDialog(true)}>
@@ -1038,7 +1038,7 @@ const Community = () => {
                     <Button
                         onClick={handleCreatePost}
                         variant='contained'
-                        sx={{ bgcolor: "#b88f34" }}
+                        sx={{ bgcolor: "primary.main" }}
                         disabled={uploadingPost}>
                         {uploadingPost ? (
                             <CircularProgress size={24} color='inherit' />
@@ -1084,8 +1084,8 @@ const Community = () => {
                                             src={
                                                 likedUser.PhotoURL || undefined
                                             }
-                                            sx={{ bgcolor: "#b88f34", mr: 2 }}>
-                                            {!likedUser.PhotoURL && <Person />}
+                                            sx={{ bgcolor: "primary.main", mr: 2 }}>
+                                            {!likedUser.PhotoURL && <Person color="primary" />}
                                         </Avatar>
                                         <ListItemText
                                             primary={

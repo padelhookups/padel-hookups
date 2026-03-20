@@ -361,7 +361,7 @@ const Profile = () => {
           sx={{
             borderRadius: 0,
             bgcolor: "white",
-            color: "b88f34",
+            color: "primary.main",
             textAlign: "center",
             pt: "env(safe-area-inset-top, 0px)",
           }}

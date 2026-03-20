@@ -112,7 +112,7 @@ const Settings = () => {
 			<Paper
 				sx={{
 					borderRadius: 0,
-					bgcolor: "#b88f34",
+					bgcolor: "primary.main",
 					color: "white",
 					height: 150,
 					/* Push header below iOS notch */

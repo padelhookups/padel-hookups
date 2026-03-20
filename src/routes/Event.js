@@ -241,12 +241,12 @@ const Event = () => {
 				flexDirection='column'
 				bgcolor='background.default'>
 				<Box
-					sx={{
-						background: `linear-gradient(to right, hsl(var(--padel-primary)), hsl(var(--padel-primary)))`,
+					sx={(theme) => ({
+						background: `linear-gradient(to right, ${theme.palette.primary.main}, ${theme.palette.primary.main})`,
 						color: "white",
 						py: 3,
 						px: 2
-					}}>
+					})}>
 					<Container maxWidth='sm'>
 						<Typography variant='h6' fontWeight={700}>
 							Event not found
@@ -290,7 +290,7 @@ const Event = () => {
 		<>
 			<Paper
 				sx={{
-					bgcolor: "#b88f34",
+					bgcolor: "primary.main",
 					color: "white",
 					textAlign: "start",
 					/* Push header below iOS notch */
@@ -327,13 +327,14 @@ const Event = () => {
 						</Box>
 					</Container>
 				</Box>
-				<Box bgcolor='background.default' sx={{ pt: 2 }}>
+				<Box bgcolor='background.default'>
 					<Tabs
 						value={tab}
 						onChange={(event, newValue) => setTab(newValue)}
 						variant='fullWidth'
 						textColor='primary'
-						indicatorColor='primary'>
+						indicatorColor='primary'
+						sx={{ bgcolor: "secondary.main" }}>
 						<Tab label='Details' />
 						<Tab label='Players' />
 						<Tab label='Brackets' />
@@ -946,13 +947,14 @@ const Event = () => {
 																sx={{ mb: 2 }}>
 																<Typography
 																	variant='subtitle2'
-																	color='text.secondary'>
+																	color='primary.main'>
 																	Pair
 																</Typography>
 																<Chip
 																	size='small'
 																	label={`#${index + 1}`}
 																	sx={{
+																		bgcolor: "secondary.main",
 																		marginLeft:
 																			"auto"
 																	}}

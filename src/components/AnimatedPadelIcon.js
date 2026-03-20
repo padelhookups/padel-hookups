@@ -51,7 +51,7 @@ const AnimatedPadelIcon = ({
 							<path
 								d='M18 2 C6 2, 2 12, 2 20 C2 28, 6 36, 12 40 L18 44 L24 40 C30 36, 34 28, 34 20 C34 12, 30 2, 18 2 Z'
 								fill='rgba(254, 243, 199, 0.95)'
-								stroke='#b88f34'
+								stroke='#105DCE'
 								strokeWidth='3'
 							/>
 						</svg>
@@ -81,7 +81,7 @@ const AnimatedPadelIcon = ({
 										position: "absolute",
 										width: "2.5px",
 										height: "2.5px",
-										bgcolor: "#b88f34",
+										bgcolor: "primary.main",
 										borderRadius: "50%",
 										top: `${yPos}px`,
 										left: `${xPos}px`,
