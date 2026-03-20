@@ -7,7 +7,8 @@ export default function Loading({isGenericLoading}) {
             justifyContent: "center",
             alignItems: "center",
             height: isGenericLoading ? '100vh' : '100%',
+            backgroundColor: "#105DCE"
         }}>
-        <img style={{ width: '80%', maxHeight: '50%' }} src={logo} alt="Loading..." />
+        <img src={logo} alt="Loading..." />
     </div>;
 }
