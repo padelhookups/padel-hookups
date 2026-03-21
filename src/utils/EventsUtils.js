@@ -128,10 +128,11 @@ const useEventActions = () => {
 
 		const seeding = pairs.map((pair, i) => ({
 			id: i + 1, // manager-side temporary ID
-			name: pair.DisplayName // display name
+			name: pair.DisplayName// display name
 		}));
 
 		const groupCount = getNumberOfGroups(pairs.length);
+		debugger;
 
 		const groupStage = await manager.create.stage({
 			name: "Group Stage",
@@ -140,7 +141,7 @@ const useEventActions = () => {
 			settings: {
 				groupCount: groupCount,
 				size: pairs.length,
-				seedOrdering: ["groups.bracket_optimized"]
+				seedOrdering: ["groups.seed_optimized"]
 			},
 			seeding: seeding
 		});
@@ -162,7 +163,7 @@ const useEventActions = () => {
 
 		const seeding = pairs.map((pair, i) => ({
 			id: i + 1, // manager-side temporary ID
-			name: pair.DisplayName // display name
+			name: pair.DisplayName || pair.name // display name
 		}));
 
 		const eliminationStage = await manager.create.stage({
