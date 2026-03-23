@@ -345,7 +345,7 @@ const Event = () => {
 				</Box>
 				<Box
 					height='100vh'
-					maxHeight='calc(100vh - 230px - env(safe-area-inset-bottom))'
+					maxHeight='calc(100vh - 245px - env(safe-area-inset-bottom))'
 					display='flex'
 					flexDirection='column'
 					bgcolor='background.default'>
