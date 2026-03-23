@@ -398,56 +398,69 @@ const EliminationsBrackets = ({ eventId, tournamentId }) => {
 					height: "100%",
 					position: "relative"
 				}}>
-				{showEliminationStageButton &&
-					!hasEliminationStage &&
-					user?.IsAdmin && (
+				<Stack direction='row' justifyContent='center' sx={{ mb: 2 }}>
+					{showEliminationStageButton &&
+						!hasEliminationStage &&
+						user?.IsAdmin && (
+							<Button
+								variant='contained'
+								onClick={async () => {
+									nextStage();
+								}}
+								sx={{
+									display: "flex",
+									marginX: "auto !important",
+									marginTop: "2rem !important",
+									marginBottom: "1rem !important",
+									bgcolor: "primary.main",
+									color: "white",
+									"&:hover": {
+										bgcolor: "white",
+										color: "primary.main"
+									}
+								}}>
+								Create Elimination Stage
+							</Button>
+						)}
+					{user?.IsAdmin && user?.Name == "Tiago Pereira" && (
 						<Button
 							variant='contained'
-							onClick={async () => {
-								nextStage();
-							}}
+							color='error'
 							sx={{
 								display: "flex",
 								marginX: "auto !important",
 								marginTop: "2rem !important",
 								marginBottom: "1rem !important",
-								bgcolor: "primary.main",
+								bgcolor: "error.main",
 								color: "white",
 								"&:hover": {
 									bgcolor: "white",
-									color: "primary.main"
+									color: "error.main"
 								}
+							}}
+							onClick={async () => {
+								// apagar matches, rounds e groups para este stage
+								await adapter.delete("match", {
+									stage_id: stageId
+								});
+								await adapter.delete("round", {
+									stage_id: stageId
+								});
+								await adapter.delete("group", {
+									stage_id: stageId
+								});
+								await adapter.delete("stage", stageId);
+
+								console.log(
+									"Deleted old stage data for stage:",
+									stageId
+								);
 							}}>
-							Create Elimination Stage
+							Eliminate stage
 						</Button>
 					)}
-				{user?.IsAdmin && user?.Name == "Tiago Pereira" && (
-					<Button
-						sx={{
-							display: "flex",
-							marginX: "auto !important"
-						}}
-						onClick={async () => {
-							// apagar matches, rounds e groups para este stage
-							await adapter.delete("match", {
-								stage_id: stageId
-							});
-							await adapter.delete("round", {
-								stage_id: stageId
-							});
-							await adapter.delete("group", {
-								stage_id: stageId
-							});
-							await adapter.delete("stage", stageId);
+				</Stack>
 
-							console.log(
-								"Deleted old stage data for stage:",
-								stageId
-							);
-						}}>
-						Eliminate stage
-					</Button>
-				)}
 				<Stack direction='row' justifyContent='center' sx={{ mb: 2 }}>
 					<ToggleButtonGroup
 						color='primary'
