@@ -395,7 +395,7 @@ const EliminationsBrackets = ({ eventId, tournamentId }) => {
 			<div
 				style={{
 					width: "100%",
-					height: "Calc(100vh - 270px)",
+					height: "100%",
 					position: "relative"
 				}}>
 				{showEliminationStageButton &&
