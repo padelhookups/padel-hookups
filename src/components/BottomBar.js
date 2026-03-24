@@ -65,6 +65,7 @@ const BottomBar = () => {
 						key={item.path}
 						label={item.label}
 						icon={item.icon}
+						
 						sx={{
 							color: "secondary.main",
 							"&.Mui-selected": { color: "primary.main", bgcolor: "secondary.main" },

@@ -19,6 +19,8 @@ import {
 	InputAdornment,
 	InputLabel,
 	OutlinedInput,
+	Snackbar,
+	Alert,
 	Switch,
 	Typography
 } from "@mui/material";
@@ -40,6 +42,7 @@ function Login() {
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
+	const [errorMessage, setErrorMessage] = useState("");
 
 	useEffect(() => {
 		console.log("useEffect Login - user:", user);
@@ -78,6 +81,11 @@ function Login() {
 					})
 					.catch((error) => {
 						console.log("Error logging in:", error);
+						if(error.message === 'Firebase: Error (auth/invalid-credential).') {
+							setErrorMessage("Incorrect password. Please try again.");
+						} else {
+							setErrorMessage(error.message);
+						}
 					})
 					.finally(() => {
 						setIsLoading(false);
@@ -324,6 +332,15 @@ function Login() {
 					</Box>
 				</Box>
 			</Container>
+			<Snackbar
+				open={!!errorMessage}
+				autoHideDuration={4000}
+				onClose={() => setErrorMessage("")}
+				anchorOrigin={{ vertical: "bottom", horizontal: "center" }}>
+				<Alert severity='error' onClose={() => setErrorMessage("")} sx={{ width: "100%" }}>
+					{errorMessage}
+				</Alert>
+			</Snackbar>
 		</Box>
 	);
 }

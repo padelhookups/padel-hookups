@@ -128,8 +128,8 @@ export default function SuccessModal({
 							fontSize: "1rem",
 							"&:hover": {
 								background:
-									"linear-gradient(45deg, rgba(184, 143, 52, 0.9) 30%, #b88f34 90%)",
-								boxShadow: "0 8px 25px rgba(184, 143, 52, 0.3)"
+									"linear-gradient(45deg, #105DCE 30%, #105DCE 90%)",
+								boxShadow: "0 8px 25px rgba(16, 93, 206, 0.3)"
 							}
 						}}>
 						{_buttonText}

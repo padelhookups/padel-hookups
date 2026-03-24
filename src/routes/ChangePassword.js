@@ -112,7 +112,8 @@ function ChangePassword() {
 			fixed
 			sx={{
 				maxHeight: "calc(100vh - 60px)",
-				height: "calc(100vh - 60px)"
+				height: "calc(100vh - 60px)",
+				bgcolor: "primary.main"
 			}}>
 			<Box
 				sx={{
@@ -121,7 +122,8 @@ function ChangePassword() {
 					flexDirection: "column",
 					alignItems: "center",
 					justifyContent: "center",
-					pb: "80px"
+					pb: "80px",
+					color: "#fff"
 				}}>
 				<Box
 					component='img'
@@ -165,7 +167,17 @@ function ChangePassword() {
 									borderWidth: "2px" // outer second border
 								}
 							}}>
-							<InputLabel htmlFor='email'>Email</InputLabel>
+							<InputLabel
+								htmlFor='email'
+								sx={{
+									bgcolor: "secondary.main",
+									p: 0.5,
+									borderRadius: 1,
+									color: "primary.main",
+									fontWeight: "bold"
+								}}>
+								Email
+							</InputLabel>
 							<OutlinedInput
 								id='email'
 								value={email}
@@ -174,6 +186,7 @@ function ChangePassword() {
 								autoComplete='email'
 								required
 								onChange={(e) => setEmail(e.target.value)}
+								sx={{ bgcolor: "#fff" }}
 								startAdornment={
 									<InputAdornment position='start'>
 										<Email
@@ -205,7 +218,15 @@ function ChangePassword() {
 									borderWidth: "2px" // outer second border
 								}
 							}}>
-							<InputLabel htmlFor='newPassword'>
+							<InputLabel
+								htmlFor='newPassword'
+								sx={{
+									bgcolor: "secondary.main",
+									p: 0.5,
+									borderRadius: 1,
+									color: "primary.main",
+									fontWeight: "bold"
+								}}>
 								New Password
 							</InputLabel>
 							<OutlinedInput
@@ -219,6 +240,7 @@ function ChangePassword() {
 								}
 								onFocus={() => setIsPasswordFocused(true)}
 								onBlur={() => setIsPasswordFocused(false)}
+								sx={{ bgcolor: "#fff" }}
 								startAdornment={
 									<InputAdornment position='start'>
 										<Lock
@@ -438,7 +460,15 @@ function ChangePassword() {
 									borderWidth: "2px" // outer second border
 								}
 							}}>
-							<InputLabel htmlFor='confirmPassword'>
+							<InputLabel
+								htmlFor='confirmPassword'
+								sx={{
+									bgcolor: "secondary.main",
+									p: 0.5,
+									borderRadius: 1,
+									color: "primary.main",
+									fontWeight: "bold"
+								}}>
 								Confirm Password
 							</InputLabel>
 							<OutlinedInput
@@ -456,6 +486,7 @@ function ChangePassword() {
 								onBlur={() =>
 									setIsConfirmPasswordFocused(false)
 								}
+								sx={{ bgcolor: "#fff" }}
 								startAdornment={
 									<InputAdornment position='start'>
 										<Lock
@@ -573,7 +604,10 @@ function ChangePassword() {
 										!specialCharValid ||
 										!lengthValid))
 							}
-							id='change-password-button'>
+							id='change-password-button'
+							sx={{
+								bgcolor: "secondary.main"
+							}}>
 							{isLoading ? (
 								<CircularProgress
 									size={24}
@@ -583,13 +617,13 @@ function ChangePassword() {
 							<Typography
 								variant='body1'
 								sx={{
-									color: "#fff",
+									color: "primary.main",
 									textTransform: "capitalize",
 									fontWeight: "bold"
 								}}>
 								Update Password
 							</Typography>
-							<ChevronRight sx={{ color: "#fff" }} />
+							<ChevronRight sx={{ color: "primary.main" }} />
 						</Button>
 					</Box>
 				</Box>
