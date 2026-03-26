@@ -44,6 +44,12 @@ const PremierPadelMatch = () => {
 	const [currentTeam, setCurrentTeam] = useState(null);
 	const [mainColor, setMainColor] = useState(null);
 
+	// Determine tab indices based on schedule visibility
+	const showScheduleTab = user?.isAdmin || currentTeam;
+	const SUMMARY_TAB = 0;
+	const SCHEDULE_TAB = 1;
+	const RESULTS_TAB = showScheduleTab ? 2 : 1;
+
 	const onBack = () => {
 		// Implement navigation back to matches list
 		navigate(-1);
@@ -60,7 +66,7 @@ const PremierPadelMatch = () => {
 				const eventSnap = await getDoc(eventRef);
 				if (eventSnap.exists()) {
 					setEvent({ id: eventSnap.id, ...eventSnap.data() });
-					setMainColor(eventSnap.data().SponsorColor);
+					setMainColor(eventSnap.data().SponsorColor); 
 				} else {
 					console.error("Event not found for match:", eventIdParam);
 					return;
@@ -232,7 +238,22 @@ const PremierPadelMatch = () => {
 		};
 		console.log(updates);
 
-		/* await updateDoc(matchRef, updates); */
+		await updateDoc(matchRef, updates);
+	};
+
+	const handleCancelResults = async () => {
+		if (!eventIdParam || !event?.TournamentId || !match?.id) {
+			throw new Error("Missing data to cancel results");
+		}
+		var matchRef = doc(
+			db,
+			`Events/${eventIdParam}/TournamentData/${event.TournamentId}/matches/${match.id}`
+		);
+		const updates = {
+			results: null
+		};
+
+		await updateDoc(matchRef, updates);
 	};
 
 	return (
@@ -287,7 +308,7 @@ const PremierPadelMatch = () => {
 							height: "calc(100vh - 320px)",
 							overflowY: "auto"
 						}}>
-						{activeTab === 0 && (
+						{activeTab === SUMMARY_TAB && (
 							<Details
 								match={match}
 								event={event}
@@ -297,7 +318,7 @@ const PremierPadelMatch = () => {
 								mainColor={mainColor}
 							/>
 						)}
-						{activeTab === 1 && (
+						{activeTab === SCHEDULE_TAB && showScheduleTab && (
 							<>
 								<Schedule
 									match={match}
@@ -360,11 +381,15 @@ const PremierPadelMatch = () => {
 								/>
 							</>
 						)}
-						{activeTab === 2 && (
+						{activeTab === RESULTS_TAB && (
 							<Results
 								match={match}
 								mainColor={mainColor}
+								currentTeamId={currentTeam}
+								user={user}
+								allPlayersIds={allPlayersIds}
 								onSubmit={handleResults}
+								onCancel={handleCancelResults}
 							/>
 						)}
 					</Box>

@@ -338,9 +338,11 @@ const EliminationsBrackets = ({ eventId, tournamentId }) => {
 				{
 					clear: true,
 					onMatchClick: (match) => {
-						console.log("A match was clicked", match);
-						setSelectedMatch(match);
-						setUploadModalOpen(true);
+						if (user?.isAdmin) {
+							console.log("A match was clicked", match);
+							setSelectedMatch(match);
+							setUploadModalOpen(true);
+						}
 					},
 					customRoundName: (info, t) => {
 						// You have a reference to `t` in order to translate things.

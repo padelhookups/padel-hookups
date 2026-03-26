@@ -16,6 +16,16 @@ const Header = ({ match, event, onBack, mainColor }) => {
 	const computedRoundLabel = getRoundLabel(roundNumber, totalRounds);
 	const roundLabel = computedRoundLabel || match?.metadata?.label || "Match";
 
+	// Determine match status
+	const hasResults = match?.results != null;
+	const isScheduled = Boolean(match?.ChoosenDate && match?.ChoosenTime);
+	const statusColor = hasResults ? "#4caf50" : "#f0c040";
+	const statusText = hasResults
+		? "Played - see results"
+		: isScheduled
+			? "Schedule – not yet played"
+			: "Awaiting schedule – not yet played";
+
 	useEffect(() => {
 		console.log("Header match", match);
 		console.log("Header event", event);
@@ -139,7 +149,7 @@ const Header = ({ match, event, onBack, mainColor }) => {
 						width: 8,
 						height: 8,
 						borderRadius: "50%",
-						bgcolor: "#f0c040",
+						bgcolor: statusColor,
 						animation: "pulse 1.5s ease-in-out infinite",
 						"@keyframes pulse": {
 							"0%,100%": { opacity: 1, transform: "scale(1)" },
@@ -153,7 +163,7 @@ const Header = ({ match, event, onBack, mainColor }) => {
 						fontSize: 12,
 						fontWeight: 500
 					}}>
-					Awaiting schedule – not yet played
+					{statusText}
 				</Typography>
 			</Box>
 		</Box>
