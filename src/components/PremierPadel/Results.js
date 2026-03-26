@@ -35,11 +35,10 @@ const Results = ({ match, onSubmit, onCancel, mainColor, currentTeamId, user, al
 	const [showResults, setShowResults] = useState(true);
 	const [phase, setPhase] = useState("entry"); // entry | pending | toConfirm | confirmed
 	const [scores, setScores] = useState(null);
+	const isScheduled = Boolean(match?.ChoosenDate && match?.ChoosenTime);
 
 	useEffect(() => {
-		if (match.Location) {
-			setShowResults(true);
-		}
+		setShowResults(isScheduled || !!match?.results);
 		if (match.results) {
 			const set1 = match.results.sets?.[0] || { a: 0, b: 0 };
 			const set2 = match.results.sets?.[1] || { a: 0, b: 0 };
@@ -69,7 +68,7 @@ const Results = ({ match, onSubmit, onCancel, mainColor, currentTeamId, user, al
 				setPhase("pending");
 			}
 		}
-	}, [match, currentTeamId, user]);
+	}, [match, currentTeamId, user, isScheduled]);
 
 	function getVal(set, team) {
 		const setScore = scores?.[set];
@@ -134,7 +133,7 @@ const Results = ({ match, onSubmit, onCancel, mainColor, currentTeamId, user, al
 	}
 
 	function handleSubmit() {
-		if (!winner) return;
+		if (!winner || !isScheduled) return;
 		const initialConfirmedBy = currentTeamId ? [currentTeamId] : [];
 		const payload = {
 			sets: setsToCount.map((s) => ({
@@ -234,7 +233,9 @@ const Results = ({ match, onSubmit, onCancel, mainColor, currentTeamId, user, al
 								mt: 0.5
 							}}>
 							{canEditResults
-								? "Enter the score set by set. Both teams must confirm the result."
+								? isScheduled
+									? "Enter the score set by set. Both teams must confirm the result."
+									: "Schedule must be confirmed before results can be submitted."
 								: "Only the 4 match players and admins can submit results."}
 						</Typography>
 					</Box>
@@ -382,7 +383,7 @@ const Results = ({ match, onSubmit, onCancel, mainColor, currentTeamId, user, al
 					<Box px={2} pt={2} pb={3}>
 						<Button
 							fullWidth
-						disabled={!winner || !canEditResults}
+						disabled={!winner || !canEditResults || !isScheduled}
 							onClick={handleSubmit}
 							sx={{
 								py: 1.75,
