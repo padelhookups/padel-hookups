@@ -20,11 +20,6 @@ const SETS = [
 	{ key: 3, label: "Super TB", max: 99 }
 ];
 
-const initialScores = () => ({
-	1: { a: "", b: "" },
-	2: { a: "", b: "" },
-	3: { a: "", b: "" }
-});
 
 const Results = ({ match, onSubmit, onCancel, mainColor, currentTeamId, user, allPlayersIds }) => {
 	const { teamA, teamB } = match?.teams;
@@ -32,21 +27,27 @@ const Results = ({ match, onSubmit, onCancel, mainColor, currentTeamId, user, al
 
 	// Access control: only players in the match or admins can edit
 	const canEditResults =
-		user?.isAdmin || (allPlayersIds && allPlayersIds.includes(user?.uid));
+		user?.IsAdmin || (allPlayersIds && allPlayersIds.includes(user?.uid));
+
+	// Confirm button: strictly match players only (not even admins)
+	const isMatchPlayer = !!(allPlayersIds && allPlayersIds.includes(user?.uid));
 
 	const [showResults, setShowResults] = useState(true);
 	const [phase, setPhase] = useState("entry"); // entry | pending | toConfirm | confirmed
-	const [scores, setScores] = useState(initialScores());
+	const [scores, setScores] = useState(null);
 
 	useEffect(() => {
 		if (match.Location) {
 			setShowResults(true);
 		}
 		if (match.results) {
+			const set1 = match.results.sets?.[0] || { a: 0, b: 0 };
+			const set2 = match.results.sets?.[1] || { a: 0, b: 0 };
+			const set3 = match.results.sets?.[2] || { a: 0, b: 0 };
 			const results = {
-				1: { a: match.results.sets[0].a, b: match.results.sets[0].b },
-				2: { a: match.results.sets[1].a, b: match.results.sets[1].b },
-				3: match.results.sets[2]
+				1: { a: set1.a, b: set1.b },
+				2: { a: set2.a, b: set2.b },
+				3: { a: set3.a, b: set3.b }
 			}
 			setScores(results);
 			
@@ -54,21 +55,25 @@ const Results = ({ match, onSubmit, onCancel, mainColor, currentTeamId, user, al
 			const submittedBy = match.results.submittedByTeam;
 			const confirmedBy = match.results.confirmedByTeams || [];
 			const bothConfirmed = confirmedBy.includes("teamA") && confirmedBy.includes("teamB");
+			const canUserConfirm =
+				user?.IsAdmin ||
+				(!!currentTeamId && !!submittedBy && submittedBy !== currentTeamId);
 			
 			if (bothConfirmed) {
 				setPhase("confirmed");
-			} else if (submittedBy === currentTeamId) {
-				// I submitted, waiting for the other team
-				setPhase("pending");
-			} else {
-				// Other team submitted, I must confirm or modify
+			} else if (canUserConfirm) {
+				// Other team (or admin) can review/confirm
 				setPhase("toConfirm");
+			} else {
+				// Submitter (or non-eligible user) waits for confirmation
+				setPhase("pending");
 			}
 		}
-	}, [match, currentTeamId]);
+	}, [match, currentTeamId, user]);
 
 	function getVal(set, team) {
-		const v = parseInt(scores[set][team]);
+		const setScore = scores?.[set];
+		const v = parseInt(setScore?.[team], 10);
 		return isNaN(v) ? 0 : v;
 	}
 
@@ -105,7 +110,7 @@ const Results = ({ match, onSubmit, onCancel, mainColor, currentTeamId, user, al
 			? teamB?.name
 			: submittedByTeam === "teamB"
 				? teamA?.name
-				: teamA?.name;
+				: 'the other team';
 
 	const submitedTeamName = submittedByTeam === "teamA"
 		? teamA?.name
@@ -123,13 +128,14 @@ const Results = ({ match, onSubmit, onCancel, mainColor, currentTeamId, user, al
 		let val = raw.replace(/[^0-9]/g, "");
 		if (val !== "" && parseInt(val) > s.max) val = String(s.max);
 		setScores((prev) => ({
-			...prev,
-			[set]: { ...prev[set], [team]: val }
+			...(prev || {}),
+			[set]: { ...(prev?.[set] || { a: "", b: "" }), [team]: val }
 		}));
 	}
 
 	function handleSubmit() {
 		if (!winner) return;
+		const initialConfirmedBy = currentTeamId ? [currentTeamId] : [];
 		const payload = {
 			sets: setsToCount.map((s) => ({
 				a: getVal(s, "a"),
@@ -137,8 +143,8 @@ const Results = ({ match, onSubmit, onCancel, mainColor, currentTeamId, user, al
 			})),
 			winner: winner === "a" ? "teamA" : "teamB",
 			scoreString,
-			submittedByTeam: currentTeamId || null,
-			confirmedByTeams: [currentTeamId] // Start with self-confirmed
+			submittedByTeam: currentTeamId || 'Admin',
+			confirmedByTeams: initialConfirmedBy // Start with submitting team self-confirmed
 		};
 		onSubmit?.(payload);
 		setPhase("pending");
@@ -157,16 +163,19 @@ const Results = ({ match, onSubmit, onCancel, mainColor, currentTeamId, user, al
 	}
 
 	function handleModify() {
+		const set1 = match.results.sets?.[0] || { a: 0, b: 0 };
+		const set2 = match.results.sets?.[1] || { a: 0, b: 0 };
+		const set3 = match.results.sets?.[2] || { a: 0, b: 0 };
 		setPhase("entry");
 		setScores({
-			1: { a: match.results.sets[0].a, b: match.results.sets[0].b },
-			2: { a: match.results.sets[1].a, b: match.results.sets[1].b },
-			3: match.results.sets[2]
+			1: { a: set1.a, b: set1.b },
+			2: { a: set2.a, b: set2.b },
+			3: { a: set3.a, b: set3.b }
 		});
 	}
 
 	function handleCancel() {
-		setScores(initialScores());
+		setScores(null);
 		setPhase("entry");
 		onCancel?.();
 	}
@@ -267,7 +276,7 @@ const Results = ({ match, onSubmit, onCancel, mainColor, currentTeamId, user, al
 										</Typography>
 									</Box>
 									<ScoreCell
-										value={scores[set.key].a}
+										value={scores?.[set.key]?.a ?? ""}
 										onChange={(v) =>
 											handleScoreChange(set.key, "a", v)
 										}
@@ -277,7 +286,7 @@ const Results = ({ match, onSubmit, onCancel, mainColor, currentTeamId, user, al
 									/>
 									<VsDivider />
 									<ScoreCell
-										value={scores[set.key].b}
+										value={scores?.[set.key]?.b ?? ""}
 										onChange={(v) =>
 											handleScoreChange(set.key, "b", v)
 										}
@@ -464,6 +473,43 @@ const Results = ({ match, onSubmit, onCancel, mainColor, currentTeamId, user, al
 						<Typography sx={styles.sectionLabel}>
 							📊 Submitted Score
 						</Typography>
+						<Box
+							mt={1}
+							sx={{
+								display: "grid",
+								gridTemplateColumns: "1fr auto 1fr",
+								alignItems: "center"
+							}}>
+							<Typography
+								sx={{
+									fontSize: 12,
+									fontWeight: 700,
+									textAlign: "center",
+									color: winner === "a" ? mainColor : "#888",
+									fontFamily: "Barlow Condensed, sans-serif"
+								}}>
+								{teamA?.name}
+							</Typography>
+							<Typography
+								sx={{
+									fontSize: 11,
+									fontWeight: 700,
+									color: "#aaa",
+									px: 1
+								}}>
+								VS
+							</Typography>
+							<Typography
+								sx={{
+									fontSize: 12,
+									fontWeight: 700,
+									textAlign: "center",
+									color: winner === "b" ? mainColor : "#888",
+									fontFamily: "Barlow Condensed, sans-serif"
+								}}>
+								{teamB?.name}
+							</Typography>
+						</Box>
 						<Stack
 							mt={1}
 							divider={<Divider sx={{ borderColor: BORDER }} />}>
@@ -529,6 +575,21 @@ const Results = ({ match, onSubmit, onCancel, mainColor, currentTeamId, user, al
 								);
 							})}
 						</Stack>
+						<Typography
+							sx={{
+								mt: 1,
+								fontSize: 12,
+								fontWeight: 700,
+								textAlign: "center",
+								color: winner ? mainColor : "#888",
+								fontFamily: "Barlow Condensed, sans-serif"
+							}}>
+							{winner === "a"
+								? `Winner: ${teamA?.name}`
+								: winner === "b"
+									? `Winner: ${teamB?.name}`
+									: "Winner: Pending"}
+						</Typography>
 					</Paper>
 
 					{/* Cancel */}
@@ -590,7 +651,7 @@ const Results = ({ match, onSubmit, onCancel, mainColor, currentTeamId, user, al
 								color: "#888",
 								lineHeight: 1.5
 							}}>
-							<strong>{userSubmittedThisResult ? "You" : submitedTeamName}</strong> submitted a result. 
+							<strong>{userSubmittedThisResult ? "You" : submitedTeamName ? submitedTeamName : "Admin"}</strong> submitted a result. 
 							Please review and confirm or edit.
 						</Typography>
 					</Paper>
@@ -606,6 +667,43 @@ const Results = ({ match, onSubmit, onCancel, mainColor, currentTeamId, user, al
 						<Typography sx={styles.sectionLabel}>
 							📊 Submitted Score
 						</Typography>
+						<Box
+							mt={1}
+							sx={{
+								display: "grid",
+								gridTemplateColumns: "1fr auto 1fr",
+								alignItems: "center"
+							}}>
+							<Typography
+								sx={{
+									fontSize: 12,
+									fontWeight: 700,
+									textAlign: "center",
+									color: winner === "a" ? mainColor : "#888",
+									fontFamily: "Barlow Condensed, sans-serif"
+								}}>
+								{teamA?.name}
+							</Typography>
+							<Typography
+								sx={{
+									fontSize: 11,
+									fontWeight: 700,
+									color: "#aaa",
+									px: 1
+								}}>
+								VS
+							</Typography>
+							<Typography
+								sx={{
+									fontSize: 12,
+									fontWeight: 700,
+									textAlign: "center",
+									color: winner === "b" ? mainColor : "#888",
+									fontFamily: "Barlow Condensed, sans-serif"
+								}}>
+								{teamB?.name}
+							</Typography>
+						</Box>
 						<Stack
 							mt={1}
 							divider={<Divider sx={{ borderColor: BORDER }} />}>
@@ -671,30 +769,47 @@ const Results = ({ match, onSubmit, onCancel, mainColor, currentTeamId, user, al
 								);
 							})}
 						</Stack>
+						<Typography
+							sx={{
+								mt: 1,
+								fontSize: 12,
+								fontWeight: 700,
+								textAlign: "center",
+								color: winner ? mainColor : "#888",
+								fontFamily: "Barlow Condensed, sans-serif"
+							}}>
+							{winner === "a"
+								? `Winner: ${teamA?.name}`
+								: winner === "b"
+									? `Winner: ${teamB?.name}`
+									: "Winner: Pending"}
+						</Typography>
 					</Paper>
 
 					{/* Action buttons */}
 					<Box display='flex' gap={1.5}>
-						<Button
-							fullWidth
-							onClick={handleConfirm}
-							sx={{
-								py: 1.5,
-								background: mainColor,
-								border: `1px solid ${mainColor}`,
-								borderRadius: "10px",
-								fontFamily: "Barlow, sans-serif",
-								fontSize: 13,
-								color: "white",
-								fontWeight: 600,
-								textTransform: "uppercase",
-								"&:hover": {
+						{isMatchPlayer && (
+							<Button
+								fullWidth
+								onClick={handleConfirm}
+								sx={{
+									py: 1.5,
 									background: mainColor,
-									opacity: 0.9
-								}
-							}}>
-							✅ Confirm
-						</Button>
+									border: `1px solid ${mainColor}`,
+									borderRadius: "10px",
+									fontFamily: "Barlow, sans-serif",
+									fontSize: 13,
+									color: "white",
+									fontWeight: 600,
+									textTransform: "uppercase",
+									"&:hover": {
+										background: mainColor,
+										opacity: 0.9
+									}
+								}}>
+								✅ Confirm
+							</Button>
+						)}
 						<Button
 							fullWidth
 							onClick={handleModify}
@@ -774,7 +889,7 @@ const Results = ({ match, onSubmit, onCancel, mainColor, currentTeamId, user, al
 										</Typography>
 									</Box>
 									<ScoreCell
-										value={scores[set.key].a}
+										value={scores?.[set.key]?.a ?? 0}
 										onChange={() => {}}
 										winning={getSetWinner(set.key) === "a"}
 										mainColor={mainColor}
@@ -782,7 +897,7 @@ const Results = ({ match, onSubmit, onCancel, mainColor, currentTeamId, user, al
 									/>
 									<VsDivider />
 									<ScoreCell
-										value={scores[set.key].b}
+										value={scores?.[set.key]?.b ?? 0}
 										onChange={() => {}}
 										winning={getSetWinner(set.key) === "b"}
 										mainColor={mainColor}

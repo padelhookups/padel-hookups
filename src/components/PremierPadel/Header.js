@@ -31,9 +31,9 @@ const Header = ({ match, event, onBack, mainColor }) => {
 		console.log("Header event", event);
 		if (match && event) {
 			const teamAPlayers =
-				event.Pairs[match.opponent1.id - 1].DisplayName;
+				event.Pairs[match.opponent1.id - 1]?.DisplayName;
 			const teamBPlayers =
-				event.Pairs[match.opponent2.id - 1].DisplayName;
+				event.Pairs[match.opponent2.id - 1]?.DisplayName;
 			console.log("Team A players:", teamAPlayers);
 			console.log("Team B players:", teamBPlayers);
 			setTeamA(teamAPlayers);

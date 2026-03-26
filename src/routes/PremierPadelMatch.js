@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation, useParams } from "react-router";
 import { useSelector } from "react-redux";
+import { BracketsManager } from "brackets-manager";
 import {
 	doc,
 	getDoc,
@@ -10,6 +11,7 @@ import {
 	onSnapshot
 } from "firebase/firestore";
 import useAuth from "../utils/useAuth";
+import { FirestoreAdapter } from "../utils/FirestoreAdapter";
 
 import { selectEvents } from "../redux/slices/eventsSlice";
 
@@ -45,7 +47,7 @@ const PremierPadelMatch = () => {
 	const [mainColor, setMainColor] = useState(null);
 
 	// Determine tab indices based on schedule visibility
-	const showScheduleTab = user?.isAdmin || currentTeam;
+	const showScheduleTab = user?.IsAdmin || currentTeam;
 	const SUMMARY_TAB = 0;
 	const SCHEDULE_TAB = 1;
 	const RESULTS_TAB = showScheduleTab ? 2 : 1;
@@ -229,6 +231,69 @@ const PremierPadelMatch = () => {
 		if (!eventIdParam || !event?.TournamentId || !match?.id) {
 			throw new Error("Missing data to update results");
 		}
+
+		// Admins bypass the two-team confirmation flow — treat as fully confirmed immediately
+		if (user?.IsAdmin) {
+			resultsPayload = {
+				...resultsPayload,
+				confirmedByTeams: ["teamA", "teamB"]
+			};
+		}
+
+		const bothConfirmed =
+			resultsPayload?.confirmedByTeams?.includes("teamA") &&
+			resultsPayload?.confirmedByTeams?.includes("teamB");
+
+		if (bothConfirmed) {
+			const adapter = new FirestoreAdapter(
+				db,
+				`Events/${eventIdParam}/TournamentData/${event.TournamentId}`,
+				event.TournamentId
+			);
+			const manager = new BracketsManager(adapter);
+
+			const sets = resultsPayload?.sets || [];
+			let team1Score = 0;
+			let team2Score = 0;
+
+			sets.forEach((setResult) => {
+				const a = Number(setResult?.a) || 0;
+				const b = Number(setResult?.b) || 0;
+
+				if (a > b) team1Score += 1;
+				if (b > a) team2Score += 1;
+			});
+
+			const opponent1Result =
+				resultsPayload?.winner === "teamA"
+					? "win"
+					: resultsPayload?.winner === "teamB"
+						? "lose"
+						: "";
+			const opponent2Result =
+				resultsPayload?.winner === "teamB"
+					? "win"
+					: resultsPayload?.winner === "teamA"
+						? "lose"
+						: "";
+
+			await manager.update.match({
+				id: match.id,
+				scoreTeam1: team1Score,
+				scoreTeam2: team2Score,
+				customStatus: 4,
+				status: 4,
+				opponent1: {
+					result: opponent1Result,
+					score: team1Score
+				},
+				opponent2: {
+					result: opponent2Result,
+					score: team2Score
+				}
+			});
+		}
+
 		var matchRef = doc(
 			db,
 			`Events/${eventIdParam}/TournamentData/${event.TournamentId}/matches/${match.id}`
@@ -296,7 +361,7 @@ const PremierPadelMatch = () => {
 						"& .MuiTabs-indicator": { bgcolor: mainColor }
 					}}>
 					<Tab label='Summary' />
-					{user?.isAdmin || currentTeam ? (
+					{user?.IsAdmin || currentTeam ? (
 						<Tab label='Schedule' />
 					) : null}
 					<Tab label='Results' />

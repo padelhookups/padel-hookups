@@ -338,7 +338,7 @@ const EliminationsBrackets = ({ eventId, tournamentId }) => {
 				{
 					clear: true,
 					onMatchClick: (match) => {
-						if (user?.isAdmin) {
+						if (user?.IsAdmin) {
 							console.log("A match was clicked", match);
 							setSelectedMatch(match);
 							setUploadModalOpen(true);

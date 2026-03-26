@@ -60,6 +60,7 @@ const Schedule = ({
   const otherTeamId = currentTeamId === "teamA" ? "teamB" : "teamA";
   const currentTeam = match.teams[currentTeamId];
   const otherTeam = match.teams[otherTeamId];
+  const hasBothTeams = !!currentTeam?.name && !!otherTeam?.name;
   const otherSubmitted = !!match.scheduling?.[otherTeamId];
   const finalOverlaps = match.Overlaps || [];
 
@@ -210,6 +211,16 @@ const Schedule = ({
 
   function handleConfirm() {
     if (!chosenOverlap) return;
+
+    // Only allow confirming slots that are shared by both teams.
+    const sourceOverlaps = phase === "confirmed" ? finalOverlaps : overlaps;
+    const isSharedSlot = sourceOverlaps.some(
+      ({ date, slots }) =>
+        date === chosenOverlap.date && slots.includes(chosenOverlap.slot),
+    );
+
+    if (!isSharedSlot) return;
+
     setConfirmedSlot(chosenOverlap);
     const dateLabel = formatDate(chosenOverlap.date);
     const timeLabel =
@@ -217,7 +228,7 @@ const Schedule = ({
       " (" +
       SLOT_MAP[chosenOverlap.slot]?.time +
       ")";
-    onConfirmed(dateLabel, timeLabel, overlaps, chosenOverlap);
+    onConfirmed(dateLabel, timeLabel, sourceOverlaps, chosenOverlap);
     setPhase("confirmed");
   }
 
@@ -267,238 +278,264 @@ const Schedule = ({
           </Box>
         </Paper>
 
-        {/* Notification: other team submitted */}
-        {otherSubmitted && !submitted && (
-          <Box px={2} pb={1.5}>
+        {!hasBothTeams && (
+          <Box px={2} pb={2}>
             <Alert
-              icon={<NotificationsActiveIcon />}
-              severity="info"
+              severity="warning"
               sx={{
                 borderRadius: 2,
                 "& .MuiAlert-message": { fontSize: 13 },
               }}
             >
-              <strong>{otherTeam.name}</strong> submitted their availability!
-              Add yours to find a match slot.
+              Team information is incomplete for this match. Scheduling is
+              unavailable until both teams are set.
             </Alert>
           </Box>
         )}
 
-        {/* Deadline banner */}
-        <Box px={2} pb={1.5}>
-          <Box
-            sx={{
-              bgcolor: "#fff3cd",
-              border: "1px solid #f0c040",
-              borderRadius: 2,
-              px: 1.5,
-              py: 1,
-              display: "flex",
-              alignItems: "center",
-              gap: 1,
-            }}
-          >
-            <Typography
-              sx={{
-                fontSize: 12,
-                fontWeight: 600,
-                color: "#856404",
-              }}
-            >
-              ⏳ Must be played by {deadlineLabel}
-            </Typography>
-          </Box>
-        </Box>
+        {hasBothTeams && (
+          <>
+            {/* Notification: other team submitted */}
+            {otherSubmitted && !submitted && (
+              <Box px={2} pb={1.5}>
+                <Alert
+                  icon={<NotificationsActiveIcon />}
+                  severity="info"
+                  sx={{
+                    borderRadius: 2,
+                    "& .MuiAlert-message": { fontSize: 13 },
+                  }}
+                >
+                  <strong>{otherTeam.name}</strong> submitted their
+                  availability! Add yours to find a match slot.
+                </Alert>
+              </Box>
+            )}
 
-        {/* Other team's card */}
-        {/* match.scheduling[otherTeamId]?.availability */}
-        <TeamCard
-          team={otherTeam}
-          submitted={otherSubmitted}
-          availability={match.scheduling?.[otherTeamId]?.availability || null}
-          months={months}
-          windowStart={windowStart}
-          windowEnd={windowEnd}
-          myAvail={myAvail}
-          interactive={false}
-          isOtherTeam
-          mainColor={mainColor}
-        />
-
-        {/* Current user's card */}
-        <TeamCard
-          team={currentTeam}
-          submitted={submitted}
-          availability={match.scheduling?.[otherTeamId]?.availability || null}
-          months={months}
-          windowStart={windowStart}
-          windowEnd={windowEnd}
-          myAvail={myAvail}
-          interactive={true}
-          onDayTap={handleDayTap}
-          selectedDays={selectedDays}
-          onEditDay={openSheetForDay}
-          mainColor={mainColor}
-        />
-
-        {/* Legend */}
-        <Stack direction="row" gap={1.5} px={2} pb={2} flexWrap="wrap">
-          <LegendItem color={mainColor} label="Your selection" />
-          <LegendItem
-            color="#e8f4f8"
-            border="1px solid #90c9e8"
-            label="Other team"
-          />
-          <LegendItem gradient label="Both available" color={mainColor} />
-        </Stack>
-
-        {/* Overlaps after submit */}
-        {submitted && overlaps.length > 0 && !hasPendingChanges && (
-          <Box px={2} pb={2}>
-            <Paper
-              variant="outlined"
-              sx={{
-                bgcolor: "#d4edda",
-                borderColor: "#b8dacc",
-                borderRadius: 2,
-                p: 2,
-              }}
-            >
-              <Typography
+            {/* Deadline banner */}
+            <Box px={2} pb={1.5}>
+              <Box
                 sx={{
-                  fontFamily: "Barlow Condensed, sans-serif",
-                  fontWeight: 700,
-                  fontSize: 13,
-                  textTransform: "uppercase",
-                  letterSpacing: 1,
-                  color: "#155724",
-                  mb: 1,
+                  bgcolor: "#fff3cd",
+                  border: "1px solid #f0c040",
+                  borderRadius: 2,
+                  px: 1.5,
+                  py: 1,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
                 }}
               >
-                🎉 Slots that work for both!
-              </Typography>
-              <Typography
-                sx={{
-                  fontSize: 12,
-                  color: "#155724",
-                  mb: 1.5,
-                }}
-              >
-                Tap one to confirm the match slot:
-              </Typography>
-              <Stack gap={1} mb={2}>
-                {overlaps.map(({ date, slots }) =>
-                  slots.map((slot) => {
-                    const s = SLOT_MAP[slot];
-                    const isChosen =
-                      chosenOverlap?.date === date &&
-                      chosenOverlap?.slot === slot;
-                    return (
-                      <Chip
-                        key={`${date}-${slot}`}
-                        label={`📅 ${formatDate(date)} · ${s?.label} (${s?.time})`}
-                        onClick={() =>
-                          setChosenOverlap({
-                            date,
-                            slot,
-                          })
-                        }
-                        sx={{
-                          bgcolor: isChosen ? "#155724" : "white",
-                          color: isChosen ? "white" : "#155724",
-                          border: "1px solid #b8dacc",
-                          fontWeight: 600,
-                          fontSize: 12,
-                          height: "auto",
-                          py: 0.5,
-                          cursor: "pointer",
-                          justifyContent: "flex-start",
-                          "& .MuiChip-label": {
-                            whiteSpace: "normal",
-                          },
-                        }}
-                      />
-                    );
-                  }),
-                )}
-              </Stack>
+                <Typography
+                  sx={{
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: "#856404",
+                  }}
+                >
+                  ⏳ Must be played by {deadlineLabel}
+                </Typography>
+              </Box>
+            </Box>
+
+            {/* Other team's card */}
+            {/* match.scheduling[otherTeamId]?.availability */}
+            <TeamCard
+              team={otherTeam}
+              submitted={otherSubmitted}
+              availability={match.scheduling?.[otherTeamId]?.availability || null}
+              months={months}
+              windowStart={windowStart}
+              windowEnd={windowEnd}
+              myAvail={myAvail}
+              interactive={false}
+              isOtherTeam
+              mainColor={mainColor}
+            />
+
+            {/* Current user's card */}
+            <TeamCard
+              team={currentTeam}
+              submitted={submitted}
+              availability={match.scheduling?.[otherTeamId]?.availability || null}
+              months={months}
+              windowStart={windowStart}
+              windowEnd={windowEnd}
+              myAvail={myAvail}
+              interactive={true}
+              onDayTap={handleDayTap}
+              selectedDays={selectedDays}
+              onEditDay={openSheetForDay}
+              mainColor={mainColor}
+            />
+
+            {/* Legend */}
+            <Stack direction="row" gap={1.5} px={2} pb={2} flexWrap="wrap">
+              <LegendItem color={mainColor} label="Your selection" />
+              <LegendItem
+                color="#e8f4f8"
+                border="1px solid #90c9e8"
+                label="Other team"
+              />
+              <LegendItem gradient label="Both available" color={mainColor} />
+            </Stack>
+
+            {/* Overlaps after submit */}
+            {submitted && overlaps.length > 0 && !hasPendingChanges && (
+              <Box px={2} pb={2}>
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    bgcolor: "#d4edda",
+                    borderColor: "#b8dacc",
+                    borderRadius: 2,
+                    p: 2,
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      fontFamily: "Barlow Condensed, sans-serif",
+                      fontWeight: 700,
+                      fontSize: 13,
+                      textTransform: "uppercase",
+                      letterSpacing: 1,
+                      color: "#155724",
+                      mb: 1,
+                    }}
+                  >
+                    🎉 Slots that work for both!
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontSize: 12,
+                      color: "#155724",
+                      mb: 1.5,
+                    }}
+                  >
+                    Tap one to confirm the match slot:
+                  </Typography>
+                  <Stack gap={1} mb={2}>
+                    {overlaps.map(({ date, slots }) =>
+                      slots.map((slot) => {
+                        const s = SLOT_MAP[slot];
+                        const isChosen =
+                          chosenOverlap?.date === date &&
+                          chosenOverlap?.slot === slot;
+                        return (
+                          <Chip
+                            key={`${date}-${slot}`}
+                            label={`📅 ${formatDate(date)} · ${s?.label} (${s?.time})`}
+                            onClick={() =>
+                              setChosenOverlap({
+                                date,
+                                slot,
+                              })
+                            }
+                            sx={{
+                              bgcolor: isChosen ? "#155724" : "white",
+                              color: isChosen ? "white" : "#155724",
+                              border: "1px solid #b8dacc",
+                              fontWeight: 600,
+                              fontSize: 12,
+                              height: "auto",
+                              py: 0.5,
+                              cursor: "pointer",
+                              justifyContent: "flex-start",
+                              "& .MuiChip-label": {
+                                whiteSpace: "normal",
+                              },
+                            }}
+                          />
+                        );
+                      }),
+                    )}
+                  </Stack>
+                  <Button
+                    fullWidth
+                    variant="contained"
+                    onClick={handleConfirm}
+                    disabled={
+                      !chosenOverlap ||
+                      !overlaps.some(
+                        ({ date, slots }) =>
+                          date === chosenOverlap.date &&
+                          slots.includes(chosenOverlap.slot),
+                      )
+                    }
+                    sx={{
+                      bgcolor: "#28a745",
+                      fontFamily: "Barlow Condensed, sans-serif",
+                      fontWeight: 700,
+                      letterSpacing: 1,
+                      borderRadius: 1.5,
+                      "&:hover": { bgcolor: "#218838" },
+                      boxShadow: "none",
+                    }}
+                  >
+                    <Typography
+                      variant="button"
+                      sx={{ color: "white", fontWeight: "bold" }}
+                    >
+                      ✅ Confirm This Slot
+                    </Typography>
+                  </Button>
+                </Paper>
+              </Box>
+            )}
+
+            {/* Submit button */}
+            <Box px={2} pb={3}>
               <Button
                 fullWidth
                 variant="contained"
-                onClick={handleConfirm}
-                disabled={!chosenOverlap}
+                disabled={!hasAnySlots || submitLoading}
+                onClick={handleSubmit}
                 sx={{
-                  bgcolor: "#28a745",
+                  py: 1.75,
+                  background: hasAnySlots
+                    ? `linear-gradient(135deg, ${DARK}, ${mainColor})`
+                    : undefined,
                   fontFamily: "Barlow Condensed, sans-serif",
+                  fontSize: 15,
                   fontWeight: 700,
                   letterSpacing: 1,
-                  borderRadius: 1.5,
-                  "&:hover": { bgcolor: "#218838" },
+                  borderRadius: 2,
                   boxShadow: "none",
+                  "&:hover": { boxShadow: "none", opacity: 0.9 },
+                  "&.Mui-disabled": {
+                    bgcolor: "#ccc",
+                    color: "white",
+                  },
                 }}
               >
                 <Typography
                   variant="button"
                   sx={{ color: "white", fontWeight: "bold" }}
                 >
-                  ✅ Confirm This Slot
+                  {submitLoading ? "Submitting..." : "📤 Submit My Availability"}
                 </Typography>
               </Button>
-            </Paper>
-          </Box>
+            </Box>
+
+            {/* Bottom sheet */}
+            <TimeSlotSheet
+              open={sheetOpen}
+              dateKey={sheetDay}
+              currentSlots={sheetDay ? [...(myAvail[sheetDay] || [])] : []}
+              onDone={handleSheetDone}
+              onClose={() => {
+                /* console.log("onClose");
+							setMyAvail((prev) => {
+								const next = { ...prev };
+								delete next[sheetDay];
+								return next;
+							}); */
+                setSheetOpen(false);
+              }}
+              mainColor={mainColor}
+            />
+          </>
         )}
-
-        {/* Submit button */}
-        <Box px={2} pb={3}>
-          <Button
-            fullWidth
-            variant="contained"
-            disabled={!hasAnySlots || submitLoading}
-            onClick={handleSubmit}
-            sx={{
-              py: 1.75,
-              background: hasAnySlots
-                ? `linear-gradient(135deg, ${DARK}, ${mainColor})`
-                : undefined,
-              fontFamily: "Barlow Condensed, sans-serif",
-              fontSize: 15,
-              fontWeight: 700,
-              letterSpacing: 1,
-              borderRadius: 2,
-              boxShadow: "none",
-              "&:hover": { boxShadow: "none", opacity: 0.9 },
-              "&.Mui-disabled": {
-                bgcolor: "#ccc",
-                color: "white",
-              },
-            }}
-          >
-            <Typography
-              variant="button"
-              sx={{ color: "white", fontWeight: "bold" }}
-            >
-              {submitLoading ? "Submitting..." : "📤 Submit My Availability"}
-            </Typography>
-          </Button>
-        </Box>
-
-        {/* Bottom sheet */}
-        <TimeSlotSheet
-          open={sheetOpen}
-          dateKey={sheetDay}
-          currentSlots={sheetDay ? [...(myAvail[sheetDay] || [])] : []}
-          onDone={handleSheetDone}
-          onClose={() => {
-            /* console.log("onClose");
-						setMyAvail((prev) => {
-							const next = { ...prev };
-							delete next[sheetDay];
-							return next;
-						}); */
-            setSheetOpen(false);
-          }}
-          mainColor={mainColor}
-        />
       </Stack>
     );
 
@@ -667,7 +704,14 @@ const Schedule = ({
                 fullWidth
                 variant="contained"
                 onClick={handleConfirm}
-                disabled={!chosenOverlap}
+                disabled={
+                  !chosenOverlap ||
+                  !finalOverlaps.some(
+                    ({ date, slots }) =>
+                      date === chosenOverlap.date &&
+                      slots.includes(chosenOverlap.slot),
+                  )
+                }
                 sx={{
                   bgcolor: "#28a745",
                   fontFamily: "Barlow Condensed, sans-serif",
