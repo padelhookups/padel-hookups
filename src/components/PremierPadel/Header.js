@@ -23,7 +23,7 @@ const Header = ({ match, event, onBack, mainColor }) => {
 	const statusText = hasResults
 		? "Played - see results"
 		: isScheduled
-			? "Schedule – not yet played"
+			? "Scheduled – not yet played"
 			: "Awaiting schedule – not yet played";
 
 	useEffect(() => {
