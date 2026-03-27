@@ -64,12 +64,12 @@ const PremierPadelMatch = () => {
 			if (match) return;
 
 			try {
-				// get event first 
+				// get event first
 				const eventRef = doc(db, "Events", eventIdParam);
 				const eventSnap = await getDoc(eventRef);
 				if (eventSnap.exists()) {
 					setEvent({ id: eventSnap.id, ...eventSnap.data() });
-					setMainColor(eventSnap.data().SponsorColor); 
+					setMainColor(eventSnap.data().SponsorColor);
 				} else {
 					console.error("Event not found for match:", eventIdParam);
 					return;
@@ -193,7 +193,12 @@ const PremierPadelMatch = () => {
 	}, [match, event, user]);
 
 	const handleSubmitAvailability = async (payload) => {
-		if (!eventIdParam || !event?.TournamentId || !match?.id || !currentTeam) {
+		if (
+			!eventIdParam ||
+			!event?.TournamentId ||
+			!match?.id ||
+			!currentTeam
+		) {
 			throw new Error("Missing data to update scheduling");
 		}
 
@@ -210,6 +215,18 @@ const PremierPadelMatch = () => {
 				}
 			}
 		);
+
+		const otherTeamIds =
+			currentTeam === "teamA"
+				? [match.teams.teamB.player1Id, match.teams.teamB.player2Id]
+				: [match.teams.teamA.player1Id, match.teams.teamA.player2Id];
+
+		await sendGroupsNotification({
+			title: `Match: ${teamA} vs ${teamB}`,
+			body: `${currentTeam === "teamA" ? match.teams.teamA.name : match.teams.teamB.name} has submitted their availability for scheduling. Please review and confirm the match schedule.`,
+			link: window.location.href,
+			userIds: otherTeamIds
+		});
 	};
 
 	const handleLocationUpdate = async (loc) => {
@@ -439,12 +456,6 @@ const PremierPadelMatch = () => {
 										};
 
 										await updateDoc(matchRef, updates);
-										await sendGroupsNotification({
-											title: "Match Scheduled",
-											body: `Your match has been scheduled for ${date} at ${time}`,
-											link: window.location.href,
-											userIds: allPlayersIds
-										});
 									}}
 									onLocationUpdated={(loc) =>
 										handleLocationUpdate(loc)
