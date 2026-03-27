@@ -14,6 +14,64 @@ const { initializeApp } = require("firebase-admin/app");
 
 initializeApp();
 
+const INVALID_TOKEN_ERRORS = new Set([
+	"messaging/registration-token-not-registered",
+	"messaging/invalid-registration-token",
+]);
+
+async function sendNotificationsAndCleanup({
+	db,
+	messaging,
+	messages,
+	tokenRefs,
+	notificationType,
+}) {
+	if (messages.length === 0) {
+		console.log("No messages to send.");
+		return;
+	}
+
+	console.log(`Sending ${messages.length} ${notificationType} notifications`);
+
+	const response = await messaging.sendEach(messages);
+	const batch = db.batch();
+	let deletedCount = 0;
+
+	response.responses.forEach((res, index) => {
+		if (res.success) {
+			return;
+		}
+
+		const errorCode = res.error?.code;
+		if (!INVALID_TOKEN_ERRORS.has(errorCode)) {
+			return;
+		}
+
+		const tokenRef = tokenRefs[index];
+		if (!tokenRef) {
+			return;
+		}
+
+		const { userId, deviceId } = tokenRef;
+		console.log(`Deleting invalid token for user ${userId}, device ${deviceId}`);
+
+		batch.update(db.collection("Users").doc(userId), {
+			[`Devices.${deviceId}`]: FieldValue.delete(),
+		});
+
+		deletedCount++;
+	});
+
+	if (deletedCount > 0) {
+		await batch.commit();
+		console.log(`Deleted ${deletedCount} invalid tokens`);
+	} else {
+		console.log("No invalid tokens found");
+	}
+
+	console.log(`${response.successCount} messages sent successfully`);
+}
+
 exports.sendInviteOnCreateUser = onDocumentCreated(
 	{ region: "europe-west1", document: "/Invites/{inviteId}" },
 	async (event) => {
@@ -178,54 +236,13 @@ exports.sendBirthdayNotifications = onSchedule(
 			}
 		}
 
-		if (messages.length === 0) {
-			console.log("No messages to send.");
-			return;
-		}
-
-		console.log(`Sending ${messages.length} birthday notifications`);
-
-		const response = await messaging.sendEach(messages);
-
-		const batch = db.batch();
-		let deletedCount = 0;
-
-		response.responses.forEach((res, index) => {
-			if (!res.success) {
-				const errorCode = res.error?.code;
-
-				if (
-					errorCode === "messaging/registration-token-not-registered" ||
-					errorCode === "messaging/invalid-registration-token"
-				) {
-					const { userId, deviceId } = tokenRefs[index];
-
-					console.log(
-						`Deleting invalid token for user ${userId}, device ${deviceId}`
-					);
-
-					batch.update(
-						db.collection("Users").doc(userId),
-						{
-							[`Devices.${deviceId}`]: FieldValue.delete(),
-						}
-					);
-
-					deletedCount++;
-				}
-			}
+		await sendNotificationsAndCleanup({
+			db,
+			messaging,
+			messages,
+			tokenRefs,
+			notificationType: "birthday",
 		});
-
-		if (deletedCount > 0) {
-			await batch.commit();
-			console.log(`Deleted ${deletedCount} invalid tokens`);
-		} else {
-			console.log("No invalid tokens found");
-		}
-
-		console.log(
-			`${response.successCount} messages sent successfully`
-		);
 	}
 );
 
@@ -297,53 +314,12 @@ exports.sendNewsNotifications = onDocumentCreated(
 			}
 		}
 
-		if (messages.length === 0) {
-			console.log("No messages to send.");
-			return;
-		}
-
-		console.log(`Sending ${messages.length} news notifications`);
-
-		const response = await messaging.sendEach(messages);
-
-		const batch = db.batch();
-		let deletedCount = 0;
-
-		response.responses.forEach((res, index) => {
-			if (!res.success) {
-				const errorCode = res.error?.code;
-
-				if (
-					errorCode === "messaging/registration-token-not-registered" ||
-					errorCode === "messaging/invalid-registration-token"
-				) {
-					const { userId, deviceId } = tokenRefs[index];
-
-					console.log(
-						`Deleting invalid token for user ${userId}, device ${deviceId}`
-					);
-
-					batch.update(
-						db.collection("Users").doc(userId),
-						{
-							[`Devices.${deviceId}`]: FieldValue.delete(),
-						}
-					);
-
-					deletedCount++;
-				}
-			}
+		await sendNotificationsAndCleanup({
+			db,
+			messaging,
+			messages,
+			tokenRefs,
+			notificationType: "news",
 		});
-
-		if (deletedCount > 0) {
-			await batch.commit();
-			console.log(`Deleted ${deletedCount} invalid tokens`);
-		} else {
-			console.log("No invalid tokens found");
-		}
-
-		console.log(
-			`${response.successCount} messages sent successfully`
-		);
 	}
 );
