@@ -323,9 +323,6 @@ const PremierPadelMatch = () => {
 
 		await updateDoc(matchRef, updates);
 
-		const submittingTeam =
-			currentTeam
-
 		if (!bothConfirmed && currentTeam && match?.teams) {
 			const otherTeamIds =
 				currentTeam === "teamA"
@@ -348,6 +345,18 @@ const PremierPadelMatch = () => {
 				body: `${submitterName} has submitted the match result. Please review it.`,
 				link: window.location.href,
 				userIds: otherTeamIds
+			});
+		} else if (bothConfirmed) {
+			await sendGroupsNotification({
+				title: `Match Result Confirmed: ${teamA} vs ${teamB}`,
+				body: `The match result has been confirmed by both teams. Please check the match details for the final result.`,
+				link: window.location.href,
+				userIds: [
+					match.teams.teamA.player1Id,
+					match.teams.teamA.player2Id,
+					match.teams.teamB.player1Id,
+					match.teams.teamB.player2Id
+				]
 			});
 		}
 	};
