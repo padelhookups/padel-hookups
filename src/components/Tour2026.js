@@ -27,6 +27,35 @@ import PullToRefresh from "react-simple-pull-to-refresh";
 
 import ConfirmationModal from "../components/ConfirmationModal";
 
+const DEFAULT_EVENT_DURATION_MINUTES = 120;
+
+const getEventDate = (value) => {
+	if (!value) {
+		return null;
+	}
+
+	if (typeof value?.toDate === "function") {
+		return value.toDate();
+	}
+
+	return new Date(value);
+};
+
+const formatCalendarDate = (date) => {
+	return date
+		.toISOString()
+		.replace(/[-:]/g, "")
+		.replace(/\.\d{3}Z$/, "Z");
+};
+
+const escapeIcsText = (value = "") => {
+	return String(value)
+		.replace(/\\/g, "\\\\")
+		.replace(/;/g, "\\;")
+		.replace(/,/g, "\\,")
+		.replace(/\r?\n/g, "\\n");
+};
+
 const Tour2026 = ({
 	groupedEvents,
 	onRefresh,
@@ -46,6 +75,57 @@ const Tour2026 = ({
 	const [confirmationTitle, setConfirmationTitle] = React.useState("");
 	const [confirmationDescription, setConfirmationDescription] =
 		React.useState("");
+
+	const handleAddToCalendar = (event, clickEvent) => {
+		clickEvent.preventDefault();
+		clickEvent.stopPropagation();
+
+		const startDate = getEventDate(event?.Date);
+
+		if (!startDate || Number.isNaN(startDate.getTime())) {
+			return;
+		}
+
+		const endDate = new Date(
+			startDate.getTime() + DEFAULT_EVENT_DURATION_MINUTES * 60 * 1000
+		);
+		const descriptionParts = [event?.Description, event?.Type ? `Type: ${event.Type}` : ""]
+			.filter(Boolean)
+			.join("\n\n");
+		const fileName = `${event?.Name || "tour-2026-event"}`
+			.toLowerCase()
+			.replace(/[^a-z0-9]+/g, "-")
+			.replace(/^-|-$/g, "");
+		const icsContent = [
+			"BEGIN:VCALENDAR",
+			"VERSION:2.0",
+			"PRODID:-//Padel Hookups//Tour 2026//EN",
+			"CALSCALE:GREGORIAN",
+			"BEGIN:VEVENT",
+			`UID:${event?.id || startDate.getTime()}@padelhookups`,
+			`DTSTAMP:${formatCalendarDate(new Date())}`,
+			`DTSTART:${formatCalendarDate(startDate)}`,
+			`DTEND:${formatCalendarDate(endDate)}`,
+			`SUMMARY:${escapeIcsText(event?.Name || "Padel Event")}`,
+			`DESCRIPTION:${escapeIcsText(descriptionParts)}`,
+			`LOCATION:${escapeIcsText(event?.Location || "Padel Hookups")}`,
+			"END:VEVENT",
+			"END:VCALENDAR"
+		].join("\r\n");
+
+		const blob = new Blob([icsContent], {
+			type: "text/calendar;charset=utf-8"
+		});
+		const downloadUrl = window.URL.createObjectURL(blob);
+		const link = document.createElement("a");
+
+		link.href = downloadUrl;
+		link.download = `${fileName || "tour-2026-event"}.ics`;
+		document.body.appendChild(link);
+		link.click();
+		document.body.removeChild(link);
+		window.URL.revokeObjectURL(downloadUrl);
+	};
 
 	const handleConfirmationConfirm = async () => {
 		if (type === "deleteEvent") {
@@ -127,6 +207,7 @@ const Tour2026 = ({
 								{monthEvents.map((event, index) => {
 									const alreadyRegistered =
 										event?.PlayersIds?.includes(user?.uid);
+									const eventDate = getEventDate(event.Date);
 									return (
 										<TimelineItem
 											key={`${monthKey}-${index}`}>
@@ -148,15 +229,18 @@ const Tour2026 = ({
 															textAlign: "center",
 															px: 0.2
 														}}>
-														{new Date(
-															event.Date
-														).getDate()}
+														{eventDate?.getDate?.() ?? "-"}
 													</Typography>
 												</TimelineDot>
 												<TimelineConnector />
 											</TimelineSeparator>
 											<TimelineContent
 												sx={{ py: "12px", px: 2 }}>
+													{(() => {
+														const eventHours = eventDate?.getHours?.() ?? 0;
+														const eventMinutes = eventDate?.getMinutes?.() ?? 0;
+
+														return (
 												<Box
 													sx={{
 														border: "2px dashed grey",
@@ -183,20 +267,26 @@ const Tour2026 = ({
 													</Typography>
 													<Typography variant='body2'>
 														⌚
-														{Timestamp.fromMillis(
-															event.Date
-														)
-															.toDate()
-															.getHours()}
+														{eventHours}
 														:
-														{Timestamp.fromMillis(
-															event.Date
-														)
-															.toDate()
-															.getMinutes()
-															.toString()
-															.padStart(2, "0")}
+														{eventMinutes.toString().padStart(2, "0")}
 													</Typography>
+													<IconButton
+														aria-label='Add event to calendar'
+														onClick={(clickEvent) =>
+															handleAddToCalendar(event, clickEvent)
+														}
+														sx={{
+															mt: 1,
+															border: "1px solid",
+															borderColor: "primary.main",
+															borderRadius: 1,
+															color: "primary.main",
+															p:.5,
+															mr: 1
+														}}>
+														<CalendarMonth fontSize='small' />
+													</IconButton>
 													<Box
 														sx={{
 															position:
@@ -274,6 +364,8 @@ const Tour2026 = ({
 														</IconButton>
 													)}
 												</Box>
+												);
+											})()}
 											</TimelineContent>
 										</TimelineItem>
 									);
