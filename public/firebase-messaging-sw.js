@@ -17,33 +17,30 @@ firebase.initializeApp({
 // Retrieve an instance of Firebase Messaging
 const messaging = firebase.messaging();
 
-// Handle background push messages
+// Ensure the service worker activates immediately so background messages are never missed.
+self.addEventListener("install", () => self.skipWaiting());
+self.addEventListener("activate", (event) => event.waitUntil(clients.claim()));
+
+// Handle background push messages.
+// Always call showNotification so messages are reliably displayed on mobile.
+// On Android, FCM may fire onBackgroundMessage without auto-displaying the notification
+// even when a `notification` field is present, so we must handle display ourselves.
+// For truly duplicate-free behaviour, send data-only messages from your server
+// (omit the `notification` field in the FCM payload).
 messaging.onBackgroundMessage((payload) => {
   console.log("[firebase-messaging-sw.js] Received background message", payload);
 
-  // Avoid duplicate notifications: if the payload has a notification key,
-  // the browser will auto-display it, so don't show it again.
-  if (payload.notification) {
-    if (!payload.notification.icon) {
-      console.warn(
-        "[firebase-messaging-sw.js] Notification payload has no icon. Set it server-side via webpush.notification.icon (HTTP v1) or notification.icon (Legacy)."
-      );
-    }
-    return;
-  }
-
-  const notificationTitle = payload.data?.title || "Background message";
+  const title = payload.notification?.title || payload.data?.title || "New message";
   const notificationOptions = {
-    body: payload.data?.body || "",
-    // Use provided icon (data.icon) or a valid default. Ensure this file exists in /public.
-    icon: "/android-chrome-192x192.png",
+    body: payload.notification?.body || payload.data?.body || "",
+    icon: payload.notification?.icon || payload.data?.icon || "/android-chrome-192x192.png",
     badge: "/android-chrome-96x96.png",
     data: {
-      url: payload.data?.click_action || "/",
+      url: payload.notification?.click_action || payload.data?.click_action || "/",
     },
   };
 
-  self.registration.showNotification(notificationTitle, notificationOptions);
+  self.registration.showNotification(title, notificationOptions);
 });
 
 self.addEventListener("notificationclick", (event) => {
@@ -54,7 +51,7 @@ self.addEventListener("notificationclick", (event) => {
   event.waitUntil(
     clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
       for (const client of clientList) {
-        if (client.url.includes("/") && "focus" in client) {
+        if (client.url === targetUrl && "focus" in client) {
           return client.focus();
         }
       }
