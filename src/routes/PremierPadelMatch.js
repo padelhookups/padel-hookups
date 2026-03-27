@@ -322,6 +322,34 @@ const PremierPadelMatch = () => {
 		console.log(updates);
 
 		await updateDoc(matchRef, updates);
+
+		const submittingTeam =
+			currentTeam
+
+		if (!bothConfirmed && currentTeam && match?.teams) {
+			const otherTeamIds =
+				currentTeam === "teamA"
+					? [
+							match.teams.teamB?.player1Id,
+							match.teams.teamB?.player2Id
+						]
+					: [
+							match.teams.teamA?.player1Id,
+							match.teams.teamA?.player2Id
+						];
+
+			const submitterName =
+				currentTeam === "teamA"
+					? match.teams.teamA?.name
+					: match.teams.teamB?.name;
+
+			await sendGroupsNotification({
+				title: `Match: ${teamA} vs ${teamB}`,
+				body: `${submitterName} has submitted the match result. Please review it.`,
+				link: window.location.href,
+				userIds: otherTeamIds
+			});
+		}
 	};
 
 	const handleCancelResults = async () => {
