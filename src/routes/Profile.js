@@ -51,6 +51,7 @@ import { grey } from "@mui/material/colors";
 import SuccessModal from "../components/SuccessModal";
 import ConfirmEditModal from "../components/ConfirmEditModal";
 import Badges from "../components/Badges";
+import FullscreenImageDialog from "../components/FullscreenImageDialog";
 import PhotoEditor from "../components/PhotoEditor";
 import ProfileDetails from "../components/ProfileDetails";
 import Statistics from "../components/Statistics";
@@ -106,6 +107,7 @@ const Profile = () => {
   const [imageError, setImageError] = useState(false);
   const [activeTab, setActiveTab] = useState("0");
   const [imageKey, setImageKey] = useState(0);
+  const [fullscreenImage, setFullscreenImage] = useState(null);
   const fileInputRef = useRef(null);
 
   const ShowBadges = getBoolean(remoteConfig, "ShowBadges");
@@ -403,6 +405,14 @@ const Profile = () => {
               <Avatar
                 key={imageKey}
                 src={user?.PhotoURL && !imageError ? `${user.PhotoURL}?t=${imageKey}` : undefined}
+                onClick={() => {
+                  if (user?.PhotoURL && !imageError) {
+                    setFullscreenImage({
+                      src: `${user.PhotoURL}?t=${imageKey}`,
+                      alt: `${user?.Name || displayName || "User"} profile photo`,
+                    });
+                  }
+                }}
                 sx={{
                   width: 100,
                   height: 100,
@@ -412,6 +422,7 @@ const Profile = () => {
                   bgcolor: "primary.main",
                   border: "3px solid",
                   borderColor: "primary.main",
+                  cursor: user?.PhotoURL && !imageError ? "pointer" : "default",
                   opacity: imageLoading && user?.PhotoURL && !imageError ? 0 : 1,
                   transition: "opacity 0.3s ease-in-out",
                 }}
@@ -724,6 +735,13 @@ const Profile = () => {
         imageSrc={originalPhoto}
         onClose={handlePhotoEditorClose}
         onSave={handlePhotoEditorSave}
+      />
+
+      <FullscreenImageDialog
+        open={Boolean(fullscreenImage)}
+        imageSrc={fullscreenImage?.src}
+        alt={fullscreenImage?.alt}
+        onClose={() => setFullscreenImage(null)}
       />
 
       <SuccessModal

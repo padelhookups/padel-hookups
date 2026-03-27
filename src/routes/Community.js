@@ -24,6 +24,7 @@ import {
 } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import ConfirmDeleteModal from "../components/ConfirmDeleteModal";
+import FullscreenImageDialog from "../components/FullscreenImageDialog";
 
 import {
     Avatar,
@@ -151,6 +152,7 @@ const Community = () => {
     const [menuAnchorEl, setMenuAnchorEl] = useState(null);
     const [selectedPostId, setSelectedPostId] = useState(null);
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [fullscreenImage, setFullscreenImage] = useState(null);
 
     /** -----------------------------
      *  FETCH USERS ONCE
@@ -283,6 +285,14 @@ const Community = () => {
     const handleRemoveImage = () => {
         setSelectedImage(null);
         setImagePreview(null);
+    };
+
+    const openFullscreenImage = (imageSrc, alt) => {
+        if (!imageSrc) {
+            return;
+        }
+
+        setFullscreenImage({ src: imageSrc, alt });
     };
 
     /** -----------------------------
@@ -712,8 +722,25 @@ const Community = () => {
                                                                                 ]
                                                                                 ? 0
                                                                                 : 1,
+                                                                        cursor:
+                                                                            filteredUser.PhotoURL &&
+                                                                                !imageErrors[
+                                                                                filteredUser
+                                                                                    .id
+                                                                                ]
+                                                                                ? "pointer"
+                                                                                : "default",
                                                                         transition:
                                                                             "opacity 0.3s ease-in-out"
+                                                                    }}
+                                                                    onClick={(event) => {
+                                                                        if (filteredUser.PhotoURL && !imageErrors[filteredUser.id]) {
+                                                                            event.stopPropagation();
+                                                                            openFullscreenImage(
+                                                                                filteredUser.PhotoURL,
+                                                                                `${filteredUser.Name || "User"} profile photo`
+                                                                            );
+                                                                        }
                                                                     }}
                                                                     imgProps={{
                                                                         onLoad: () =>
@@ -818,8 +845,15 @@ const Community = () => {
                                             avatar={
                                                 <Avatar
                                                     src={userPhoto || undefined}
+                                                    onClick={() =>
+                                                        openFullscreenImage(
+                                                            userPhoto,
+                                                            `${userName || "User"} profile photo`
+                                                        )
+                                                    }
                                                     sx={{
                                                         bgcolor: "primary.main",
+                                                        cursor: userPhoto ? "pointer" : "default",
                                                     }}></Avatar>
                                             }
                                             action={
@@ -850,6 +884,13 @@ const Community = () => {
                                                 component='img'
                                                 image={item.Image}
                                                 alt='News image'
+                                                onClick={() =>
+                                                    openFullscreenImage(
+                                                        item.Image,
+                                                        `${userName || "Community"} post image`
+                                                    )
+                                                }
+                                                sx={{ cursor: "pointer" }}
                                             />
                                         )}
                                         <CardContent>
@@ -1137,6 +1178,13 @@ const Community = () => {
                     Delete Post
                 </MenuItem>
             </Menu>
+
+            <FullscreenImageDialog
+                open={Boolean(fullscreenImage)}
+                imageSrc={fullscreenImage?.src}
+                alt={fullscreenImage?.alt}
+                onClose={() => setFullscreenImage(null)}
+            />
 
             {/* Snackbar for feedback */}
             <Snackbar
