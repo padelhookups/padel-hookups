@@ -283,7 +283,7 @@ const Home = () => {
 								{PremierPadelForEveryOne ||
 								user?.IsAdmin ? (
 									<Tab
-										label='Premier Padel'
+										label='PH Cups'
 										value='premier'
 									/>
 								) : null}
