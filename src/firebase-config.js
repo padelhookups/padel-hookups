@@ -11,6 +11,7 @@ import { getMessaging, getToken, onMessage } from "firebase/messaging";
 import { getPerformance } from "firebase/performance";
 import { getRemoteConfig, fetchAndActivate } from "firebase/remote-config";
 import { getStorage } from "firebase/storage";
+import { getFunctions, httpsCallable } from "firebase/functions";
 
 const firebaseConfig = {
 	apiKey: "AIzaSyBOW8pVZPA8nlU9xcwjnNTxe7dbqCBxub8",
@@ -29,6 +30,8 @@ const db = getFirestore(app);
 const messaging = getMessaging(app);
 const remoteConfig = getRemoteConfig(app);
 const storage = getStorage(app);
+const functions = getFunctions(app, "europe-west1");
+
 console.log(process.env.NODE_ENV);
 
 export async function initRemoteConfig() {
@@ -243,6 +246,13 @@ const onMessageListener = () =>
 			resolve(payload);
 		});
 	});
+
+export async function sendGroupsNotification({ title, body, link, userIds }) {
+	const fn = httpsCallable(functions, "sendGroupsNotification");
+	const result = await fn({ title, body, link, userIds });
+	console.log("sendGroupsNotification result:", result.data);	
+	return result.data; // { sent: number }
+}
 
 // Export the app so it can be used in other files
 // Assign the object to a variable before exporting

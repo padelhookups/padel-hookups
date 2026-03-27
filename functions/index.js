@@ -6,7 +6,8 @@ const { getAuth } = require("firebase-admin/auth");
 
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { onDocumentCreated } = require("firebase-functions/v2/firestore");
-const { getFirestore, FieldValue } = require("firebase-admin/firestore");
+const { onCall, HttpsError } = require("firebase-functions/v2/https");
+const { getFirestore, FieldValue, FieldPath } = require("firebase-admin/firestore");
 const { getMessaging } = require("firebase-admin/messaging");
 
 // The Firebase Admin SDK to access Firestore.
@@ -323,3 +324,64 @@ exports.sendNewsNotifications = onDocumentCreated(
 		});
 	}
 );
+
+exports.sendGroupsNotification = onCall({ region: "europe-west1" }, async (request) => {
+	if (!request.auth) {
+		throw new HttpsError("unauthenticated", "User must be signed in.");
+	}
+
+	// Verify the caller is an admin
+	const db = getFirestore();
+
+	const { title, body, link, userIds } = request.data;
+	if (!title || !body) {
+		throw new HttpsError("invalid-argument", "'title' and 'body' are required.");
+	}
+	if (!Array.isArray(userIds) || userIds.length === 0) {
+		throw new HttpsError("invalid-argument", "'userIds' must be a non-empty array.");
+	}
+
+	const messaging = getMessaging();
+
+	const usersSnapshot = await db.collection("Users").where(FieldPath.documentId(), "in", userIds).get();
+	const userDocs = usersSnapshot.docs;
+
+	if (userDocs.length === 0) {
+		return { sent: 0 };
+	}
+
+	const messages = [];
+	const tokenRefs = [];
+
+	for (const userDoc of userDocs) {
+		const userData = userDoc.data();
+
+		const devices = userData.Devices || {};
+
+		for (const [deviceId, device] of Object.entries(devices)) {
+			if (device?.Token && device?.SendNotifications) {
+				const message = {
+					token: device.Token,
+					data: { title, body },
+					webpush: { headers: { Urgency: "high" } },
+				};
+				if (link) {
+					message.data.click_action = link;
+					message.webpush.fcmOptions = { link };
+				}
+				messages.push(message);
+				tokenRefs.push({ userId: userDoc.id, deviceId, token: device.Token });
+			}
+		}
+	}
+
+	await sendNotificationsAndCleanup({
+		db,
+		messaging,
+		messages,
+		tokenRefs,
+		notificationType: "adminNotification",
+	});
+
+	return { sent: messages.length };
+});

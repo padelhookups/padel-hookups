@@ -12,6 +12,7 @@ import {
 } from "firebase/firestore";
 import useAuth from "../utils/useAuth";
 import { FirestoreAdapter } from "../utils/FirestoreAdapter";
+import { sendGroupsNotification } from "../firebase-config";
 
 import { selectEvents } from "../redux/slices/eventsSlice";
 
@@ -438,6 +439,12 @@ const PremierPadelMatch = () => {
 										};
 
 										await updateDoc(matchRef, updates);
+										await sendGroupsNotification({
+											title: "Match Scheduled",
+											body: `Your match has been scheduled for ${date} at ${time}`,
+											link: window.location.href,
+											userIds: allPlayersIds
+										});
 									}}
 									onLocationUpdated={(loc) =>
 										handleLocationUpdate(loc)
