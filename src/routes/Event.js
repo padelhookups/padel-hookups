@@ -5,6 +5,7 @@ import { fetchEvents, selectEvents } from "../redux/slices/eventsSlice";
 import { fetchUsers, selectUsers } from "../redux/slices/usersSlice";
 
 import { getFirestore, Timestamp } from "firebase/firestore";
+import { getFunctions, httpsCallable } from "firebase/functions";
 
 import useAuth from "../utils/useAuth";
 import useEventActions from "../utils/EventsUtils";
@@ -16,6 +17,7 @@ import EventRankings from "../components/EventRankings";
 import ConfirmationModal from "../components/ConfirmationModal";
 import SuccessModal from "../components/SuccessModal";
 import SearchPlayer from "../components/SearchPlayer";
+import firebase from "../firebase-config";
 
 import {
 	Avatar,
@@ -49,11 +51,13 @@ import {
 	Delete as DeleteIcon
 } from "@mui/icons-material";
 import { create } from "brackets-manager/dist/base/stage/creator";
+import mbwayLogo from "../images/mbway.webp";
 
 const Event = () => {
 	const { user } = useAuth();
 	const { state } = useLocation();
 	const db = getFirestore();
+	const functions = getFunctions(undefined, "europe-west1");
 	const dispatch = useDispatch();
 	const {
 		createMatchsRobinHood,
@@ -93,6 +97,7 @@ const Event = () => {
 	const [confirmationModalTitle, setConfirmationModalTitle] = useState("");
 	const [successTitle, setSuccessTitle] = useState("");
 	const [successDescription, setSuccessDescription] = useState("");
+	const [stripeLoading, setStripeLoading] = useState(false);
 	const initialFetchDone = useRef(false);
 
 	const filteredUsers = [...users, ...(event?.Guests || [])]
@@ -230,6 +235,48 @@ const Event = () => {
 		await removeMixPlayed(event.PlayersIds);
 		await alert("All games deleted.");
 		dispatch(fetchEvents({ db, forceRefresh: false }));
+	};
+
+	const handleStripeCheckout = async () => {
+		if (!event?.id || !event?.Price) {
+			alert("This event has no valid payment amount.");
+			return;
+		}
+
+		try {
+			setStripeLoading(true);
+			const currentUser = firebase.auth.currentUser;
+			if (!currentUser) {
+				alert("Please sign in again before paying.");
+				return;
+			}
+			
+			const createStripePaymentLink = httpsCallable(
+				functions,
+				"createStripePaymentLink"
+			);
+			const result = await createStripePaymentLink({
+				eventId: event.id,
+				origin: window.location.origin
+			});
+			const paymentLinkUrl = result.data?.url;
+
+			if (!paymentLinkUrl) {
+				throw new Error("Missing payment link URL.");
+			}
+
+			window.location.href = paymentLinkUrl;
+		} catch (error) {
+			console.error("Stripe checkout failed:", error);
+			const firebaseCode = error?.code || "unknown";
+			if (firebaseCode === "functions/unauthenticated") {
+				alert("Session expired. Please log in again and retry payment.");
+				return;
+			}
+			alert(`Unable to start payment (${firebaseCode}). Please try again.`);
+		} finally {
+			setStripeLoading(false);
+		}
 	};
 
 	if (!event) {
@@ -456,6 +503,22 @@ const Event = () => {
 												}}>
 												Good Luck 🤞
 											</Button>
+											{event.Price && (
+												<Button
+													fullWidth
+													variant='contained'
+													disabled={stripeLoading}
+													sx={{
+														bgcolor: "#0a2540",
+														color: "white",
+														"&:hover": {
+															bgcolor: "#163f66"
+														}
+													}}
+													onClick={handleStripeCheckout}>
+														{stripeLoading ? "Redirecting..." : "Pay with Stripe"}
+												</Button>
+											)}
 											{!event.TournamentStarted && (
 												<Button
 													fullWidth

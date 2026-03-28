@@ -1,6 +1,7 @@
 // The Cloud Functions for Firebase SDK to create Cloud Functions and triggers.
 const { SecretManagerServiceClient } = require("@google-cloud/secret-manager");
 const client = new SecretManagerServiceClient();
+const Stripe = require("stripe");
 const { logger } = require("firebase-functions");
 const { getAuth } = require("firebase-admin/auth");
 
@@ -19,6 +20,90 @@ const INVALID_TOKEN_ERRORS = new Set([
 	"messaging/registration-token-not-registered",
 	"messaging/invalid-registration-token",
 ]);
+
+const DEFAULT_WEB_ORIGIN = "https://padel-hookups.web.app";
+const ALLOWED_WEB_ORIGINS = new Set([
+	DEFAULT_WEB_ORIGIN,
+	"http://localhost:3000",
+	"http://127.0.0.1:3000",
+]);
+const CALLABLE_CORS_ORIGINS = [
+	"https://padel-hookups.web.app",
+	"http://localhost:3000",
+	"http://127.0.0.1:3000",
+];
+
+let stripeClient;
+let stripeSecretKeyPromise;
+
+function toCents(value) {
+	if (value === null || value === undefined || value === "") {
+		return null;
+	}
+
+	if (typeof value === "number") {
+		if (!Number.isFinite(value) || value <= 0) {
+			return null;
+		}
+		return Math.round(value * 100);
+	}
+
+	if (typeof value === "string") {
+		const parsed = Number(
+			value
+				.replace(/[€\s]/g, "")
+				.replace(",", ".")
+		);
+		if (!Number.isFinite(parsed) || parsed <= 0) {
+			return null;
+		}
+		return Math.round(parsed * 100);
+	}
+
+	return null;
+}
+
+function resolveAllowedOrigin(origin) {
+	if (!origin || typeof origin !== "string") {
+		return DEFAULT_WEB_ORIGIN;
+	}
+
+	try {
+		const parsed = new URL(origin);
+		return ALLOWED_WEB_ORIGINS.has(parsed.origin)
+			? parsed.origin
+			: DEFAULT_WEB_ORIGIN;
+	} catch {
+		return DEFAULT_WEB_ORIGIN;
+	}
+}
+
+async function getStripeClient() {
+	if (stripeClient) {
+		return stripeClient;
+	}
+
+	if (!stripeSecretKeyPromise) {
+		stripeSecretKeyPromise = client
+			.accessSecretVersion({ name: STRIPE_SECRET_NAME })
+			.then(([result]) => {
+				const secretKey = result.payload?.data?.toString("utf8")?.trim();
+				if (!secretKey) {
+					throw new Error("Stripe secret key is empty.");
+				}
+				logger.info(`Stripe secret key loaded from ${STRIPE_SECRET_NAME}`);
+				return secretKey;
+			})
+			.catch((error) => {
+				stripeSecretKeyPromise = null;
+				throw error;
+			});
+	}
+
+	const secretKey = await stripeSecretKeyPromise;
+	stripeClient = new Stripe(secretKey);
+	return stripeClient;
+}
 
 async function sendNotificationsAndCleanup({
 	db,
@@ -385,3 +470,97 @@ exports.sendGroupsNotification = onCall({ region: "europe-west1" }, async (reque
 
 	return { sent: messages.length };
 });
+
+async function createStripePaymentLinkForRequest(request) {
+	if (!request.auth) {
+		throw new HttpsError("unauthenticated", "User must be signed in.");
+	}
+
+	const { eventId, origin } = request.data || {};
+	if (!eventId || typeof eventId !== "string") {
+		throw new HttpsError(
+			"invalid-argument",
+			"'eventId' is required and must be a string."
+		);
+	}
+
+	const db = getFirestore();
+	const eventSnap = await db.collection("Events").doc(eventId).get();
+	if (!eventSnap.exists) {
+		throw new HttpsError("not-found", "Event not found.");
+	}
+
+	const eventData = eventSnap.data() || {};
+	const amount = toCents(eventData.Price);
+	if (!amount) {
+		throw new HttpsError(
+			"failed-precondition",
+			"This event has no valid price configured."
+		);
+	}
+
+	const safeOrigin = resolveAllowedOrigin(origin);
+
+	let stripe;
+	try {
+		stripe = await getStripeClient();
+	} catch (error) {
+		logger.error("Failed to load Stripe secret key.", error);
+		throw new HttpsError("internal", "Payment provider not configured.");
+	}
+
+	const eventName = eventData.Name || "Padel Event";
+	const paymentLink = await stripe.paymentLinks.create({
+		line_items: [
+			{
+				quantity: 1,
+				price_data: {
+					currency: "eur",
+					unit_amount: amount,
+					product_data: {
+						name: `${eventName} entry fee`,
+						description: eventData.Location || undefined,
+					},
+				},
+			},
+		],
+		customer_creation: "always",
+		after_completion: {
+			type: "redirect",
+			redirect: {
+				url: `${safeOrigin}/Event/${eventId}?payment=success`,
+			},
+		},
+		metadata: {
+			eventId,
+			userId: request.auth.uid,
+			eventName,
+		},
+		payment_intent_data: {
+			metadata: {
+				eventId,
+				userId: request.auth.uid,
+				eventName,
+			},
+		},
+	});
+
+	if (!paymentLink.url) {
+		throw new HttpsError("internal", "Unable to create payment link.");
+	}
+
+	const paymentLinkUrl = new URL(paymentLink.url);
+	if (request.auth.token.email) {
+		paymentLinkUrl.searchParams.set(
+			"prefilled_email",
+			request.auth.token.email
+		);
+	}
+
+	return { url: paymentLinkUrl.toString() };
+}
+
+exports.createStripePaymentLink = onCall(
+	{ region: "europe-west1", cors: CALLABLE_CORS_ORIGINS },
+	async (request) => createStripePaymentLinkForRequest(request)
+);
