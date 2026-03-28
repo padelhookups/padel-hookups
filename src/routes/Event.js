@@ -51,7 +51,6 @@ import {
 	Delete as DeleteIcon
 } from "@mui/icons-material";
 import { create } from "brackets-manager/dist/base/stage/creator";
-import mbwayLogo from "../images/mbway.webp";
 
 const Event = () => {
 	const { user } = useAuth();
