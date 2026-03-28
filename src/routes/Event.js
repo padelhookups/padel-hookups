@@ -142,7 +142,8 @@ const Event = () => {
 		</div>
 	);
 
-	const alreadyRegistered = event?.PlayersIds.includes(user?.uid);
+	const alreadyRegistered = !!event?.PlayersIds?.includes(user?.uid);
+	const canShowPayNow = !!(user && alreadyRegistered && event?.Price && user?.IsAdmin);
 
 	// click assign: add clicked player to first available slot (player1 then player2)
 	const handleListItemClick = (player) => {
@@ -503,7 +504,7 @@ const Event = () => {
 												}}>
 												Good Luck 🤞
 											</Button>
-											{event.Price && (
+											{canShowPayNow && (
 												<Button
 													fullWidth
 													variant='contained'
@@ -516,7 +517,7 @@ const Event = () => {
 														}
 													}}
 													onClick={handleStripeCheckout}>
-														{stripeLoading ? "Redirecting..." : "Pay with Stripe"}
+														{stripeLoading ? "Redirecting..." : "Pay Now"}
 												</Button>
 											)}
 											{!event.TournamentStarted && (

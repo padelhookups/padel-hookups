@@ -85,13 +85,13 @@ async function getStripeClient() {
 
 	if (!stripeSecretKeyPromise) {
 		stripeSecretKeyPromise = client
-			.accessSecretVersion({ name: STRIPE_SECRET_NAME })
+			.accessSecretVersion({ name: 'projects/padel-hookups/secrets/STRIPE_SECRET_KEY/versions/latest' })
 			.then(([result]) => {
 				const secretKey = result.payload?.data?.toString("utf8")?.trim();
 				if (!secretKey) {
 					throw new Error("Stripe secret key is empty.");
 				}
-				logger.info(`Stripe secret key loaded from ${STRIPE_SECRET_NAME}`);
+				logger.info(`Stripe secret key loaded from projects/padel-hookups/secrets/STRIPE_SECRET_KEY/versions/latest`);
 				return secretKey;
 			})
 			.catch((error) => {
