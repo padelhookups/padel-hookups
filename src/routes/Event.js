@@ -344,7 +344,7 @@ const Event = () => {
 					pt: "env(safe-area-inset-top)"
 				}}>
 				{/* Header */}
-				<Box sx={{ py: 3, px: 2 }}>
+				<Box className="eventHeader" sx={{ py: 3, px: 2 }}>
 					<Container maxWidth='sm'>
 						<Box
 							display='flex'

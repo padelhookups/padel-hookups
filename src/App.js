@@ -28,6 +28,9 @@ import ManageUsers from "./routes/Admin/ManageUsers";
 import ChangePassword from "./routes/ChangePassword";
 import MyDevices from "./routes/MyDevices";
 import NotificationPreferences from "./routes/NotificationPreferences";
+import MarketPlace from "./routes/MarketPlace";
+import MarketPlaceItemDetail from "./routes/MarketPlaceItemDetail";
+import ShopMerchItemDetail from "./routes/ShopMerchItemDetail";
 import NotificationPermissionModal from "./components/NotificationPermissionModal";
 
 import logo from "./images/LogoWhite.svg";
@@ -216,6 +219,30 @@ function App() {
 							element={
 								<ProtectedRoute user={user}>
 									<ManageUsers />
+								</ProtectedRoute>
+							}
+						/>
+						<Route
+							path='/Shop'
+							element={
+								<ProtectedRoute user={user}>
+									<MarketPlace />
+								</ProtectedRoute>
+							}
+						/>
+						<Route
+							path='/Shop/item/:itemId'
+							element={
+								<ProtectedRoute user={user}>
+									<MarketPlaceItemDetail />
+								</ProtectedRoute>
+							}
+						/>
+						<Route
+							path='/Shop/merch/:itemId'
+							element={
+								<ProtectedRoute user={user}>
+									<ShopMerchItemDetail />
 								</ProtectedRoute>
 							}
 						/>
