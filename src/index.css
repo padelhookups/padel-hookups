@@ -155,6 +155,20 @@ code {
   }
 }
 
+@media screen and (max-width: 400px) {
+
+  .eventHeader {
+    height: 100px !important;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+  }
+
+  .eventHeader h5 {
+    font-size: 1rem !important;
+  }
+}
+
 @media screen and (max-width: 778px) {
   .brackets-viewer .round-robin .group table {
     margin: auto;
