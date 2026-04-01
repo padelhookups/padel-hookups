@@ -111,6 +111,10 @@ const Home = () => {
 		remoteConfig,
 		"PremierPadelForEveryOne"
 	);
+	const PremierPadelForTesters = getBoolean(
+		remoteConfig,
+		"PremierPadelForTesters"
+	);
 
 	useEffect(() => {
 		// Only fetch if we haven't done initial fetch and don't have benefits
@@ -280,7 +284,7 @@ const Home = () => {
 								<Tab label='Tour 2026' value='tour' />
 								{/* ||
 								user?.IsTester  */}
-								{PremierPadelForEveryOne ||
+								{PremierPadelForEveryOne || PremierPadelForTesters ||
 								user?.IsAdmin ? (
 									<Tab
 										label='PH Cups'

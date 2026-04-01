@@ -49,7 +49,7 @@ const Header = ({ match, event, onBack, mainColor }) => {
           ${mainColor},
           color-mix(in srgb, ${mainColor}, black 20%)
         )`,
-				//background: `linear-gradient(135deg, ${GOLD_DARK} 0%, ${GOLD} 60%, ${GOLD_LIGHT} 100%)`,
+				pt: "env(safe-area-inset-top)",
 				position: "relative",
 				overflow: "hidden",
 				height: 210,

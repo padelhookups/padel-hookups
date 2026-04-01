@@ -144,9 +144,11 @@ const Settings = () => {
 
 			<Box
 				sx={{
-					p: 3,
-					height: "Calc(100vh - 258px - env(safe-area-inset-bottom))",
-					overflow: "auto"
+					px: 3,
+					pt: 3,
+					height: "calc(100dvh - 235px - env(safe-area-inset-bottom))",
+					overflowY: "auto",
+					WebkitOverflowScrolling: "touch"
 				}}>
 				{/* Account Settings */}
 				<Typography
@@ -297,7 +299,7 @@ const Settings = () => {
 					startIcon={<Logout />}
 					fullWidth
 					onClick={handleSignOut}
-					sx={{ mt: 1 }}>
+					sx={{ mt: 1, mb: 3 }}>
 					Sign Out
 				</Button>
 			</Box>

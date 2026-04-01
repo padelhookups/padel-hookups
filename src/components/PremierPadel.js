@@ -1,8 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { Box, Paper, Typography, Chip } from "@mui/material";
+import { Box, Paper, Typography, Chip, Avatar } from "@mui/material";
 import { useNavigate } from "react-router";
 
-const TournamentCard = ({ title, startMonth, durationMonths, color, onClick }) => {
+const TournamentCard = ({
+  title,
+  startMonth,
+  durationMonths,
+  onClick,
+  mainSponsor,
+  logoSponsor,
+  colorSponsor
+}) => {
   const months = [];
   const monthNames = [
     "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
@@ -14,12 +22,41 @@ const TournamentCard = ({ title, startMonth, durationMonths, color, onClick }) =
 
   return (
     <Paper
-      sx={{ p: 2, mb: 2, borderLeft: `6px solid ${color}`, cursor: onClick ? 'pointer' : 'default' }}
-      elevation={2}
+      sx={{
+        p: 2,
+        mb: 2,
+        border: `2px dashed ${colorSponsor || "grey"}`,
+        borderRadius: 2,
+        position: "relative",
+        cursor: onClick ? "pointer" : "default",
+      }}
+      elevation={0}
       onClick={onClick}
     >
-      <Typography variant="h6" sx={{ fontWeight: 'bold' }}>{title}</Typography>
-      <Box sx={{ display: 'flex', gap: 1, mt: 1, flexWrap: 'wrap' }}>
+      <Box
+        sx={{
+          position: "absolute",
+          top: 8,
+          right: 8,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 0.5,
+        }}
+      >
+        <Avatar
+          src={logoSponsor || ""}
+          alt={`${mainSponsor || "Main sponsor"} logo`}
+          sx={{ bgcolor: "transparent", width: 48, height: 48, fontSize: 18 }}
+        >
+          {mainSponsor ? mainSponsor.charAt(0).toUpperCase() : "M"}
+        </Avatar>
+      </Box>
+
+      <Typography variant="h6" sx={{ fontWeight: "bold", width: "calc(100% - 110px)", color: colorSponsor || "text.primary" }}>
+        {title}
+      </Typography>
+      <Box sx={{ display: "flex", gap: 1, mt: 1, flexWrap: "wrap", width: "calc(100% - 110px)" }}>
         {months.map((m) => (
           <Chip key={m} label={m} size="small" />
         ))}
@@ -53,7 +90,9 @@ const PremierPadel = ({ events }) => {
           title={event.Name}
           startMonth={event.StartMonth}
           durationMonths={event.EndMonth - event.StartMonth}
-          //color="#388e3c"
+          mainSponsor={event.MainSponsor}
+          logoSponsor={event.LogoSponsor}
+          colorSponsor={event.SponsorColor}
           onClick={() =>
             handleOpenCup(
               event
