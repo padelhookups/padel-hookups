@@ -313,6 +313,25 @@ const EventCup = () => {
 
   const alreadyRegistered = event?.PlayersIds?.includes(user?.uid);
 
+  const parseEventDate = (value) => {
+    if (!value) return null;
+    const parsed = value?.toDate ? value.toDate() : new Date(value);
+    return Number.isNaN(parsed?.getTime?.()) ? null : parsed;
+  };
+
+  const formatDateText = (value) => {
+    const parsed = parseEventDate(value);
+    if (!parsed) return "-";
+    return parsed.toLocaleDateString(undefined, {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
+  const eventStartDate = parseEventDate(event.Date);
+  const inscriptionOpenDate = parseEventDate(event.InscriptionDate);
+
   return (
     <>
       <Paper
@@ -398,9 +417,46 @@ const EventCup = () => {
               </Box>
             )}
             <Paper elevation={1} sx={{ p: 2 }}>
-              <Typography variant="body1" color="text.secondary">
-                {event.description || "Cup overview and details."}
-              </Typography>
+              <Stack spacing={1.5}>
+                <Typography variant="body1" color="text.secondary">
+                  {event.description || "Cup overview and details"}
+                </Typography>
+
+                {(event.Date || event.InscriptionDate) && <Divider />}
+
+                {event.Date && (
+                  <Stack direction="row" justifyContent="space-between">
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      fontWeight={600}
+                    >
+                      Start Date
+                    </Typography>
+                    <Typography variant="body2" color={sponsorColor}>
+                      {formatDateText(eventStartDate)}
+                    </Typography>
+                  </Stack>
+                )}
+
+                {event.InscriptionDate && (
+                  <Stack direction="row" justifyContent="space-between">
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      fontWeight={600}
+                    >
+                      Registration Opens
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      color={sponsorColor}
+                    >
+                      {formatDateText(inscriptionOpenDate)}
+                    </Typography>
+                  </Stack>
+                )}
+              </Stack>
             </Paper>
 
             {user && (
@@ -414,6 +470,12 @@ const EventCup = () => {
                       color: "white",
                     }}
                     onClick={async () => {
+                      if (event.InscriptionDate) {
+                        if (inscriptionOpenDate && inscriptionOpenDate > new Date()) {
+                          alert("Registration is not open yet. Inscriptions open on " + formatDateText(inscriptionOpenDate) + ".");
+                          return;
+                        }
+                      }
                       if ((event?.TypeOfTournament || event.type) === "Mix") {
                         setType("joinGame");
                         setConfirmationTitle("Register");
