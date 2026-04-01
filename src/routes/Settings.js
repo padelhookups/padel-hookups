@@ -25,7 +25,14 @@ import {
 	Typography,
 	Paper
 } from "@mui/material";
-import { Lock, Logout, Security, Devices, Notifications } from "@mui/icons-material";
+import {
+	Lock,
+	Logout,
+	Security,
+	Devices,
+	Notifications,
+	Storefront
+} from "@mui/icons-material";
 
 import NotificationPermissionModal from "../components/NotificationPermissionModal";
 
@@ -37,8 +44,8 @@ const Settings = () => {
 
 	const [notificationsChecked, setNotificationsChecked] = useState(false);
 	const [openNotifications, setOpenNotifications] = useState(false);
-	const [messagingToken, setMessagingToken] = useState(() =>
-		firebase.messagingToken
+	const [messagingToken, setMessagingToken] = useState(
+		() => firebase.messagingToken
 	);
 
 	useEffect(() => {
@@ -103,9 +110,13 @@ const Settings = () => {
 		navigate("/MyDevices");
 	};
 
+	const handleShop = () => {
+		navigate("/Shop");
+	};
+
 	const goToNotificationPreferences = () => {
 		navigate("/NotificationPreferences");
-	}
+	};
 
 	return (
 		<>
@@ -135,7 +146,7 @@ const Settings = () => {
 				sx={{
 					p: 3,
 					height: "Calc(100vh - 258px - env(safe-area-inset-bottom))",
-					overflow: "auto",
+					overflow: "auto"
 				}}>
 				{/* Account Settings */}
 				<Typography
@@ -249,15 +260,26 @@ const Settings = () => {
 				</Card>
 
 				{user?.IsAdmin && (
-					<Button
-						variant='outlined'
-						fullWidth
-						startIcon={<Security />}
-						onClick={handleAdminSettings}
-						sx={{ py: 1.5 }}>
-						Admin Settings
-					</Button>
+					<>
+						<Button
+							variant='outlined'
+							fullWidth
+							startIcon={<Security />}
+							onClick={handleAdminSettings}
+							sx={{ py: 1.5 }}>
+							Admin Settings
+						</Button>
+						<Button
+							variant='outlined'
+							fullWidth
+							startIcon={<Storefront />}
+							onClick={handleShop}
+							sx={{ py: 1.5, mt: user?.IsAdmin ? 2 : 0 }}>
+							Shop
+						</Button>
+					</>
 				)}
+
 				{/* Danger Zone */}
 				<Alert severity='warning' color='error' sx={{ my: 2 }}>
 					<Typography variant='subtitle2' gutterBottom>
