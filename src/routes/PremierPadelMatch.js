@@ -196,11 +196,22 @@ const PremierPadelMatch = () => {
 		if (
 			!eventIdParam ||
 			!event?.TournamentId ||
-			!match?.id ||
-			!currentTeam
+			!match?.id
 		) {
 			throw new Error("Missing data to update scheduling");
 		}
+
+		const isAdminSchedulingPayload = !!payload?.teamA || !!payload?.teamB;
+		const nextScheduling = isAdminSchedulingPayload
+			? {
+				...match.scheduling,
+				...(payload.teamA ? { teamA: payload.teamA } : {}),
+				...(payload.teamB ? { teamB: payload.teamB } : {})
+			}
+			: {
+				...match.scheduling,
+				[currentTeam]: payload
+			};
 
 		await setDoc(
 			doc(
@@ -209,12 +220,13 @@ const PremierPadelMatch = () => {
 			),
 			{
 				...match,
-				scheduling: {
-					...match.scheduling,
-					[currentTeam]: payload
-				}
+				scheduling: nextScheduling
 			}
 		);
+
+		if (isAdminSchedulingPayload) {
+			return;
+		}
 
 		const otherTeamIds =
 			currentTeam === "teamA"

@@ -28,6 +28,15 @@ function getSlotsCount(slots) {
   return slots?.size || 0;
 }
 
+function getSharedSlots(leftSlots, rightSlots) {
+  if (!leftSlots || !rightSlots) return [];
+
+  const left = Array.isArray(leftSlots) ? leftSlots : [...leftSlots];
+  const right = Array.isArray(rightSlots) ? rightSlots : [...rightSlots];
+
+  return left.filter((slot) => right.includes(slot));
+}
+
 function formatDate(key) {
   const d = new Date(key + "T12:00:00");
   return `${DAY_NAMES[d.getDay()]} ${d.toLocaleDateString("en-GB", { day: "numeric", month: "long" })}`;
@@ -57,10 +66,15 @@ const Schedule = ({
   onLocationUpdated,
   mainColor,
 }) => {
+  const isAdminView = !currentTeamId;
   const otherTeamId = currentTeamId === "teamA" ? "teamB" : "teamA";
   const currentTeam = match.teams[currentTeamId];
   const otherTeam = match.teams[otherTeamId];
-  const hasBothTeams = !!currentTeam?.name && !!otherTeam?.name;
+  const teamASubmitted = !!match.scheduling?.teamA;
+  const teamBSubmitted = !!match.scheduling?.teamB;
+  const hasBothTeams = isAdminView
+    ? !!match.teams?.teamA?.name && !!match.teams?.teamB?.name
+    : !!currentTeam?.name && !!otherTeam?.name;
   const otherSubmitted = !!match.scheduling?.[otherTeamId];
   const finalOverlaps = match.Overlaps || [];
 
@@ -71,7 +85,9 @@ const Schedule = ({
     match.scheduling?.[currentTeamId]?.availability || {},
   ); // { "2026-02-22": Set(["morning_9_12"]) }
   const [submitted, setSubmitted] = useState(
-    !!match.scheduling?.[currentTeamId],
+    isAdminView
+      ? teamASubmitted && teamBSubmitted
+      : !!match.scheduling?.[currentTeamId],
   );
   const [phase, setPhase] = useState("availability"); // availability | confirmed | court_booked
 
@@ -89,12 +105,27 @@ const Schedule = ({
   const [submitLoading, setSubmitLoading] = useState(false);
   const [hasPendingChanges, setHasPendingChanges] = useState(false);
 
+    // Admin per-team avail state
+    const [myAvailA, setMyAvailA] = useState(
+      isAdminView ? match.scheduling?.teamA?.availability || {} : {},
+    );
+    const [myAvailB, setMyAvailB] = useState(
+      isAdminView ? match.scheduling?.teamB?.availability || {} : {},
+    );
+    const [activeEditTeam, setActiveEditTeam] = useState(null);
+
   const { months, deadline } = useMemo(
     () => getWindowMonths(match.StartDateToPlay),
     [match],
   );
 
   useEffect(() => {
+    setSubmitted(
+      isAdminView
+        ? teamASubmitted && teamBSubmitted
+        : !!match.scheduling?.[currentTeamId],
+    );
+
     if (match.Location) {
       setPhase("court_booked");
       setConfirmedSlot({
@@ -126,7 +157,7 @@ const Schedule = ({
     } else  {
       setPhase("availability");
     }
-  }, [match]);
+  }, [currentTeamId, isAdminView, match, teamASubmitted, teamBSubmitted]);
 
   const windowStart = new Date(match.StartDateToPlay.seconds * 1000)
     .toISOString()
@@ -140,26 +171,49 @@ const Schedule = ({
 
   // Compute overlaps after both teams submit
   const overlaps = useMemo(() => {
-    if (!submitted || !otherSubmitted) return [];
-    const otherAvail = match.scheduling[otherTeamId]?.availability || {};
-    const result = [];
-    console.log("overlaps", myAvail);
+    const primaryAvail = isAdminView ? myAvailA : myAvail;
+    const secondaryAvail = isAdminView
+      ? myAvailB
+      : match.scheduling?.[otherTeamId]?.availability || {};
 
-    for (const [date, mySlots] of Object.entries(myAvail)) {
-      const myArr = [...mySlots];
-      const otherSlots = otherAvail[date] || [];
-      const shared = myArr.filter((s) => otherSlots.includes(s));
+    if (!isAdminView && (!submitted || !otherSubmitted)) return [];
+
+    const result = [];
+    console.log("overlaps", primaryAvail, secondaryAvail);
+
+    for (const [date, mySlots] of Object.entries(primaryAvail)) {
+      const otherSlots = secondaryAvail[date] || [];
+      const shared = getSharedSlots(mySlots, otherSlots);
       if (shared.length) result.push({ date, slots: shared });
     }
     console.log("overlaps", result);
 
     return result;
-  }, [submitted, myAvail, match.scheduling, otherTeamId, otherSubmitted]);
+  }, [
+    isAdminView,
+    submitted,
+    myAvail,
+    myAvailA,
+    myAvailB,
+    match.scheduling,
+    otherTeamId,
+    otherSubmitted,
+  ]);
 
   function handleDayTap(key) {
     console.log("handleDayTap", key);
 
-    if (!myAvail[key]) setMyAvail((prev) => ({ ...prev, [key]: new Set() }));
+    if (isAdminView && arguments[1]) {
+      const teamId = arguments[1];
+      const setAvail = teamId === "teamA" ? setMyAvailA : setMyAvailB;
+      setAvail((prev) => {
+        if (!prev[key]) return { ...prev, [key]: new Set() };
+        return prev;
+      });
+      setActiveEditTeam(teamId);
+    } else {
+      if (!myAvail[key]) setMyAvail((prev) => ({ ...prev, [key]: new Set() }));
+    }
     setSheetDay(key);
     setSheetOpen(true);
   }
@@ -167,31 +221,68 @@ const Schedule = ({
   function handleSheetDone(selectedSlots) {
     console.log("handleSheetDone", selectedSlots);
 
-    setMyAvail((prev) => {
-      const next = { ...prev };
-      if (selectedSlots.size === 0) delete next[sheetDay];
-      else next[sheetDay] = selectedSlots;
-      return next;
-    });
+      if (isAdminView) {
+        const setAvail = activeEditTeam === "teamA" ? setMyAvailA : setMyAvailB;
+        setAvail((prev) => {
+          const next = { ...prev };
+          if (selectedSlots.size === 0) delete next[sheetDay];
+          else next[sheetDay] = selectedSlots;
+          return next;
+        });
+      } else {
+        setMyAvail((prev) => {
+          const next = { ...prev };
+          if (selectedSlots.size === 0) delete next[sheetDay];
+          else next[sheetDay] = selectedSlots;
+          return next;
+        });
+      }
     setHasPendingChanges(true);
     setSheetOpen(false);
   }
 
   function openSheetForDay(key) {
+    if (isAdminView && arguments[1]) setActiveEditTeam(arguments[1]);
     setSheetDay(key);
     setSheetOpen(true);
   }
 
   const hasAnySlots = Object.values(myAvail).some((s) => getSlotsCount(s) > 0);
+  const hasAnySlotsAdmin = isAdminView
+    ? Object.values(myAvailA).some((s) => getSlotsCount(s) > 0) ||
+      Object.values(myAvailB).some((s) => getSlotsCount(s) > 0)
+    : false;
   const selectedDays = Object.keys(myAvail).sort();
+  const selectedDaysA = isAdminView ? Object.keys(myAvailA).sort() : [];
+  const selectedDaysB = isAdminView ? Object.keys(myAvailB).sort() : [];
 
   // Firestore payload (log here, in real app call updateDoc)
   function getFirestorePayload() {
-    const out = {};
-    for (const [date, slots] of Object.entries(myAvail)) {
-      out[date] = [...slots];
+    const serializeAvailability = (availabilityMap) => {
+      const out = {};
+      for (const [date, slots] of Object.entries(availabilityMap)) {
+        out[date] = [...slots];
+      }
+      return out;
+    };
+
+    if (isAdminView) {
+      return {
+        teamA: {
+          submittedAt: new Date(),
+          availability: serializeAvailability(myAvailA),
+        },
+        teamB: {
+          submittedAt: new Date(),
+          availability: serializeAvailability(myAvailB),
+        },
+      };
     }
-    return { submittedAt: new Date(), availability: out };
+
+    return {
+      submittedAt: new Date(),
+      availability: serializeAvailability(myAvail),
+    };
   }
 
   async function handleSubmit() {
@@ -296,7 +387,7 @@ const Schedule = ({
         {hasBothTeams && (
           <>
             {/* Notification: other team submitted */}
-            {otherSubmitted && !submitted && (
+            {!isAdminView && otherSubmitted && !submitted && (
               <Box px={2} pb={1.5}>
                 <Alert
                   icon={<NotificationsActiveIcon />}
@@ -338,47 +429,64 @@ const Schedule = ({
               </Box>
             </Box>
 
-            {/* Other team's card */}
-            {/* match.scheduling[otherTeamId]?.availability */}
+            {/* Team A card */}
             <TeamCard
-              team={otherTeam}
-              submitted={otherSubmitted}
-              availability={match.scheduling?.[otherTeamId]?.availability || null}
+              team={match.teams.teamA}
+              submitted={isAdminView ? teamASubmitted : currentTeamId === "teamA" ? submitted : teamASubmitted}
+              availability={
+                isAdminView
+                  ? myAvailB
+                  : currentTeamId === "teamA"
+                    ? match.scheduling?.teamB?.availability || null
+                    : match.scheduling?.teamA?.availability || null
+              }
               months={months}
               windowStart={windowStart}
               windowEnd={windowEnd}
-              myAvail={myAvail}
-              interactive={false}
-              isOtherTeam
+              myAvail={isAdminView ? myAvailA : currentTeamId === "teamA" ? myAvail : match.scheduling?.teamA?.availability || {}}
+              interactive={isAdminView || currentTeamId === "teamA"}
+              isOtherTeam={!isAdminView && currentTeamId !== "teamA"}
+              onDayTap={isAdminView ? (key) => handleDayTap(key, "teamA") : currentTeamId === "teamA" ? handleDayTap : undefined}
+              selectedDays={isAdminView ? selectedDaysA : currentTeamId === "teamA" ? selectedDays : undefined}
+              onEditDay={isAdminView ? (key) => openSheetForDay(key, "teamA") : currentTeamId === "teamA" ? openSheetForDay : undefined}
               mainColor={mainColor}
             />
 
-            {/* Current user's card */}
+            {/* Team B card */}
             <TeamCard
-              team={currentTeam}
-              submitted={submitted}
-              availability={match.scheduling?.[otherTeamId]?.availability || null}
+              team={match.teams.teamB}
+              submitted={isAdminView ? teamBSubmitted : currentTeamId === "teamB" ? submitted : teamBSubmitted}
+              availability={
+                isAdminView
+                  ? myAvailA
+                  : currentTeamId === "teamB"
+                    ? match.scheduling?.teamA?.availability || null
+                    : match.scheduling?.teamB?.availability || null
+              }
               months={months}
               windowStart={windowStart}
               windowEnd={windowEnd}
-              myAvail={myAvail}
-              interactive={true}
-              onDayTap={handleDayTap}
-              selectedDays={selectedDays}
-              onEditDay={openSheetForDay}
+              myAvail={isAdminView ? myAvailB : currentTeamId === "teamB" ? myAvail : match.scheduling?.teamB?.availability || {}}
+              interactive={isAdminView || currentTeamId === "teamB"}
+              isOtherTeam={!isAdminView && currentTeamId !== "teamB"}
+              onDayTap={isAdminView ? (key) => handleDayTap(key, "teamB") : currentTeamId === "teamB" ? handleDayTap : undefined}
+              selectedDays={isAdminView ? selectedDaysB : currentTeamId === "teamB" ? selectedDays : undefined}
+              onEditDay={isAdminView ? (key) => openSheetForDay(key, "teamB") : currentTeamId === "teamB" ? openSheetForDay : undefined}
               mainColor={mainColor}
             />
 
             {/* Legend */}
-            <Stack direction="row" gap={1.5} px={2} pb={2} flexWrap="wrap">
-              <LegendItem color={mainColor} label="Your selection" />
-              <LegendItem
-                color="#e8f4f8"
-                border="1px solid #90c9e8"
-                label="Other team"
-              />
-              <LegendItem gradient label="Both available" color={mainColor} />
-            </Stack>
+            {!isAdminView && (
+              <Stack direction="row" gap={1.5} px={2} pb={2} flexWrap="wrap">
+                <LegendItem color={mainColor} label="Your selection" />
+                <LegendItem
+                  color="#e8f4f8"
+                  border="1px solid #90c9e8"
+                  label="Other team"
+                />
+                <LegendItem gradient label="Both available" color={mainColor} />
+              </Stack>
+            )}
 
             {/* Overlaps after submit */}
             {submitted && overlaps.length > 0 && !hasPendingChanges && (
@@ -488,7 +596,7 @@ const Schedule = ({
               <Button
                 fullWidth
                 variant="contained"
-                disabled={!hasAnySlots || submitLoading}
+                disabled={!(isAdminView ? hasAnySlotsAdmin : hasAnySlots) || submitLoading}
                 onClick={handleSubmit}
                 sx={{
                   py: 1.75,
@@ -512,7 +620,7 @@ const Schedule = ({
                   variant="button"
                   sx={{ color: "white", fontWeight: "bold" }}
                 >
-                  {submitLoading ? "Submitting..." : "📤 Submit My Availability"}
+                  {submitLoading ? "Submitting..." : isAdminView ? "Save Changes" : "📤 Submit My Availability"}
                 </Typography>
               </Button>
             </Box>
@@ -521,7 +629,9 @@ const Schedule = ({
             <TimeSlotSheet
               open={sheetOpen}
               dateKey={sheetDay}
-              currentSlots={sheetDay ? [...(myAvail[sheetDay] || [])] : []}
+              currentSlots={sheetDay ? [...((isAdminView
+                ? activeEditTeam === "teamA" ? myAvailA : myAvailB
+                : myAvail)[sheetDay] || [])] : []}
               onDone={handleSheetDone}
               onClose={() => {
                 /* console.log("onClose");
@@ -895,7 +1005,7 @@ function TeamCard({
       )}
 
       {/* My selected days list */}
-      {!isOtherTeam && selectedDays?.length > 0 && (
+      {interactive && selectedDays?.length > 0 && (
         <Stack gap={0.75} px={2} pb={1.5}>
           {selectedDays.map((date) => {
             const slots = myAvail[date];

@@ -1,5 +1,19 @@
 import { Box, Typography, Stack } from "@mui/material";
 
+function getSlotsCount(slots) {
+  if (Array.isArray(slots)) return slots.length;
+  return slots?.size || 0;
+}
+
+function hasSharedSlots(leftSlots, rightSlots) {
+  if (!leftSlots || !rightSlots) return false;
+
+  const left = Array.isArray(leftSlots) ? leftSlots : [...leftSlots];
+  const right = Array.isArray(rightSlots) ? rightSlots : [...rightSlots];
+
+  return left.some((slot) => right.includes(slot));
+}
+
 const DAY_NAMES = ["S", "M", "T", "W", "T", "F", "S"];
 const MONTH_NAMES = [
   "January",
@@ -40,8 +54,9 @@ const MatchCalendar = ({
   for (let d = 1; d <= daysInMonth; d++) {
     const key = dateKey(d);
     const outside = key < windowStart || key > windowEnd;
-    const inT1 = !!team1Avail?.[key];
-    const inT2 = !!(team2Avail?.[key]?.length > 0);
+    const inT1 = getSlotsCount(team1Avail?.[key]) > 0;
+    const inT2 = getSlotsCount(team2Avail?.[key]) > 0;
+    const bothSelected = hasSharedSlots(team1Avail?.[key], team2Avail?.[key]);
 
     if (!outside) {
       if (interactive) {
@@ -49,7 +64,7 @@ const MatchCalendar = ({
         console.log(team2Avail);
         console.log(d, key, inT1, inT2); */
       }
-      days.push({ d, key, outside, inT1, inT2 });
+      days.push({ d, key, outside, inT1, inT2, bothSelected });
     }
   }
 
@@ -96,9 +111,7 @@ const MatchCalendar = ({
       <Box display="grid" gridTemplateColumns="repeat(7,1fr)" gap={0.5}>
         {days.map((cell) => {
           if (cell.empty) return <Box key={cell.key} />;
-          const { d, key, inT1, inT2 } = cell;
-
-          const bothSelected = inT1 && inT2;
+          const { d, key, inT1, inT2, bothSelected } = cell;
 
           const canTap = interactive;
 

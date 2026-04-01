@@ -214,11 +214,11 @@ const EventCup = () => {
             db,
             forceRefresh: false,
           }),
-        );
-        dispatch(fetchEvents({ db, forceRefresh: false }));
+        );        
         setShowExitSuccess(true);
       } else if (type === "createMasters") {
         await createPremierPadelBrackets(eventId);
+        dispatch(fetchEvents({ db, forceRefresh: false }));
       }
     } catch (err) {
       console.error("confirmation action error", err);
@@ -561,11 +561,7 @@ const EventCup = () => {
                   >
                     Manage Rules PDF
                   </Button>
-                </Stack>
-              </Box>
-            )}
-            <Box sx={{ mt: 2 }}>
-              <Button
+                  <Button
                 variant="outlined"
                 startIcon={<Group />}
                 fullWidth
@@ -573,8 +569,12 @@ const EventCup = () => {
                   borderColor: sponsorColor || sponsorColor || "primary.main",
                   color: sponsorColor || sponsorColor || "primary.main",
                 }}
-                disabled={event.TournamentStarted}
+                disabled={!!event.TournamentId}
                 onClick={async () => {
+                  if (event.TournamentId) {
+                    return;
+                  }
+
                   if (
                     !event.Pairs ||
                     event.Pairs.length % 2 !== 0 ||
@@ -592,7 +592,9 @@ const EventCup = () => {
               >
                 Create Matches
               </Button>
-            </Box>
+                </Stack>
+              </Box>
+            )}
           </Container>
         </TabPanel>
 
