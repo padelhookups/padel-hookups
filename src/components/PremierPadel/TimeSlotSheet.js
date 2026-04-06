@@ -59,8 +59,8 @@ const TimeSlotSheet = ({
 	}, [dateKey, open]);
 
 	function toggle(key) {
-    console.log('toggle');
-    
+		console.log("toggle");
+
 		setSelected((prev) => {
 			const next = new Set(prev);
 			next.has(key) ? next.delete(key) : next.add(key);
@@ -89,7 +89,12 @@ const TimeSlotSheet = ({
 		<SwipeableDrawer
 			anchor='bottom'
 			open={open}
-			onClose={(e) => e.preventDefault()}
+			onClose={(e) => {
+				if (e) {
+					e.preventDefault();
+					e.stopPropagation();
+				}
+			}}
 			onOpen={() => {}}
 			disableSwipeToOpen
 			sx={{ zIndex: 1300 }}>
@@ -196,7 +201,9 @@ const TimeSlotSheet = ({
 						boxShadow: "none",
 						"&:hover": { boxShadow: "none", opacity: 0.9 }
 					}}>
-					<Typography variant='button' sx={{ color: "white", fontWeight: 'bold' }}>
+					<Typography
+						variant='button'
+						sx={{ color: "white", fontWeight: "bold" }}>
 						Done
 					</Typography>
 				</Button>
