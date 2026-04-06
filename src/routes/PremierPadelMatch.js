@@ -152,7 +152,13 @@ const PremierPadelMatch = () => {
 			setTeamB(teamBPlayers);
 			setAllPlayersIds([...teamAIds, ...teamBIds]);
 
-			if (!match.teams && event?.TournamentId && match?.id) {
+			if (
+				(!match.teams ||
+					match.teams.teamA.name === "" ||
+					match.teams.teamB.name === "") &&
+				event?.TournamentId &&
+				match?.id
+			) {
 				// Update match in firebase to add teams info (player ids) if not already present, this is needed to identify which team the user logged in is in and show the schedule tab accordingly
 				const teamsPayload = {
 					teamA: {
@@ -193,25 +199,21 @@ const PremierPadelMatch = () => {
 	}, [match, event, user]);
 
 	const handleSubmitAvailability = async (payload) => {
-		if (
-			!eventIdParam ||
-			!event?.TournamentId ||
-			!match?.id
-		) {
+		if (!eventIdParam || !event?.TournamentId || !match?.id) {
 			throw new Error("Missing data to update scheduling");
 		}
 
 		const isAdminSchedulingPayload = !!payload?.teamA || !!payload?.teamB;
 		const nextScheduling = isAdminSchedulingPayload
 			? {
-				...match.scheduling,
-				...(payload.teamA ? { teamA: payload.teamA } : {}),
-				...(payload.teamB ? { teamB: payload.teamB } : {})
-			}
+					...match.scheduling,
+					...(payload.teamA ? { teamA: payload.teamA } : {}),
+					...(payload.teamB ? { teamB: payload.teamB } : {})
+				}
 			: {
-				...match.scheduling,
-				[currentTeam]: payload
-			};
+					...match.scheduling,
+					[currentTeam]: payload
+				};
 
 		await setDoc(
 			doc(
