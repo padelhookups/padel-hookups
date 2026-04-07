@@ -114,7 +114,7 @@ async function sendNotificationsAndCleanup({
 }) {
 	if (messages.length === 0) {
 		console.log("No messages to send.");
-		return;
+		return null;
 	}
 
 	console.log(`Sending ${messages.length} ${notificationType} notifications`);
@@ -156,6 +156,7 @@ async function sendNotificationsAndCleanup({
 	}
 
 	console.log(`${response.successCount} messages sent successfully`);
+	return response;
 }
 
 exports.sendInviteOnCreateUser = onDocumentCreated(
@@ -432,14 +433,30 @@ exports.sendGroupsNotification = onCall({ region: "europe-west1" }, async (reque
 	const userDocs = usersSnapshot.docs;
 
 	if (userDocs.length === 0) {
-		return { sent: 0 };
+		return { sent: 0, created: 0 };
 	}
 
 	const messages = [];
 	const tokenRefs = [];
+	const notificationsBatch = db.batch();
+	const notificationRefsByUserId = new Map();
+	let createdNotificationsCount = 0;
 
 	for (const userDoc of userDocs) {
 		const userData = userDoc.data();
+		const userRef = db.collection("Users").doc(userDoc.id);
+		const notificationRef = db.collection("Notifications").doc();
+		notificationRefsByUserId.set(userDoc.id, notificationRef);
+		notificationsBatch.set(notificationRef, {
+			UserId: userRef,
+			Message: body,
+			Title: title,
+			Link: link || null,
+			DeliveryStatus: "pending",
+			MarkedAsRead: false,
+			CreatedDate: FieldValue.serverTimestamp(),
+		});
+		createdNotificationsCount++;
 
 		const devices = userData.Devices || {};
 
@@ -460,7 +477,9 @@ exports.sendGroupsNotification = onCall({ region: "europe-west1" }, async (reque
 		}
 	}
 
-	await sendNotificationsAndCleanup({
+	await notificationsBatch.commit();
+
+	const response = await sendNotificationsAndCleanup({
 		db,
 		messaging,
 		messages,
@@ -468,7 +487,40 @@ exports.sendGroupsNotification = onCall({ region: "europe-west1" }, async (reque
 		notificationType: "adminNotification",
 	});
 
-	return { sent: messages.length };
+	const deliveredUserIds = new Set();
+	if (response) {
+		response.responses.forEach((res, index) => {
+			if (res.success) {
+				const userId = tokenRefs[index]?.userId;
+				if (userId) {
+					deliveredUserIds.add(userId);
+				}
+			}
+		});
+	}
+
+	const deliveryStatusBatch = db.batch();
+	for (const userDoc of userDocs) {
+		const notificationRef = notificationRefsByUserId.get(userDoc.id);
+		if (!notificationRef) {
+			continue;
+		}
+
+		const userHadPushTargets = tokenRefs.some((tokenRef) => tokenRef.userId === userDoc.id);
+		const deliveryStatus = deliveredUserIds.has(userDoc.id)
+			? "sent"
+			: userHadPushTargets
+				? "failed"
+				: "not_sent";
+
+		deliveryStatusBatch.update(notificationRef, {
+			DeliveryStatus: deliveryStatus,
+		});
+	}
+
+	await deliveryStatusBatch.commit();
+
+	return { sent: messages.length, created: createdNotificationsCount };
 });
 
 async function createStripePaymentLinkForRequest(request) {

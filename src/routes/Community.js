@@ -112,6 +112,74 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
     }
 }));
 
+const getNotificationStatusLabel = (status) => {
+    switch (status) {
+    case "sent":
+        return "Delivered";
+    case "failed":
+        return "Failed";
+    case "not_sent":
+        return "Saved only";
+    default:
+        return "Pending";
+    }
+};
+
+const getNotificationStatusStyles = (status) => {
+    switch (status) {
+    case "sent":
+        return {
+            color: "#fff",
+            backgroundColor: "success.light"
+        };
+    case "failed":
+        return {
+            color: "#fff",
+            backgroundColor: "error.light"
+        };
+    case "not_sent":
+        return {
+            color: "#fff",
+            backgroundColor: "warning.light"
+        };
+    default:
+        return {
+            color: "#fff",
+            backgroundColor: "info.light"
+        };
+    }
+};
+
+const MOCK_NOTIFICATIONS = [
+    {
+        id: "mock-1",
+        Title: "Match Result Confirmed",
+        Message: "Your match against Team Smash was confirmed. Tap to view the final result.",
+        Link: "/PremierPadelMatch/mock-match-1",
+        DeliveryStatus: "sent",
+        MarkedAsRead: false,
+        relativeDate: "5 minutes ago"
+    },
+    {
+        id: "mock-2",
+        Title: "New Scheduling Update",
+        Message: "A new time slot is available for your next Premier Padel match.",
+        Link: "/PremierPadelMatch/mock-match-2",
+        DeliveryStatus: "sent",
+        MarkedAsRead: false,
+        relativeDate: "1 hour ago"
+    },
+    {
+        id: "mock-3",
+        Title: "Community Announcement",
+        Message: "Registration is now open for the spring event series.",
+        Link: "/Community",
+        DeliveryStatus: "not_sent",
+        MarkedAsRead: true,
+        relativeDate: "Yesterday"
+    }
+];
+
 const Community = () => {
     const db = getFirestore();
     const dispatch = useDispatch();
@@ -147,6 +215,10 @@ const Community = () => {
     // Likes dialog
     const [likesDialogOpen, setLikesDialogOpen] = useState(false);
     const [selectedPostLikes, setSelectedPostLikes] = useState([]);
+
+    const [notificationsOpen, setNotificationsOpen] = useState(false);
+    const [notificationsLoading, setNotificationsLoading] = useState(false);
+    const [notificationsItems, setNotificationsItems] = useState([]);
 
     // Post menu
     const [menuAnchorEl, setMenuAnchorEl] = useState(null);
@@ -470,6 +542,148 @@ const Community = () => {
         setLikesDialogOpen(true);
     };
 
+    const formatRelativeTimestamp = (timestamp) => {
+        if (!timestamp?.toDate) {
+            return "Just now";
+        }
+
+        const now = new Date();
+        const createdDate = timestamp.toDate();
+        const diffInMs = now - createdDate;
+        const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+        const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+        const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+
+        if (diffInMinutes < 1) {
+            return "Just now";
+        }
+
+        if (diffInMinutes < 60) {
+            return `${diffInMinutes} minute${diffInMinutes > 1 ? "s" : ""} ago`;
+        }
+
+        if (diffInHours < 24) {
+            return `${diffInHours} hour${diffInHours > 1 ? "s" : ""} ago`;
+        }
+
+        return `${diffInDays} day${diffInDays > 1 ? "s" : ""} ago`;
+    };
+
+    const handleNotificationsOpen = async () => {
+        if (!user?.uid) {
+            setSnackbar({
+                open: true,
+                message: "You must be logged in to view notifications",
+                severity: "error"
+            });
+            return;
+        }
+
+        setNotificationsOpen(true);
+        setNotificationsLoading(true);
+
+        try {
+            const notificationsQuery = query(
+                collection(db, "Notifications"),
+                where("UserId", "==", doc(db, "Users", user.uid))
+            );
+            const notificationsSnapshot = await getDocs(notificationsQuery);
+            const notificationList = notificationsSnapshot.docs
+                .map((notificationDoc) => {
+                    const data = notificationDoc.data();
+
+                    return {
+                        id: notificationDoc.id,
+                        ...data,
+                        relativeDate: formatRelativeTimestamp(data.CreatedDate),
+                        createdDateMs: data.CreatedDate?.toMillis?.() || 0
+                    };
+                })
+                .sort((a, b) => b.createdDateMs - a.createdDateMs);
+
+            setNotificationsItems(
+                notificationList.length > 0
+                    ? notificationList
+                    : MOCK_NOTIFICATIONS
+            );
+        } catch (error) {
+            console.error("Error fetching notifications:", error);
+            setNotificationsItems(MOCK_NOTIFICATIONS);
+            setSnackbar({
+                open: true,
+                message: "Showing mock notifications",
+                severity: "info"
+            });
+        } finally {
+            setNotificationsLoading(false);
+        }
+    };
+
+    const handleMarkNotificationAsRead = async (event, notificationId) => {
+        event.stopPropagation();
+
+        const notification = notificationsItems.find(
+            (item) => item.id === notificationId
+        );
+
+        if (!notification || notification.MarkedAsRead) {
+            return;
+        }
+
+        setNotificationsItems((prevItems) =>
+            prevItems.map((item) =>
+                item.id === notificationId
+                    ? { ...item, MarkedAsRead: true }
+                    : item
+            )
+        );
+
+        if (String(notificationId).startsWith("mock-")) {
+            return;
+        }
+
+        try {
+            await updateDoc(doc(db, "Notifications", notificationId), {
+                MarkedAsRead: true
+            });
+        } catch (error) {
+            console.error("Error marking notification as read:", error);
+            setNotificationsItems((prevItems) =>
+                prevItems.map((item) =>
+                    item.id === notificationId
+                        ? { ...item, MarkedAsRead: false }
+                        : item
+                )
+            );
+            setSnackbar({
+                open: true,
+                message: "Failed to mark notification as read",
+                severity: "error"
+            });
+        }
+    };
+
+    const handleNotificationClick = (notification) => {
+        if (!notification?.Link) {
+            return;
+        }
+
+        try {
+            const parsedUrl = new URL(notification.Link, window.location.origin);
+            if (parsedUrl.origin === window.location.origin) {
+                navigate(
+                    `${parsedUrl.pathname}${parsedUrl.search}${parsedUrl.hash}`
+                );
+            } else {
+                window.open(parsedUrl.toString(), "_blank", "noopener,noreferrer");
+            }
+        } catch {
+            navigate(notification.Link);
+        }
+
+        setNotificationsOpen(false);
+    };
+
     const handleMenuOpen = (event, postId) => {
         setMenuAnchorEl(event.currentTarget);
         setSelectedPostId(postId);
@@ -584,7 +798,10 @@ const Community = () => {
                             navigate("/Benefits");
                         }}
                     />
-                    <Notifications sx={{ ml: 2, color: "secondary.main" }}/>
+                    <Notifications
+                        sx={{ ml: 2, color: "secondary.main", cursor: "pointer" }}
+                        onClick={handleNotificationsOpen}
+                    />
                 </Box>
             </Paper>
 
@@ -1149,6 +1366,199 @@ const Community = () => {
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setLikesDialogOpen(false)}>
+                        Close
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            <Dialog
+                open={notificationsOpen}
+                onClose={() => setNotificationsOpen(false)}
+                maxWidth='sm'
+                fullWidth>
+                <DialogTitle sx={{ pb: 1 }}>
+                    <Typography variant='h6' fontWeight='bold'>
+                        Notifications
+                    </Typography>
+                    <Typography variant='body2' color='text.secondary'>
+                        Updates related to your matches, scheduling and community activity.
+                    </Typography>
+                </DialogTitle>
+                <DialogContent dividers sx={{ px: 2, py: 1.5 }}>
+                    {notificationsLoading ? (
+                        <Box
+                            sx={{
+                                display: "flex",
+                                justifyContent: "center",
+                                py: 4
+                            }}>
+                            <CircularProgress />
+                        </Box>
+                    ) : notificationsItems.length === 0 ? (
+                        <Box
+                            sx={{
+                                py: 6,
+                                textAlign: "center",
+                                color: "text.secondary"
+                            }}>
+                            <Typography variant='subtitle1' fontWeight='bold'>
+                                No notifications yet
+                            </Typography>
+                            <Typography variant='body2' sx={{ mt: 1 }}>
+                                When something important happens, it will show up here.
+                            </Typography>
+                        </Box>
+                    ) : (
+                        <List sx={{ pt: 0, display: "grid", gap: 1.25 }}>
+                            {notificationsItems.map((notification, index) => (
+                                <React.Fragment key={notification.id}>
+                                    <ListItem
+                                        sx={{
+                                            alignItems: "stretch",
+                                            display: "block",
+                                            px: 0,
+                                            py: 0,
+                                            cursor: notification.Link ? "pointer" : "default",
+                                            borderRadius: 3,
+                                            border: "1px solid",
+                                            borderColor: notification.MarkedAsRead
+                                                ? "divider"
+                                                : "secondary.light",
+                                            background: notification.MarkedAsRead
+                                                ? "linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(248,249,251,0.96) 100%)"
+                                                : "linear-gradient(180deg, #E3F77E 0%, #E3F77E 50%)",
+                                            boxShadow: notification.MarkedAsRead
+                                                ? "0 6px 18px rgba(15, 23, 42, 0.06)"
+                                                : "0 10px 24px rgba(15, 23, 42, 0.12)",
+                                            transition: "transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease",
+                                            "&:hover": notification.Link
+                                                ? {
+                                                    transform: "translateY(-1px)",
+                                                    boxShadow: "0 14px 28px rgba(15, 23, 42, 0.14)",
+                                                    borderColor: "secondary.main"
+                                                }
+                                                : undefined
+                                        }}
+                                        onClick={() => handleNotificationClick(notification)}>
+                                        <Box sx={{ p: 2 }}>
+                                            <Box
+                                                sx={{
+                                                    display: "flex",
+                                                    alignItems: "flex-start",
+                                                    justifyContent: "space-between",
+                                                    gap: 1.5,
+                                                    mb: 1.25
+                                                }}>
+                                                <Box sx={{ minWidth: 0, flex: 1 }}>
+                                                    <Box
+                                                        sx={{
+                                                            display: "flex",
+                                                            alignItems: "center",
+                                                            gap: 1,
+                                                            mb: 0.75
+                                                        }}>
+                                                        {!notification.MarkedAsRead && (
+                                                            <Box
+                                                                sx={{
+                                                                    width: 10,
+                                                                    height: 10,
+                                                                    borderRadius: "50%",
+                                                                    backgroundColor: "primary.main",
+                                                                    boxShadow: "0 0 0 4px #fff",
+                                                                    flexShrink: 0
+                                                                }}
+                                                            />
+                                                        )}
+                                                        <Typography
+                                                            variant='subtitle1'
+                                                            fontWeight='bold'
+                                                            sx={{ lineHeight: 1.25 }}>
+                                                            {notification.Title || "Notification"}
+                                                        </Typography>
+                                                    </Box>
+                                                    <Typography
+                                                        variant='body2'
+                                                        color='text.primary'
+                                                        sx={{
+                                                            lineHeight: 1.6,
+                                                            pr: 1
+                                                        }}>
+                                                        {notification.Message}
+                                                    </Typography>
+                                                </Box>
+                                                <Box
+                                                    sx={{
+                                                        px: 1.1,
+                                                        py: 0.4,
+                                                        borderRadius: 999,
+                                                        fontSize: 12,
+                                                        fontWeight: 700,
+                                                        letterSpacing: 0.2,
+                                                        whiteSpace: "nowrap",
+                                                        ...getNotificationStatusStyles(notification.DeliveryStatus)
+                                                    }}>
+                                                    {getNotificationStatusLabel(notification.DeliveryStatus)}
+                                                </Box>
+                                            </Box>
+
+                                            <Box
+                                                sx={{
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    justifyContent: "space-between",
+                                                    gap: 1,
+                                                    mt: 1.5
+                                                }}>
+                                                <Typography
+                                                    variant='caption'
+                                                    color='text.secondary'
+                                                    sx={{ display: "block" }}>
+                                                    {notification.relativeDate}
+                                                </Typography>
+                                                {!notification.MarkedAsRead && (
+                                                    <Box
+                                                        component='button'
+                                                        type='button'
+                                                        onClick={(event) =>
+                                                            handleMarkNotificationAsRead(
+                                                                event,
+                                                                notification.id
+                                                            )
+                                                        }
+                                                        sx={{
+                                                            border: "1px solid",
+                                                            borderColor: "primary.main",
+                                                            backgroundColor: "rgba(255,255,255,0.92)",
+                                                            color: "primary.main",
+                                                            fontSize: 12,
+                                                            fontWeight: 700,
+                                                            letterSpacing: 0.2,
+                                                            lineHeight: 1,
+                                                            px: 1.2,
+                                                            py: 0.75,
+                                                            borderRadius: 999,
+                                                            cursor: "pointer",
+                                                            transition: "all 0.18s ease",
+                                                            fontFamily: "inherit",
+                                                            "&:hover": {
+                                                                backgroundColor: "primary.main",
+                                                                color: "white"
+                                                            }
+                                                        }}>
+                                                        Mark as read
+                                                    </Box>
+                                                )}
+                                            </Box>
+                                        </Box>
+                                    </ListItem>
+                                    {index < notificationsItems.length - 1 && <Divider sx={{ opacity: 0 }} />}
+                                </React.Fragment>
+                            ))}
+                        </List>
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setNotificationsOpen(false)}>
                         Close
                     </Button>
                 </DialogActions>
