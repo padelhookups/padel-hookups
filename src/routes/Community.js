@@ -150,35 +150,6 @@ const getNotificationStatusStyles = (status) => {
     }
 };
 
-const MOCK_NOTIFICATIONS = [
-    {
-        id: "mock-1",
-        Title: "Match Result Confirmed",
-        Message: "Your match against Team Smash was confirmed. Tap to view the final result.",
-        Link: "/PremierPadelMatch/mock-match-1",
-        DeliveryStatus: "sent",
-        MarkedAsRead: false,
-        relativeDate: "5 minutes ago"
-    },
-    {
-        id: "mock-2",
-        Title: "New Scheduling Update",
-        Message: "A new time slot is available for your next Premier Padel match.",
-        Link: "/PremierPadelMatch/mock-match-2",
-        DeliveryStatus: "sent",
-        MarkedAsRead: false,
-        relativeDate: "1 hour ago"
-    },
-    {
-        id: "mock-3",
-        Title: "Community Announcement",
-        Message: "Registration is now open for the spring event series.",
-        Link: "/Community",
-        DeliveryStatus: "not_sent",
-        MarkedAsRead: true,
-        relativeDate: "Yesterday"
-    }
-];
 
 const Community = () => {
     const db = getFirestore();
@@ -602,17 +573,15 @@ const Community = () => {
                 .sort((a, b) => b.createdDateMs - a.createdDateMs);
 
             setNotificationsItems(
-                notificationList.length > 0
-                    ? notificationList
-                    : MOCK_NOTIFICATIONS
+                notificationList
             );
         } catch (error) {
             console.error("Error fetching notifications:", error);
-            setNotificationsItems(MOCK_NOTIFICATIONS);
+            setNotificationsItems([]);
             setSnackbar({
                 open: true,
-                message: "Showing mock notifications",
-                severity: "info"
+                message: "Failed to fetch notifications",
+                severity: "error"
             });
         } finally {
             setNotificationsLoading(false);
